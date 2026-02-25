@@ -6,8 +6,13 @@
 <title>Dashboard | St Paul Learning Centre</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  body {
+  * {
     margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
     font-family: 'Poppins', sans-serif;
     background: #f4f6f9;
   }
@@ -19,11 +24,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 
   nav h1 {
-    margin: 0;
     font-size: 20px;
+    font-weight: 700;
   }
 
   nav button {
@@ -33,6 +39,7 @@
     font-weight: 600;
     cursor: pointer;
     border-radius: 5px;
+    transition: background 0.3s;
   }
 
   nav button:hover {
@@ -41,50 +48,431 @@
 
   .container {
     padding: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
   }
 
   h2 {
     color: #002147;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .filter-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .filter-section select, .filter-section input {
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+  }
+
+  .filter-section button {
+    padding: 10px 20px;
+    background: #002147;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+  }
+
+  .filter-section button:hover {
+    background: #003366;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
   }
 
   th, td {
-    border: 1px solid #ccc;
-    padding: 12px;
+    padding: 15px;
     text-align: left;
+    border-bottom: 1px solid #eee;
   }
 
   th {
     background: #002147;
     color: white;
+    font-weight: 600;
+  }
+
+  tr:hover {
+    background: #f9f9f9;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .status-pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .status-approved {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .status-rejected {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .status-reviewed {
+    background: #d1ecf1;
+    color: #0c5460;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+
+  .btn-approve {
+    background: #28a745;
+    color: white;
+  }
+
+  .btn-approve:hover {
+    background: #218838;
+  }
+
+  .btn-reject {
+    background: #dc3545;
+    color: white;
+  }
+
+  .btn-reject:hover {
+    background: #c82333;
+  }
+
+  .btn-view {
+    background: #007bff;
+    color: white;
+  }
+
+  .btn-view:hover {
+    background: #0056b3;
+  }
+
+  .btn-edit {
+    background: #ffc107;
+    color: #333;
+  }
+
+  .btn-edit:hover {
+    background: #e0a800;
+  }
+
+  .btn-reset {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-reset:hover {
+    background: #5a6268;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.3s;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-content h3 {
+    color: #002147;
+    margin-bottom: 20px;
+  }
+
+  .modal-content p {
+    margin: 10px 0;
+    color: #555;
+    line-height: 1.6;
+  }
+
+  .modal-content label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 600;
+    color: #002147;
+  }
+
+  .modal-content input, .modal-content select, .modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .modal-content textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+
+  .btn-confirm {
+    background: #28a745;
+    color: white;
+  }
+
+  .btn-confirm:hover {
+    background: #218838;
+  }
+
+  .btn-cancel {
+    background: #ccc;
+    color: #333;
+  }
+
+  .btn-cancel:hover {
+    background: #999;
+  }
+
+  .alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    display: none;
+  }
+
+  .alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    display: block;
+  }
+
+  .alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    display: block;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #002147;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  .stat-card h3 {
+    color: #002147;
+    font-size: 28px;
+    margin: 10px 0;
+  }
+
+  .stat-card p {
+    color: #666;
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 20px;
+    }
+
+    table {
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 10px;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+
+    .filter-section {
+      flex-direction: column;
+    }
+
+    .filter-section input, .filter-section select, .filter-section button {
+      width: 100%;
+    }
   }
 </style>
 </head>
 <body>
 
 <nav>
-  <h1>Admin Dashboard</h1>
+  <h1>Admin Dashboard - St Paul Learning Centre</h1>
   <button id="logoutBtn">Logout</button>
 </nav>
 
 <div class="container">
-  <h2>Student Admissions</h2>
-  <table id="admissionsTable">
+  <div id="alertBox"></div>
+
+  <div class="header-section">
+    <div>
+      <h2>Student Admissions Management</h2>
+      <p style="color: #666;">Review, approve, and manage student admissions</p>
+    </div>
+  </div>
+
+  <div class="stats" id="statsContainer">
+    <div class="stat-card">
+      <p>Pending</p>
+      <h3 id="statPending">0</h3>
+    </div>
+    <div class="stat-card">
+      <p>Approved</p>
+      <h3 id="statApproved">0</h3>
+    </div>
+    <div class="stat-card">
+      <p>Rejected</p>
+      <h3 id="statRejected">0</h3>
+    </div>
+    <div class="stat-card">
+      <p>Total</p>
+      <h3 id="statTotal">0</h3>
+    </div>
+  </div>
+
+  <div class="filter-section">
+    <select id="statusFilter">
+      <option value="">All Status</option>
+      <option value="pending">Pending</option>
+      <option value="reviewed">Reviewed</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="Search by name or email...">
+    <button onclick="applyFilters()">Search</button>
+    <button onclick="loadAdmissions()">Reset</button>
+  </div>
+
+  <div id="loadingDiv" class="loading" style="display: none;">
+    <div class="spinner"></div>
+    <p>Loading admissions...</p>
+  </div>
+
+  <table id="admissionsTable" style="display: none;">
     <thead>
       <tr>
         <th>Student Name</th>
-        <th>Date of Birth</th>
+        <th>DOB</th>
         <th>Class</th>
         <th>Parent Name</th>
         <th>Parent Email</th>
         <th>Phone</th>
-        <th>Message</th>
-        <th>Submitted At</th>
+        <th>Status</th>
+        <th>Submitted</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -93,11 +481,100 @@
   </table>
 </div>
 
+<!-- View Modal -->
+<div id="viewModal" class="modal">
+  <div class="modal-content">
+    <h3>Admission Details</h3>
+    <div id="viewDetails"></div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('viewModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="modal">
+  <div class="modal-content">
+    <h3>Approve Admission</h3>
+    <p>Are you sure you want to approve this admission?</p>
+    <p><strong>Student:</strong> <span id="approveStudentName"></span></p>
+    <label>
+      <input type="checkbox" id="sendEmailCheckbox" checked> Send Welcome Email to Parent
+    </label>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('approveModal')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmApprove()">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal">
+  <div class="modal-content">
+    <h3>Reject Admission</h3>
+    <p>Are you sure you want to reject this admission?</p>
+    <p><strong>Student:</strong> <span id="rejectStudentName"></span></p>
+    <label>Reason for Rejection:</label>
+    <textarea id="rejectionReason" placeholder="Optional: provide a reason for rejection"></textarea>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('rejectModal')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmReject()">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <h3>Edit Student Information</h3>
+    <form id="editForm">
+      <label>Student Name:</label>
+      <input type="text" id="editStudentName" required>
+      
+      <label>Date of Birth:</label>
+      <input type="date" id="editDOB" required>
+      
+      <label>Class:</label>
+      <input type="text" id="editClass" required>
+      
+      <label>Parent Name:</label>
+      <input type="text" id="editParentName" required>
+      
+      <label>Parent Email:</label>
+      <input type="email" id="editParentEmail" required>
+      
+      <label>Parent Phone:</label>
+      <input type="tel" id="editParentPhone" required>
+      
+      <label>Additional Message:</label>
+      <textarea id="editAdditionalInfo"></textarea>
+      
+      <div class="modal-buttons">
+        <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+        <button type="submit" class="btn-confirm">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetPasswordModal" class="modal">
+  <div class="modal-content">
+    <h3>Reset Student Password</h3>
+    <p><strong>Student:</strong> <span id="resetStudentName"></span></p>
+    <p>A new temporary password will be generated and sent to the parent's email.</p>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('resetPasswordModal')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmResetPassword()">Reset Password</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -115,46 +592,463 @@
 
   const tableBody = document.querySelector("#admissionsTable tbody");
   const logoutBtn = document.getElementById("logoutBtn");
+  const loadingDiv = document.getElementById("loadingDiv");
+  const admissionsTable = document.getElementById("admissionsTable");
+  const alertBox = document.getElementById("alertBox");
 
-  // Check if user is logged in and allowed
+  let allAdmissions = [];
+  let currentAdmissionId = null;
+  let currentAdmissionData = null;
+
+  // ============= Authentication =============
   onAuthStateChanged(auth, (user) => {
     if (user && user.email === "nicholasbagenda@gmail.com") {
       loadAdmissions();
     } else {
-      // redirect to login if not authorized
       window.location.href = "login.html";
     }
   });
 
-  // Logout button
   logoutBtn.addEventListener("click", () => {
     signOut(auth).then(() => {
       window.location.href = "login.html";
-    });
+    }).catch(err => showAlert("Logout failed: " + err.message, "error"));
   });
 
-  // Load admissions from Firestore
-  async function loadAdmissions() {
-    const admissionsRef = collection(db, "admissions");
-    const q = query(admissionsRef, orderBy("submittedAt", "desc"));
-    const querySnapshot = await getDocs(q);
+  // ============= Load Admissions =============
+  window.loadAdmissions = async function() {
+    loadingDiv.style.display = "block";
+    admissionsTable.style.display = "none";
     
-    tableBody.innerHTML = ""; // clear table
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
+    try {
+      const admissionsRef = collection(db, "admissions");
+      const q = query(admissionsRef, orderBy("submittedAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      
+      allAdmissions = [];
+      tableBody.innerHTML = "";
+      
+      querySnapshot.forEach((doc) => {
+        allAdmissions.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      displayAdmissions(allAdmissions);
+      updateStats();
+      
+      loadingDiv.style.display = "none";
+      admissionsTable.style.display = "table";
+    } catch (error) {
+      console.error("Error loading admissions:", error);
+      showAlert("Error loading admissions: " + error.message, "error");
+      loadingDiv.style.display = "none";
+    }
+  };
+
+  // ============= Display Admissions =============
+  function displayAdmissions(admissions) {
+    tableBody.innerHTML = "";
+    
+    if (admissions.length === 0) {
+      tableBody.innerHTML = "<tr><td colspan='9' style='text-align: center; padding: 20px;'>No admissions found</td></tr>";
+      return;
+    }
+
+    admissions.forEach((admission) => {
+      const status = admission.status || "pending";
+      const statusBadge = getStatusBadge(status);
+      const submittedDate = admission.submittedAt?.toDate ? admission.submittedAt.toDate().toLocaleDateString() : "N/A";
+      
       const row = `<tr>
-        <td>${data.studentName}</td>
-        <td>${data.dob}</td>
-        <td>${data.class}</td>
-        <td>${data.parentName}</td>
-        <td>${data.parentEmail}</td>
-        <td>${data.parentPhone}</td>
-        <td>${data.additionalInfo || ""}</td>
-        <td>${data.submittedAt.toDate().toLocaleString()}</td>
+        <td>${admission.studentName || "N/A"}</td>
+        <td>${admission.dob || "N/A"}</td>
+        <td>${admission.class || "N/A"}</td>
+        <td>${admission.parentName || "N/A"}</td>
+        <td>${admission.parentEmail || "N/A"}</td>
+        <td>${admission.parentPhone || "N/A"}</td>
+        <td>${statusBadge}</td>
+        <td>${submittedDate}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-view" onclick="viewAdmission('${admission.id}')">View</button>
+            ${status === "pending" || status === "reviewed" ? `
+              <button class="btn btn-approve" onclick="openApproveModal('${admission.id}', '${admission.studentName}')">Approve</button>
+              <button class="btn btn-reject" onclick="openRejectModal('${admission.id}', '${admission.studentName}')">Reject</button>
+            ` : ""}
+            ${status === "approved" ? `
+              <button class="btn btn-edit" onclick="openEditModal('${admission.id}')">Edit</button>
+              <button class="btn btn-reset" onclick="openResetPasswordModal('${admission.id}', '${admission.studentName}')">Reset Pass</button>
+            ` : ""}
+          </div>
+        </td>
       </tr>`;
       tableBody.innerHTML += row;
     });
   }
+
+  // ============= Status Badge =============
+  function getStatusBadge(status) {
+    const badges = {
+      "pending": '<span class="status-badge status-pending">Pending</span>',
+      "reviewed": '<span class="status-badge status-reviewed">Reviewed</span>',
+      "approved": '<span class="status-badge status-approved">Approved</span>',
+      "rejected": '<span class="status-badge status-rejected">Rejected</span>'
+    };
+    return badges[status] || badges["pending"];
+  }
+
+  // ============= View Admission =============
+  window.viewAdmission = async function(admissionId) {
+    const admission = allAdmissions.find(a => a.id === admissionId);
+    if (!admission) return;
+
+    const detailsHTML = `
+      <p><strong>Student Name:</strong> ${admission.studentName || "N/A"}</p>
+      <p><strong>Date of Birth:</strong> ${admission.dob || "N/A"}</p>
+      <p><strong>Class:</strong> ${admission.class || "N/A"}</p>
+      <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
+      <p><strong>Parent Name:</strong> ${admission.parentName || "N/A"}</p>
+      <p><strong>Parent Email:</strong> ${admission.parentEmail || "N/A"}</p>
+      <p><strong>Parent Phone:</strong> ${admission.parentPhone || "N/A"}</p>
+      <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
+      <p><strong>Additional Message:</strong></p>
+      <p style="background: #f9f9f9; padding: 10px; border-radius: 4px;">${admission.additionalInfo || "No message provided"}</p>
+      <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
+      <p><strong>Status:</strong> ${getStatusBadge(admission.status || "pending")}</p>
+      <p><strong>Submitted:</strong> ${admission.submittedAt?.toDate ? admission.submittedAt.toDate().toLocaleString() : "N/A"}</p>
+    `;
+
+    document.getElementById("viewDetails").innerHTML = detailsHTML;
+    openModal("viewModal");
+  };
+
+  // ============= Approve Workflow =============
+  window.openApproveModal = function(admissionId, studentName) {
+    currentAdmissionId = admissionId;
+    document.getElementById("approveStudentName").textContent = studentName;
+    openModal("approveModal");
+  };
+
+  window.confirmApprove = async function() {
+    if (!currentAdmissionId) return;
+
+    try {
+      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
+      if (!admission) return;
+
+      // 1. Update admission status
+      await updateDoc(doc(db, "admissions", currentAdmissionId), {
+        status: "approved",
+        approvedAt: new Date()
+      });
+
+      // 2. Create student record
+      const studentRef = doc(collection(db, "students"), currentAdmissionId);
+      await setDoc(studentRef, {
+        name: admission.studentName,
+        class: admission.class,
+        parentEmail: admission.parentEmail,
+        parentPhone: admission.parentPhone,
+        dob: admission.dob,
+        status: "active",
+        createdAt: new Date()
+      });
+
+      // 3. Generate login credentials
+      const tempPassword = generatePassword();
+      const studentEmail = admission.parentEmail;
+
+      await setDoc(doc(db, "users", currentAdmissionId), {
+        email: studentEmail,
+        password: tempPassword, // In production, hash this!
+        role: "student",
+        studentId: currentAdmissionId,
+        createdAt: new Date(),
+        passwordExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Expires in 7 days
+      });
+
+      // 4. Send welcome email if checkbox is checked
+      if (document.getElementById("sendEmailCheckbox").checked) {
+        await sendWelcomeEmail(admission.parentEmail, admission.parentName, studentEmail, tempPassword);
+      }
+
+      closeModal("approveModal");
+      showAlert("Admission approved successfully! Student added to system.", "success");
+      loadAdmissions();
+    } catch (error) {
+      console.error("Error approving admission:", error);
+      showAlert("Error approving admission: " + error.message, "error");
+    }
+  };
+
+  // ============= Reject Workflow =============
+  window.openRejectModal = function(admissionId, studentName) {
+    currentAdmissionId = admissionId;
+    document.getElementById("rejectStudentName").textContent = studentName;
+    document.getElementById("rejectionReason").value = "";
+    openModal("rejectModal");
+  };
+
+  window.confirmReject = async function() {
+    if (!currentAdmissionId) return;
+
+    const reason = document.getElementById("rejectionReason").value.trim();
+
+    try {
+      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
+      if (!admission) return;
+
+      await updateDoc(doc(db, "admissions", currentAdmissionId), {
+        status: "rejected",
+        rejectionReason: reason,
+        rejectedAt: new Date()
+      });
+
+      closeModal("rejectModal");
+      showAlert("Admission rejected successfully.", "success");
+      loadAdmissions();
+    } catch (error) {
+      console.error("Error rejecting admission:", error);
+      showAlert("Error rejecting admission: " + error.message, "error");
+    }
+  };
+
+  // ============= Edit Student =============
+  window.openEditModal = async function(admissionId) {
+    currentAdmissionId = admissionId;
+    const admission = allAdmissions.find(a => a.id === admissionId);
+    
+    if (!admission) return;
+
+    document.getElementById("editStudentName").value = admission.studentName || "";
+    document.getElementById("editDOB").value = admission.dob || "";
+    document.getElementById("editClass").value = admission.class || "";
+    document.getElementById("editParentName").value = admission.parentName || "";
+    document.getElementById("editParentEmail").value = admission.parentEmail || "";
+    document.getElementById("editParentPhone").value = admission.parentPhone || "";
+    document.getElementById("editAdditionalInfo").value = admission.additionalInfo || "";
+
+    openModal("editModal");
+  };
+
+  document.getElementById("editForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    try {
+      const updateData = {
+        studentName: document.getElementById("editStudentName").value,
+        dob: document.getElementById("editDOB").value,
+        class: document.getElementById("editClass").value,
+        parentName: document.getElementById("editParentName").value,
+        parentEmail: document.getElementById("editParentEmail").value,
+        parentPhone: document.getElementById("editParentPhone").value,
+        additionalInfo: document.getElementById("editAdditionalInfo").value,
+        updatedAt: new Date()
+      };
+
+      await updateDoc(doc(db, "admissions", currentAdmissionId), updateData);
+
+      // Also update student record
+      await updateDoc(doc(db, "students", currentAdmissionId), {
+        name: updateData.studentName,
+        class: updateData.class,
+        parentEmail: updateData.parentEmail,
+        parentPhone: updateData.parentPhone,
+        dob: updateData.dob,
+        updatedAt: new Date()
+      });
+
+      closeModal("editModal");
+      showAlert("Student information updated successfully.", "success");
+      loadAdmissions();
+    } catch (error) {
+      console.error("Error updating student:", error);
+      showAlert("Error updating student: " + error.message, "error");
+    }
+  });
+
+  // ============= Reset Password =============
+  window.openResetPasswordModal = function(admissionId, studentName) {
+    currentAdmissionId = admissionId;
+    document.getElementById("resetStudentName").textContent = studentName;
+    openModal("resetPasswordModal");
+  };
+
+  window.confirmResetPassword = async function() {
+    if (!currentAdmissionId) return;
+
+    try {
+      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
+      if (!admission) return;
+
+      const newPassword = generatePassword();
+
+      await updateDoc(doc(db, "users", currentAdmissionId), {
+        password: newPassword,
+        passwordExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      });
+
+      // Send reset email
+      await sendPasswordResetEmail(admission.parentEmail, admission.parentName, newPassword);
+
+      closeModal("resetPasswordModal");
+      showAlert("Password reset successfully! New password sent to parent's email.", "success");
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      showAlert("Error resetting password: " + error.message, "error");
+    }
+  };
+
+  // ============= Filters and Search =============
+  window.applyFilters = function() {
+    const status = document.getElementById("statusFilter").value;
+    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+
+    let filtered = allAdmissions;
+
+    if (status) {
+      filtered = filtered.filter(a => (a.status || "pending") === status);
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(a => {
+        const name = (a.studentName || "").toLowerCase();
+        const email = (a.parentEmail || "").toLowerCase();
+        const parentName = (a.parentName || "").toLowerCase();
+        return name.includes(searchTerm) || email.includes(searchTerm) || parentName.includes(searchTerm);
+      });
+    }
+
+    displayAdmissions(filtered);
+  };
+
+  // ============= Statistics =============
+  function updateStats() {
+    const stats = {
+      pending: allAdmissions.filter(a => (a.status || "pending") === "pending").length,
+      approved: allAdmissions.filter(a => a.status === "approved").length,
+      rejected: allAdmissions.filter(a => a.status === "rejected").length,
+      total: allAdmissions.length
+    };
+
+    document.getElementById("statPending").textContent = stats.pending;
+    document.getElementById("statApproved").textContent = stats.approved;
+    document.getElementById("statRejected").textContent = stats.rejected;
+    document.getElementById("statTotal").textContent = stats.total;
+  }
+
+  // ============= Utility Functions =============
+  function generatePassword(length = 12) {
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+  }
+
+  async function sendWelcomeEmail(parentEmail, parentName, studentEmail, tempPassword) {
+    // Using EmailJS - you need to set this up first
+    try {
+      // This requires EmailJS setup - replace with your service
+      console.log("Sending welcome email to:", parentEmail);
+      
+      // Example using fetch to a backend function
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: parentEmail,
+          subject: "Welcome to St Paul Learning Centre - Student Login Details",
+          message: `
+            Dear ${parentName},
+            
+            Your student has been admitted to St Paul Learning Centre!
+            
+            Student Portal Login Details:
+            Email: ${studentEmail}
+            Temporary Password: ${tempPassword}
+            
+            Please log in and change the password immediately.
+            
+            Best regards,
+            St Paul Learning Centre Admin
+          `
+        })
+      });
+
+      if (!response.ok) throw new Error("Email send failed");
+    } catch (error) {
+      console.error("Error sending email:", error);
+      // Don't throw - email failure shouldn't block approval
+    }
+  }
+
+  async function sendPasswordResetEmail(parentEmail, parentName, newPassword) {
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: parentEmail,
+          subject: "Password Reset - St Paul Learning Centre",
+          message: `
+            Dear ${parentName},
+            
+            Your student's password has been reset.
+            
+            New Temporary Password: ${newPassword}
+            
+            Please log in and change the password immediately.
+            
+            Best regards,
+            St Paul Learning Centre Admin
+          `
+        })
+      });
+
+      if (!response.ok) throw new Error("Email send failed");
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
+    }
+  }
+
+  function showAlert(message, type = "success") {
+    const alertBox = document.getElementById("alertBox");
+    alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    alertBox.scrollIntoView({ behavior: "smooth" });
+
+    setTimeout(() => {
+      alertBox.innerHTML = "";
+    }, 4000);
+  }
+
+  window.openModal = function(modalId) {
+    document.getElementById(modalId).style.display = "block";
+  };
+
+  window.closeModal = function(modalId) {
+    document.getElementById(modalId).style.display = "none";
+  };
+
+  window.onclick = function(event) {
+    if (event.target.classList.contains("modal")) {
+      event.target.style.display = "none";
+    }
+  };
+
+  // Make functions globally accessible
+  window.viewAdmission = viewAdmission;
+  window.openApproveModal = openApproveModal;
+  window.confirmApprove = confirmApprove;
+  window.openRejectModal = openRejectModal;
+  window.confirmReject = confirmReject;
+  window.openEditModal = openEditModal;
+  window.openResetPasswordModal = openResetPasswordModal;
+  window.confirmResetPassword = confirmResetPassword;
+  window.applyFilters = applyFilters;
 </script>
 
 </body>
