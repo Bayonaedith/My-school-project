@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Paul Learning Centre | Student Portal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:0; }
+    header { background:#004aad; color:#fff; padding:20px; text-align:center; }
+    h1 { margin:0; }
+    .container { max-width:600px; margin:40px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.2); }
+    button { margin-top:20px; padding:15px; width:100%; background:#004aad; color:#fff; border:none; border-radius:5px; font-size:16px; cursor:pointer; }
+    button:hover { background:#003080; }
+    .hidden { display:none; }
+    #welcome { font-size:18px; margin-bottom:20px; }
+    #studentData { margin-top:20px; }
+    .data-item { background:#f1f1f1; padding:10px; margin-bottom:10px; border-radius:5px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ST Paul Learning Centre | Student Portal</h1>
+</header>
+
+<div class="container">
+  <div id="loginSection">
+    <button id="googleSignIn"><i class="fa-brands fa-google"></i> Sign in with Google</button>
+    <button id="emailSignIn"><i class="fa-solid fa-envelope"></i> Sign in with Email</button>
+  </div>
+
+  <div id="emailLoginForm" class="hidden">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="emailSignInBtn">Sign In</button>
+    <button id="emailSignUpBtn">Sign Up</button>
+    <button id="backBtn">Back</button>
+    <p id="errorMsg" style="color:red;"></p>
+  </div>
+
+  <div id="portalSection" class="hidden">
+    <p id="welcome"></p>
+    <button id="logoutBtn">Logout</button>
+    <div id="studentData"></div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+    authDomain: "my-school-project-6e00c.firebaseapp.com",
+    projectId: "my-school-project-6e00c",
+    storageBucket: "my-school-project-6e00c.firebasestorage.app",
+    messagingSenderId: "14283853516",
+    appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
+    measurementId: "G-LTJZ2RDG15"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  // DOM Elements
+  const loginSection = document.getElementById('loginSection');
+  const portalSection = document.getElementById('portalSection');
+  const emailLoginForm = document.getElementById('emailLoginForm');
+  const welcome = document.getElementById('welcome');
+  const studentData = document.getElementById('studentData');
+  const errorMsg = document.getElementById('errorMsg');
+
+  // Google Sign In
+  document.getElementById('googleSignIn').addEventListener('click', async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      showPortal(user);
+    } catch (error) {
+      alert(error.message);
+    }
+  });
+
+  // Email Sign In
+  document.getElementById('emailSignIn').addEventListener('click', () => {
+    loginSection.classList.add('hidden');
+    emailLoginForm.classList.remove('hidden');
+  });
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    emailLoginForm.classList.add('hidden');
+    loginSection.classList.remove('hidden');
+    errorMsg.textContent = '';
+  });
+
+  document.getElementById('emailSignInBtn').addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      showPortal(userCredential.user);
+    } catch (error) {
+      errorMsg.textContent = error.message;
+    }
+  });
+
+  // Email Sign Up
+  document.getElementById('emailSignUpBtn').addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      showPortal(userCredential.user);
+    } catch (error) {
+      errorMsg.textContent = error.message;
+    }
+  });
+
+  // Logout
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+    portalSection.classList.add('hidden');
+    loginSection.classList.remove('hidden');
+  });
+
+  // Show Portal
+  async function showPortal(user) {
+    emailLoginForm.classList.add('hidden');
+    loginSection.classList.add('hidden');
+    portalSection.classList.remove('hidden');
+    welcome.textContent = `Welcome, ${user.displayName || user.email}!`;
+
+    // Fetch student's admission data
+    const q = query(collection(db, "admissions"), where("email", "==", user.email));
+    const querySnapshot = await getDocs(q);
+    studentData.innerHTML = '';
+    if(querySnapshot.empty){
+      studentData.innerHTML = '<p>No admission data found.</p>';
+    } else {
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        studentData.innerHTML += `
+          <div class="data-item">
+            <p><strong>Name:</strong> ${data.name}</p>
+            <p><strong>Class:</strong> ${data.class}</p>
+            <p><strong>Phone:</strong> ${data.phone}</p>
+            <p><strong>Message:</strong> ${data.message || '-'}</p>
+          </div>
+        `;
+      });
+    }
+  }
+</script>
+</body>
+</html>
