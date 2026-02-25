@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login | St Paul Learning Centre</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #f4f6f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    width: 350px;
+    text-align: center;
+  }
+
+  .login-container img {
+    width: 100px;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    margin-bottom: 25px;
+    color: #002147;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    background: #ffcc00;
+    border: none;
+    font-weight: 600;
+    color: #002147;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+
+  button:hover {
+    background: #e6b800;
+  }
+
+  .error {
+    color: red;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <img src="https://i.ibb.co/qYq3JQv/splc-logo.png" alt="St Paul Learning Centre Logo">
+  <h2>Admin Login</h2>
+  <div class="error" id="errorMsg"></div>
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button id="loginBtn">Login</button>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+    authDomain: "my-school-project-6e00c.firebaseapp.com",
+    projectId: "my-school-project-6e00c",
+    storageBucket: "my-school-project-6e00c.firebasestorage.app",
+    messagingSenderId: "14283853516",
+    appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
+    measurementId: "G-LTJZ2RDG15"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const loginBtn = document.getElementById("loginBtn");
+  const errorMsg = document.getElementById("errorMsg");
+
+  loginBtn.addEventListener("click", () => {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Only allow your email
+        if(userCredential.user.email === "nicholasbagenda@gmail.com") {
+          window.location.href = "dashboard.html"; // redirect to your dashboard
+        } else {
+          errorMsg.textContent = "Access denied! Not authorized.";
+          auth.signOut();
+        }
+      })
+      .catch((error) => {
+        errorMsg.textContent = "Wrong email or password!";
+        console.error(error);
+      });
+  });
+
+  // Auto-redirect if already logged in
+  onAuthStateChanged(auth, (user) => {
+    if (user && user.email === "nicholasbagenda@gmail.com") {
+      window.location.href = "dashboard.html";
+    }
+  });
+</script>
+
+</body>
+  </html>
