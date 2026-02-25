@@ -48,6 +48,7 @@
     font-weight: 600;
     cursor: pointer;
     border: none;
+    transition: 0.3s;
   }
 
   button:hover {
@@ -79,26 +80,58 @@
   </form>
 </div>
 
-<!-- EmailJS SDK -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script type="text/javascript">
-  (function(){
-    emailjs.init('S17h9x6ExMG6mKaQh'); // Your Public Key
-  })();
+<!-- Firebase + EmailJS -->
+<script type="module">
+  // Firebase
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+    authDomain: "my-school-project-6e00c.firebaseapp.com",
+    projectId: "my-school-project-6e00c",
+    storageBucket: "my-school-project-6e00c.firebasestorage.app",
+    messagingSenderId: "14283853516",
+    appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // EmailJS
+  import emailjs from "https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js";
+  emailjs.init('S17h9x6ExMG6mKaQh');
+
+  // Form handling
   const form = document.getElementById('admissionForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  form.addEventListener('submit', function(event) {
-    event.preventDefault();
+    const formData = new FormData(form);
+    const data = {
+      studentName: formData.get('studentName'),
+      dob: formData.get('dob'),
+      class: formData.get('class'),
+      parentName: formData.get('parentName'),
+      parentEmail: formData.get('parentEmail'),
+      parentPhone: formData.get('parentPhone'),
+      additionalInfo: formData.get('additionalInfo'),
+      submittedAt: new Date()
+    };
 
-    emailjs.sendForm('service_ndh30l8', 'template_0k9iqza', this)
-      .then(() => {
-        alert('Application sent successfully!');
-        form.reset();
-      }, (err) => {
-        console.error('Failed to send application:', err);
-        alert('Something went wrong. Please try again.');
-      });
+    try {
+      // Save to Firebase
+      await addDoc(collection(db, 'admissions'), data);
+
+      // Send email
+      await emailjs.sendForm('service_ndh30l8', 'template_0k9iqza', form);
+
+      alert('Application submitted successfully!');
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong. Please try again.');
+    }
   });
 </script>
 
