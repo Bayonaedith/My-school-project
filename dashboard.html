@@ -56,7 +56,7 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 import { getFirestore, collection, getDocs, query, orderBy, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import emailjs from "https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js";
 
-// Firebase config
+// --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
   authDomain: "my-school-project-6e00c.firebaseapp.com",
@@ -77,7 +77,7 @@ emailjs.init("S17h9x6ExMG6mKaQh");
 const tableBody = document.querySelector("#admissionsTable tbody");
 const logoutBtn = document.getElementById("logoutBtn");
 
-// Check admin login
+// --- Admin login check ---
 onAuthStateChanged(auth, (user) => {
   if (user && user.email === "nicholasbagenda@gmail.com") {
     loadAdmissions();
@@ -88,19 +88,20 @@ onAuthStateChanged(auth, (user) => {
 
 // Logout
 logoutBtn.addEventListener("click", () => {
-  signOut(auth).then(() => window.location.href="login.html");
+  signOut(auth).then(() => window.location.href = "login.html");
 });
 
-// Load Admissions
+// --- Load Admissions from Firestore ---
 async function loadAdmissions() {
   tableBody.innerHTML = "";
   const admissionsRef = collection(db, "admissions");
   const q = query(admissionsRef, orderBy("submittedAt", "desc"));
   const snapshot = await getDocs(q);
 
-  snapshot.forEach(async (docSnap) => {
+  snapshot.forEach(docSnap => {
     const data = docSnap.data();
     const row = document.createElement("tr");
+
     row.innerHTML = `
       <td>${data.studentName}</td>
       <td>${data.dob}</td>
@@ -117,8 +118,9 @@ async function loadAdmissions() {
       </td>
     `;
 
-    // Approve
+    // --- Approve student ---
     row.querySelector(".approve").addEventListener("click", async () => {
+      // Add to "students" collection
       await setDoc(doc(db, "students", docSnap.id), {
         name: data.studentName,
         dob: data.dob,
@@ -129,8 +131,10 @@ async function loadAdmissions() {
         status: "active",
         createdAt: new Date()
       });
+      // Update admission status
       await updateDoc(doc(db, "admissions", docSnap.id), { status: "Approved" });
 
+      // Send email via EmailJS
       emailjs.send("service_ndh30l8","template_0k9iqza",{
         parent_email: data.parentEmail,
         student_name: data.studentName,
@@ -141,7 +145,7 @@ async function loadAdmissions() {
       loadAdmissions();
     });
 
-    // Reject
+    // --- Reject student ---
     row.querySelector(".reject").addEventListener("click", async () => {
       await updateDoc(doc(db, "admissions", docSnap.id), { status: "Rejected" });
       alert(`${data.studentName} has been rejected.`);
