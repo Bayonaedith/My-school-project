@@ -48,7 +48,6 @@
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: 0.3s;
   }
 
   button:hover {
@@ -80,56 +79,62 @@
   </form>
 </div>
 
-<!-- Firebase + EmailJS -->
-<script type="module">
-  // Firebase
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+<!-- EmailJS SDK -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
+<!-- Firebase SDKs -->
+<script type="module">
+  // Firebase imports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
     authDomain: "my-school-project-6e00c.firebaseapp.com",
     projectId: "my-school-project-6e00c",
-    storageBucket: "my-school-project-6e00c.firebasestorage.app",
+    storageBucket: "my-school-project-6e00c.appspot.com",
     messagingSenderId: "14283853516",
-    appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+    appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
+    measurementId: "G-LTJZ2RDG15"
   };
 
+  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // EmailJS
-  import emailjs from "https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js";
-  emailjs.init('S17h9x6ExMG6mKaQh');
+  // Initialize EmailJS
+  (function(){
+    emailjs.init('S17h9x6ExMG6mKaQh'); // Your Public Key
+  })();
 
-  // Form handling
   const form = document.getElementById('admissionForm');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  form.addEventListener('submit', async function(event) {
+    event.preventDefault();
 
-    const formData = new FormData(form);
+    // 1️⃣ Prepare form data
     const data = {
-      studentName: formData.get('studentName'),
-      dob: formData.get('dob'),
-      class: formData.get('class'),
-      parentName: formData.get('parentName'),
-      parentEmail: formData.get('parentEmail'),
-      parentPhone: formData.get('parentPhone'),
-      additionalInfo: formData.get('additionalInfo'),
-      submittedAt: new Date()
+      studentName: this.studentName.value,
+      dob: this.dob.value,
+      class: this.class.value,
+      parentName: this.parentName.value,
+      parentEmail: this.parentEmail.value,
+      parentPhone: this.parentPhone.value,
+      additionalInfo: this.additionalInfo.value,
+      submittedAt: serverTimestamp()
     };
 
     try {
-      // Save to Firebase
-      await addDoc(collection(db, 'admissions'), data);
+      // 2️⃣ Save to Firestore
+      await addDoc(collection(db, "admissions"), data);
 
-      // Send email
-      await emailjs.sendForm('service_ndh30l8', 'template_0k9iqza', form);
+      // 3️⃣ Send Email
+      await emailjs.sendForm('service_ndh30l8', 'template_0k9iqza', this);
 
       alert('Application submitted successfully!');
       form.reset();
     } catch (err) {
-      console.error(err);
+      console.error('Error submitting application:', err);
       alert('Something went wrong. Please try again.');
     }
   });
