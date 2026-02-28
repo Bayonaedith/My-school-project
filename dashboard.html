@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard | St Paul Learning Centre</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- EmailJS Library -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/index.min.js"></script>
 <style>
   * {
     margin: 0;
@@ -600,6 +602,23 @@
   let currentAdmissionId = null;
   let currentAdmissionData = null;
 
+  // ✨ NEW: EmailJS configuration
+  const EMAILJS_CONFIG = {
+    publicKey: "S17h9x6ExMG6mKaQh",
+    serviceId: "service_ndh30l8",
+    templates: {
+      welcome: "template_nub0vst",
+      rejection: "template_rejection"
+    }
+  };
+
+  // Initialize EmailJS
+  try {
+    emailjs.init(EMAILJS_CONFIG.publicKey);
+  } catch (error) {
+    console.log("EmailJS initialization note:", error.message);
+  }
+
   // ============= Authentication =============
   onAuthStateChanged(auth, (user) => {
     if (user && user.email === "nicholasbagenda@gmail.com") {
@@ -771,7 +790,7 @@
 
       // 4. Send welcome email if checkbox is checked
       if (document.getElementById("sendEmailCheckbox").checked) {
-        await sendWelcomeEmail(admission.parentEmail, admission.parentName, studentEmail, tempPassword);
+        await sendWelcomeEmail(admission.parentEmail, admission.parentName, admission.studentName, studentEmail, tempPassword);
       }
 
       closeModal("approveModal");
@@ -949,67 +968,142 @@
     return password;
   }
 
-  async function sendWelcomeEmail(parentEmail, parentName, studentEmail, tempPassword) {
-    // Using EmailJS - you need to set this up first
+  // ✨ NEW: Enhanced Email sending functions using EmailJS
+  async function sendWelcomeEmail(parentEmail, parentName, studentName, studentEmail, tempPassword) {
     try {
-      // This requires EmailJS setup - replace with your service
-      console.log("Sending welcome email to:", parentEmail);
-      
-      // Example using fetch to a backend function
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: parentEmail,
-          subject: "Welcome to St Paul Learning Centre - Student Login Details",
-          message: `
-            Dear ${parentName},
-            
-            Your student has been admitted to St Paul Learning Centre!
-            
-            Student Portal Login Details:
-            Email: ${studentEmail}
-            Temporary Password: ${tempPassword}
-            
-            Please log in and change the password immediately.
-            
-            Best regards,
-            St Paul Learning Centre Admin
-          `
-        })
-      });
+      const emailTemplate = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f6f9; border-radius: 8px;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+            <!-- Header -->
+            <div style="text-align: center; border-bottom: 3px solid #002147; padding-bottom: 20px; margin-bottom: 30px;">
+              <h1 style="color: #002147; margin: 0; font-size: 28px;">🎓 Welcome to St Paul Learning Centre</h1>
+              <p style="color: #666; margin: 10px 0 0 0; font-size: 14px;">Excellence in Education</p>
+            </div>
 
-      if (!response.ok) throw new Error("Email send failed");
+            <!-- Welcome Message -->
+            <div style="margin-bottom: 30px;">
+              <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 15px 0;">
+                Dear <strong>${parentName}</strong>,
+              </p>
+              <p style="color: #555; font-size: 15px; line-height: 1.8; margin: 0 0 15px 0;">
+                We are delighted to welcome you and your child, <strong>${studentName}</strong>, to the St Paul Learning Centre family! 🌟
+              </p>
+              <p style="color: #555; font-size: 15px; line-height: 1.8; margin: 0 0 15px 0;">
+                We are committed to providing a supportive, nurturing, and academically rigorous environment where every student can thrive. Our dedicated team of educators is excited to work with you and your family on this educational journey.
+              </p>
+            </div>
+
+            <!-- Login Details Box -->
+            <div style="background-color: #f9f9f9; border-left: 4px solid #28a745; padding: 20px; margin: 30px 0; border-radius: 4px;">
+              <h2 style="color: #002147; font-size: 18px; margin: 0 0 15px 0;">📧 Portal Login Details</h2>
+              <p style="color: #333; font-size: 14px; margin: 0 0 10px 0;">
+                <strong>Email:</strong><br>
+                <span style="background-color: #e8f4f8; padding: 10px; display: inline-block; border-radius: 4px; font-family: monospace; font-size: 13px;">
+                  ${studentEmail}
+                </span>
+              </p>
+              <p style="color: #333; font-size: 14px; margin: 10px 0;">
+                <strong>Temporary Password:</strong><br>
+                <span style="background-color: #e8f4f8; padding: 10px; display: inline-block; border-radius: 4px; font-family: monospace; font-size: 13px;">
+                  ${tempPassword}
+                </span>
+              </p>
+            </div>
+
+            <!-- Important Instructions -->
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffcc00; padding: 20px; margin: 30px 0; border-radius: 4px;">
+              <h3 style="color: #856404; font-size: 16px; margin: 0 0 10px 0;">⚠️ Important - Please Read!</h3>
+              <ul style="color: #555; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                <li>Log in to the student portal immediately using the credentials above</li>
+                <li><strong>Change your password</strong> on your first login for security</li>
+                <li>Keep your login details confidential</li>
+                <li>Check the portal regularly for updates, assignments, and announcements</li>
+              </ul>
+            </div>
+
+            <!-- Next Steps -->
+            <div style="margin: 30px 0;">
+              <h3 style="color: #002147; font-size: 16px; margin: 0 0 15px 0;">📋 Next Steps</h3>
+              <p style="color: #555; font-size: 14px; line-height: 1.8; margin: 0 0 10px 0;">
+                ✓ Complete your student profile in the portal<br>
+                ✓ Review the parent handbook and school policies<br>
+                ✓ Attend the orientation session (details will be sent separately)<br>
+                ✓ Set up parent-teacher communication preferences
+              </p>
+            </div>
+
+            <!-- Contact Information -->
+            <div style="background-color: #e3f2fd; border-left: 4px solid #007bff; padding: 20px; margin: 30px 0; border-radius: 4px;">
+              <h3 style="color: #0c5460; font-size: 16px; margin: 0 0 10px 0;">📞 Get in Touch</h3>
+              <p style="color: #555; font-size: 14px; line-height: 1.8; margin: 0;">
+                If you have any questions or concerns, please don't hesitate to contact us:<br>
+                Email: info@stpaullearning.edu<br>
+                Phone: +1 (555) 123-4567<br>
+                Portal Support: support@stpaullearning.edu
+              </p>
+            </div>
+
+            <!-- Closing -->
+            <div style="margin: 30px 0; text-align: center;">
+              <p style="color: #666; font-size: 14px; line-height: 1.8;">
+                We look forward to a wonderful year ahead of academic growth and personal development!
+              </p>
+              <p style="color: #666; font-size: 14px; margin: 20px 0 0 0;">
+                <strong>Best regards,</strong><br>
+                <strong style="color: #002147;">St Paul Learning Centre Administration</strong>
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align: center; border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px;">
+              <p style="color: #999; font-size: 12px; margin: 0;">
+                This is an automated message. Please do not reply directly to this email.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const templateParams = {
+        to_email: parentEmail,
+        to_name: parentName,
+        student_name: studentName,
+        student_email: studentEmail,
+        temp_password: tempPassword,
+        email_html: emailTemplate
+      };
+
+      const response = await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.templates.welcome,
+        templateParams
+      );
+
+      console.log("Welcome email sent successfully:", response);
+      return response;
     } catch (error) {
-      console.error("Error sending email:", error);
+      console.error("Error sending welcome email:", error);
       // Don't throw - email failure shouldn't block approval
+      showAlert("Note: Welcome email could not be sent, but admission was approved.", "error");
     }
   }
 
   async function sendPasswordResetEmail(parentEmail, parentName, newPassword) {
     try {
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: parentEmail,
-          subject: "Password Reset - St Paul Learning Centre",
-          message: `
-            Dear ${parentName},
-            
-            Your student's password has been reset.
-            
-            New Temporary Password: ${newPassword}
-            
-            Please log in and change the password immediately.
-            
-            Best regards,
-            St Paul Learning Centre Admin
-          `
-        })
-      });
+      const templateParams = {
+        to_email: parentEmail,
+        to_name: parentName,
+        new_password: newPassword
+      };
 
-      if (!response.ok) throw new Error("Email send failed");
+      const response = await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.templates.rejection,
+        templateParams
+      );
+
+      console.log("Password reset email sent successfully:", response);
+      return response;
     } catch (error) {
       console.error("Error sending password reset email:", error);
     }
@@ -1049,6 +1143,7 @@
   window.openResetPasswordModal = openResetPasswordModal;
   window.confirmResetPassword = confirmResetPassword;
   window.applyFilters = applyFilters;
+  window.loadAdmissions = loadAdmissions;
 </script>
 
 </body>
