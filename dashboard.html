@@ -602,22 +602,22 @@
   let currentAdmissionId = null;
   let currentAdmissionData = null;
 
-  // ✨ CORRECTED: EmailJS configuration
+  // ✨ CORRECTED: EmailJS Configuration
   const EMAILJS_CONFIG = {
     publicKey: "S17h9x6ExMG6mKaQh",
     serviceId: "service_ndh30l8",
     templates: {
       welcome: "template_nub0vst",
-      passwordReset: "template_password_reset" // FIXED: Separate template for password reset
+      passwordReset: "template_password_reset"
     }
   };
 
   // Initialize EmailJS
   try {
     emailjs.init(EMAILJS_CONFIG.publicKey);
-    console.log("EmailJS initialized successfully");
+    console.log("✅ EmailJS initialized successfully");
   } catch (error) {
-    console.error("EmailJS initialization error:", error);
+    console.error("❌ EmailJS initialization error:", error);
   }
 
   // ============= Authentication =============
@@ -758,15 +758,17 @@
       const admission = allAdmissions.find(a => a.id === currentAdmissionId);
       if (!admission) return;
 
+      console.log("📝 Starting approval process for:", admission.studentName);
+
       // 1. Update admission status
       await updateDoc(doc(db, "admissions", currentAdmissionId), {
         status: "approved",
         approvedAt: new Date()
       });
+      console.log("✅ Admission status updated to approved");
 
       // 2. Create student record
-      const studentRef = doc(collection(db, "students"), currentAdmissionId);
-      await setDoc(studentRef, {
+      await setDoc(doc(collection(db, "students"), currentAdmissionId), {
         name: admission.studentName,
         class: admission.class,
         parentEmail: admission.parentEmail,
@@ -775,6 +777,7 @@
         status: "active",
         createdAt: new Date()
       });
+      console.log("✅ Student record created");
 
       // 3. Generate login credentials
       const tempPassword = generatePassword();
@@ -782,15 +785,18 @@
 
       await setDoc(doc(db, "users", currentAdmissionId), {
         email: studentEmail,
-        password: tempPassword, // In production, hash this!
+        password: tempPassword,
         role: "student",
         studentId: currentAdmissionId,
         createdAt: new Date(),
-        passwordExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Expires in 7 days
+        passwordExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
+      console.log("✅ Login credentials created");
 
       // 4. Send welcome email if checkbox is checked
       if (document.getElementById("sendEmailCheckbox").checked) {
+        console.log("📧 Parent chose to send welcome email");
+        
         const emailSent = await sendWelcomeEmail(
           admission.parentEmail,
           admission.parentName,
@@ -799,19 +805,23 @@
           tempPassword
         );
         
-        if (!emailSent) {
-          showAlert("Admission approved! Note: Welcome email could not be sent.", "error");
+        if (emailSent) {
+          showAlert("✅ Admission approved! Welcome email sent to parent.", "success");
+          console.log("✅ Email successfully sent to:", admission.parentEmail);
         } else {
-          showAlert("Admission approved successfully! Welcome email sent to parent.", "success");
+          showAlert("✅ Admission approved! ⚠️ Welcome email could not be sent - check console.", "error");
+          console.warn("⚠️ Email send failed but approval was successful");
         }
       } else {
-        showAlert("Admission approved successfully!", "success");
+        showAlert("✅ Admission approved successfully!", "success");
+        console.log("ℹ️ Parent chose not to send welcome email");
       }
 
       closeModal("approveModal");
       loadAdmissions();
+
     } catch (error) {
-      console.error("Error approving admission:", error);
+      console.error("❌ Error approving admission:", error);
       showAlert("Error approving admission: " + error.message, "error");
     }
   };
@@ -982,10 +992,18 @@
     return password;
   }
 
-  // ✨ CORRECTED: EmailJS email sending functions using proper template variables
+  // ✨ CORRECTED: EmailJS email sending functions
   async function sendWelcomeEmail(parentEmail, parentName, studentName, studentEmail, tempPassword) {
     try {
-      // FIXED: Use proper template parameters that match EmailJS template
+      console.log("🚀 Starting email send process...");
+      
+      // Validate inputs
+      if (!parentEmail || !studentName) {
+        console.error("❌ Missing required fields:", { parentEmail, studentName });
+        return false;
+      }
+
+      // Prepare template parameters - MUST MATCH template variable names exactly
       const templateParams = {
         to_email: parentEmail,
         to_name: parentName,
@@ -998,28 +1016,66 @@
         support_email: "support@stpaullearning.edu"
       };
 
-      console.log("Sending welcome email with params:", { 
-        to: parentEmail, 
-        student: studentName 
+      console.log("📧 Email Parameters:", templateParams);
+      console.log("🔧 Config:", {
+        serviceId: EMAILJS_CONFIG.serviceId,
+        templateId: EMAILJS_CONFIG.templates.welcome,
+        publicKey: EMAILJS_CONFIG.publicKey.substring(0, 5) + "..."
       });
 
+      console.log("⏳ Sending email via EmailJS...");
+      
       const response = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
         EMAILJS_CONFIG.templates.welcome,
         templateParams
       );
 
-      console.log("Welcome email sent successfully:", response);
+      console.log("✅ Email sent successfully!", response);
+      console.log("📨 Response:", {
+        status: response.status,
+        text: response.text,
+        id: response.id
+      });
+      
       return true;
+
     } catch (error) {
-      console.error("Error sending welcome email:", error);
-      return false; // Return false instead of throwing
+      console.error("❌ Email send failed:", error);
+      console.error("Error Details:", {
+        message: error.message,
+        name: error.name,
+        status: error.status,
+        text: error.text
+      });
+
+      // Provide specific error messages
+      if (error.status === 0) {
+        console.error("🔴 Network error - check your internet connection");
+      } else if (error.status === 400) {
+        console.error("🔴 Bad request - check template variables match");
+      } else if (error.status === 401) {
+        console.error("🔴 Unauthorized - check public key and service ID");
+      } else if (error.status === 404) {
+        console.error("🔴 Not found - verify template ID exists");
+      } else if (error.status === 422) {
+        console.error("🔴 Template variable mismatch");
+      }
+
+      return false;
     }
   }
 
-  // FIXED: New dedicated password reset email function
+  // CORRECTED: Password Reset Email
   async function sendPasswordResetEmail(parentEmail, parentName, newPassword) {
     try {
+      console.log("🔐 Sending password reset email...");
+      
+      if (!parentEmail) {
+        console.error("❌ Missing parent email");
+        return false;
+      }
+
       const templateParams = {
         to_email: parentEmail,
         to_name: parentName,
@@ -1028,7 +1084,7 @@
         support_email: "support@stpaullearning.edu"
       };
 
-      console.log("Sending password reset email to:", parentEmail);
+      console.log("📧 Reset Email Parameters:", templateParams);
 
       const response = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
@@ -1036,10 +1092,11 @@
         templateParams
       );
 
-      console.log("Password reset email sent successfully:", response);
+      console.log("✅ Password reset email sent!", response);
       return true;
+
     } catch (error) {
-      console.error("Error sending password reset email:", error);
+      console.error("❌ Password reset email failed:", error);
       return false;
     }
   }
@@ -1051,7 +1108,7 @@
 
     setTimeout(() => {
       alertBox.innerHTML = "";
-    }, 5000); // Increased from 4000 to 5000ms
+    }, 5000);
   }
 
   window.openModal = function(modalId) {
@@ -1082,4 +1139,4 @@
 </script>
 
 </body>
- </html>
+</html>
