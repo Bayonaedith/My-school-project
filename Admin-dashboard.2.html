@@ -1,55 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Admin Dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | St Paul Learning Centre</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-body{background:#0f172a;color:white;font-family:sans-serif}
-.card{background:#1e293b;padding:30px;margin:50px auto;width:400px;border-radius:12px;box-shadow:0 0 20px #00f0ff}
-input,button{width:100%;padding:10px;margin:5px 0}
-button{background:#00f0ff;border:none}
+  body { font-family: 'Poppins', sans-serif; background:#f4f6f9; margin:0; padding:0; }
+  header { background:#004aad; color:#fff; padding:15px; text-align:center; }
+  h1 { margin:0; font-size:20px; }
+  .container { max-width:700px; margin:30px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+  input, select, button { width:100%; padding:12px; margin:5px 0; border-radius:5px; border:1px solid #ccc; font-size:16px; box-sizing:border-box; }
+  button { background:#004aad; color:#fff; font-weight:600; cursor:pointer; border:none; }
+  button:hover { background:#003080; }
+  h2 { text-align:center; color:#002147; margin-bottom:20px; }
+  .status { font-weight:bold; color:green; margin-top:10px; }
+  .error { color:red; margin-top:10px; }
 </style>
 </head>
 <body>
 
-<div class="card">
-<h2>Create Student Account</h2>
-<input id="name" placeholder="Full Name">
-<input id="email" placeholder="Student Email">
-<input id="class" placeholder="Class">
-<input id="parent" placeholder="Parent Name">
-<input id="phone" placeholder="Parent Phone">
-<button onclick="createAccount()">Create</button>
+<header>
+  <h1>Admin Dashboard | Create Student</h1>
+</header>
+
+<div class="container">
+  <h2>Create New Student Account</h2>
+  <input type="email" id="adminEmail" placeholder="Your Admin Email">
+  <input type="password" id="adminPassword" placeholder="Admin Password">
+  <hr>
+  <input type="text" id="studentFullName" placeholder="Student Full Name">
+  <input type="email" id="studentEmail" placeholder="Student Email">
+  <select id="studentClass">
+    <option value="">Select Class</option>
+    <option value="Primary 1">Primary 1</option>
+    <option value="Primary 2">Primary 2</option>
+    <option value="Primary 3">Primary 3</option>
+    <option value="Primary 4">Primary 4</option>
+    <option value="Primary 5">Primary 5</option>
+    <option value="Primary 6">Primary 6</option>
+  </select>
+  <input type="text" id="parentName" placeholder="Parent/Guardian Name">
+  <input type="tel" id="parentPhone" placeholder="Parent/Guardian Phone">
+  <button id="createStudentBtn">Create Student Account</button>
+  <p class="status" id="statusMsg"></p>
+  <p class="error" id="errorMsg"></p>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-  authDomain: "my-school-project-6e00c.firebaseapp.com",
-  projectId: "my-school-project-6e00c",
-  storageBucket: "my-school-project-6e00c.firebasestorage.app",
-  messagingSenderId: "14283853516",
-  appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
-  measurementId: "G-LTJZ2RDG15"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+    authDomain: "my-school-project-6e00c.firebaseapp.com",
+    projectId: "my-school-project-6e00c",
+    storageBucket: "my-school-project-6e00c.firebasestorage.app",
+    messagingSenderId: "14283853516",
+    appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
+    measurementId: "G-LTJZ2RDG15"
+  };
 
-const app = initializeApp(firebaseConfig);
-const functions = getFunctions(app);
-const createStudent = httpsCallable(functions,"createStudentAccount");
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
 
-window.createAccount = async function(){
-  await createStudent({
-    email: email.value,
-    fullName: name.value,
-    studentClass: class.value,
-    parentName: parent.value,
-    parentPhone: phone.value
+  const adminEmail = document.getElementById('adminEmail');
+  const adminPassword = document.getElementById('adminPassword');
+  const studentFullName = document.getElementById('studentFullName');
+  const studentEmail = document.getElementById('studentEmail');
+  const studentClass = document.getElementById('studentClass');
+  const parentName = document.getElementById('parentName');
+  const parentPhone = document.getElementById('parentPhone');
+  const createBtn = document.getElementById('createStudentBtn');
+  const statusMsg = document.getElementById('statusMsg');
+  const errorMsg = document.getElementById('errorMsg');
+
+  createBtn.addEventListener('click', async () => {
+    statusMsg.textContent = '';
+    errorMsg.textContent = '';
+
+    // ✅ Check admin email
+    if (adminEmail.value !== "nicholasbagenda@gmail.com") {
+      errorMsg.textContent = "Only admin can create students!";
+      return;
+    }
+
+    try {
+      // 🔑 Sign in admin
+      await signInWithEmailAndPassword(auth, adminEmail.value, adminPassword.value);
+
+      // 🔑 Create student in Firebase Auth
+      const tempPassword = "Student123!";
+      await createUserWithEmailAndPassword(auth, studentEmail.value, tempPassword);
+
+      // 📝 Save student data to Firestore
+      await setDoc(doc(db, "students", studentEmail.value), {
+        fullName: studentFullName.value,
+        email: studentEmail.value,
+        class: studentClass.value,
+        parentName: parentName.value,
+        parentPhone: parentPhone.value,
+        role: "student",
+        createdAt: serverTimestamp()
+      });
+
+      statusMsg.textContent = "Student account created successfully!";
+      adminPassword.value = '';
+      studentFullName.value = '';
+      studentEmail.value = '';
+      studentClass.value = '';
+      parentName.value = '';
+      parentPhone.value = '';
+    } catch (err) {
+      console.error(err);
+      errorMsg.textContent = err.message;
+    }
   });
-  alert("Student Created!");
-}
 </script>
+
 </body>
 </html>
