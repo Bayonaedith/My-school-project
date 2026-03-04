@@ -27,7 +27,7 @@
     color: #002147;
   }
 
-  form {
+  form, .check-status {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -53,6 +53,12 @@
   button:hover {
     background: #e6b800;
   }
+
+  .status-result {
+    background: #f1f1f1;
+    padding: 15px;
+    border-radius: 8px;
+  }
 </style>
 </head>
 <body>
@@ -77,6 +83,15 @@
     <textarea name="additionalInfo" placeholder="Message / Additional Info" rows="4"></textarea>
     <button type="submit">Submit Application</button>
   </form>
+
+  <hr style="margin:30px 0;">
+
+  <div class="check-status">
+    <h2>Check Admission Status</h2>
+    <input type="text" id="checkInput" placeholder="Enter Student Name or Email">
+    <button id="checkBtn">Check Status</button>
+    <div id="statusResult" class="status-result"></div>
+  </div>
 </div>
 
 <!-- EmailJS SDK -->
@@ -84,11 +99,9 @@
 
 <!-- Firebase SDKs -->
 <script type="module">
-  // Firebase imports
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
     authDomain: "my-school-project-6e00c.firebaseapp.com",
@@ -99,20 +112,17 @@
     measurementId: "G-LTJZ2RDG15"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Initialize EmailJS
-  (function(){
-    emailjs.init('S17h9x6ExMG6mKaQh'); // Your Public Key
-  })();
+  // EmailJS
+  (function(){ emailjs.init('S17h9x6ExMG6mKaQh'); })();
 
+  // Submit Admission Form
   const form = document.getElementById('admissionForm');
   form.addEventListener('submit', async function(event) {
     event.preventDefault();
 
-    // 1️⃣ Prepare form data
     const data = {
       studentName: this.studentName.value,
       dob: this.dob.value,
@@ -121,21 +131,56 @@
       parentEmail: this.parentEmail.value,
       parentPhone: this.parentPhone.value,
       additionalInfo: this.additionalInfo.value,
+      approved: false, // default not approved
       submittedAt: serverTimestamp()
     };
 
     try {
-      // 2️⃣ Save to Firestore
       await addDoc(collection(db, "admissions"), data);
-
-      // 3️⃣ Send Email
       await emailjs.sendForm('service_ndh30l8', 'template_0k9iqza', this);
-
       alert('Application submitted successfully!');
       form.reset();
     } catch (err) {
-      console.error('Error submitting application:', err);
-      alert('Something went wrong. Please try again.');
+      console.error(err);
+      alert('Error submitting application.');
+    }
+  });
+
+  // Check Admission Status
+  const checkBtn = document.getElementById('checkBtn');
+  const checkInput = document.getElementById('checkInput');
+  const statusResult = document.getElementById('statusResult');
+
+  checkBtn.addEventListener('click', async () => {
+    const search = checkInput.value.trim();
+    if(!search){
+      statusResult.textContent = 'Please enter a Name or Email.';
+      return;
+    }
+
+    const q = query(collection(db, "admissions"), 
+      where("parentEmail", "==", search)
+    );
+    const qName = query(collection(db, "admissions"), 
+      where("studentName", "==", search)
+    );
+
+    let results = [];
+    const querySnapshotEmail = await getDocs(q);
+    querySnapshotEmail.forEach(doc => results.push(doc.data()));
+
+    const querySnapshotName = await getDocs(qName);
+    querySnapshotName.forEach(doc => results.push(doc.data()));
+
+    if(results.length === 0){
+      statusResult.textContent = "No admission record found.";
+    } else {
+      statusResult.innerHTML = results.map(r => `
+        <p><strong>Name:</strong> ${r.studentName}</p>
+        <p><strong>Class:</strong> ${r.class}</p>
+        <p><strong>Approved:</strong> ${r.approved ? '✅ Approved' : '❌ Pending'}</p>
+        <hr>
+      `).join('');
     }
   });
 </script>
