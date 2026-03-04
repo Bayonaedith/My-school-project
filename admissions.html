@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>St Paul Learning Centre | Admission Form</title>
+<title>St Paul Learning Centre | Admission</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   body {
@@ -15,7 +15,7 @@
 
   .container {
     max-width: 600px;
-    margin: 50px auto;
+    margin: 40px auto;
     background: white;
     padding: 30px;
     border-radius: 10px;
@@ -54,10 +54,35 @@
     background: #e6b800;
   }
 
-  .status-result {
-    background: #f1f1f1;
+  .status-card {
+    background: #f9f9f9;
     padding: 15px;
     border-radius: 8px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+
+  .status-card p {
+    margin: 5px 0;
+    font-size: 16px;
+  }
+
+  .status-approved {
+    color: #008000;
+    font-weight: 600;
+  }
+
+  .status-pending {
+    color: #d9534f;
+    font-weight: 600;
+  }
+
+  #checkInput {
+    margin-top: 10px;
+  }
+
+  #statusResult {
+    margin-top: 15px;
   }
 </style>
 </head>
@@ -83,24 +108,21 @@
     <textarea name="additionalInfo" placeholder="Message / Additional Info" rows="4"></textarea>
     <button type="submit">Submit Application</button>
   </form>
+</div>
 
-  <hr style="margin:30px 0;">
-
-  <div class="check-status">
-    <h2>Check Admission Status</h2>
-    <input type="text" id="checkInput" placeholder="Enter Student Name or Email">
-    <button id="checkBtn">Check Status</button>
-    <div id="statusResult" class="status-result"></div>
-  </div>
+<div class="container">
+  <h2>Check Admission Status</h2>
+  <input type="text" id="checkInput" placeholder="Enter Student Name or Email">
+  <button id="checkBtn">Check Status</button>
+  <div id="statusResult"></div>
 </div>
 
 <!-- EmailJS SDK -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
-<!-- Firebase SDKs -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -115,10 +137,12 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // EmailJS
-  (function(){ emailjs.init('S17h9x6ExMG6mKaQh'); })();
+  // Initialize EmailJS
+  (function(){
+    emailjs.init('S17h9x6ExMG6mKaQh'); // Your Public Key
+  })();
 
-  // Submit Admission Form
+  // Handle form submission
   const form = document.getElementById('admissionForm');
   form.addEventListener('submit', async function(event) {
     event.preventDefault();
@@ -131,7 +155,7 @@
       parentEmail: this.parentEmail.value,
       parentPhone: this.parentPhone.value,
       additionalInfo: this.additionalInfo.value,
-      approved: false, // default not approved
+      approved: false, // default
       submittedAt: serverTimestamp()
     };
 
@@ -142,11 +166,11 @@
       form.reset();
     } catch (err) {
       console.error(err);
-      alert('Error submitting application.');
+      alert('Error submitting application. Please try again.');
     }
   });
 
-  // Check Admission Status
+  // Handle status check
   const checkBtn = document.getElementById('checkBtn');
   const checkInput = document.getElementById('checkInput');
   const statusResult = document.getElementById('statusResult');
@@ -158,28 +182,27 @@
       return;
     }
 
-    const q = query(collection(db, "admissions"), 
-      where("parentEmail", "==", search)
-    );
-    const qName = query(collection(db, "admissions"), 
-      where("studentName", "==", search)
-    );
+    const qEmail = query(collection(db, "admissions"), where("parentEmail", "==", search));
+    const qName = query(collection(db, "admissions"), where("studentName", "==", search));
 
     let results = [];
-    const querySnapshotEmail = await getDocs(q);
+    const querySnapshotEmail = await getDocs(qEmail);
     querySnapshotEmail.forEach(doc => results.push(doc.data()));
 
     const querySnapshotName = await getDocs(qName);
     querySnapshotName.forEach(doc => results.push(doc.data()));
 
     if(results.length === 0){
-      statusResult.textContent = "No admission record found.";
+      statusResult.innerHTML = `<p>No admission record found.</p>`;
     } else {
       statusResult.innerHTML = results.map(r => `
-        <p><strong>Name:</strong> ${r.studentName}</p>
-        <p><strong>Class:</strong> ${r.class}</p>
-        <p><strong>Approved:</strong> ${r.approved ? '✅ Approved' : '❌ Pending'}</p>
-        <hr>
+        <div class="status-card">
+          <p><strong>Name:</strong> ${r.studentName}</p>
+          <p><strong>Class:</strong> ${r.class}</p>
+          <p><strong>Status:</strong> <span class="${r.approved ? 'status-approved' : 'status-pending'}">
+            ${r.approved ? 'Approved ✅' : 'Pending ❌'}
+          </span></p>
+        </div>
       `).join('');
     }
   });
