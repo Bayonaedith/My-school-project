@@ -1,138 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Management</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<title>Students | St Paul Learning Centre</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-body { font-family:Poppins; background:#f4f6f9; margin:0; }
-nav { background:#002147; color:white; padding:15px 30px; display:flex; justify-content:space-between; }
-.container { padding:30px; }
-input, select { padding:10px; margin:5px; }
-button { padding:8px 12px; cursor:pointer; }
-table { width:100%; border-collapse:collapse; margin-top:20px; }
-th, td { border:1px solid #ccc; padding:10px; }
-th { background:#002147; color:white; }
-.edit { background:#ffc107; border:none; }
-.delete { background:#dc3545; color:white; border:none; }
+body { font-family:'Poppins', sans-serif; background:#f4f6f9; margin:0; padding:0; }
+nav { background:#002147; color:white; padding:15px 40px; display:flex; justify-content:space-between; align-items:center; }
+nav h1 { font-size:20px; font-weight:700; }
+nav button { background:#ffcc00; border:none; padding:10px 20px; font-weight:600; cursor:pointer; border-radius:5px; transition:0.3s; }
+nav button:hover { background:#e6b800; }
+.container { padding:40px; max-width:1400px; margin:0 auto; }
+h2 { color:#002147; font-size:28px; margin-bottom:20px; }
+table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:5px; overflow:hidden; }
+th, td { padding:15px; text-align:left; border-bottom:1px solid #eee; }
+th { background:#002147; color:white; font-weight:600; }
+tr:hover { background:#f9f9f9; }
+.action-buttons button { margin-right:5px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; }
+.btn-edit { background:#ffc107; color:#333; }
+.btn-edit:hover { background:#e0a800; }
+.btn-reset { background:#6c757d; color:white; }
+.btn-reset:hover { background:#5a6268; }
+.modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); }
+.modal-content { background:#fff; margin:5% auto; padding:30px; border-radius:8px; width:90%; max-width:600px; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+.modal-buttons { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+.btn-confirm { background:#28a745; color:white; }
+.btn-cancel { background:#ccc; color:#333; }
 </style>
-</head>
-<body>
-
-<nav>
-<h2>Student Management</h2>
-<button onclick="logout()">Logout</button>
-</nav>
-
-<div class="container">
-
-<h3>Add Student</h3>
-<input type="text" id="name" placeholder="Student Name">
-<input type="email" id="email" placeholder="Student Email">
-<input type="text" id="class" placeholder="Class">
-<input type="text" id="parentPhone" placeholder="Parent Phone">
-<button onclick="addStudent()">Add Student</button>
-
-<h3>All Students</h3>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Email</th>
-<th>Class</th>
-<th>Parent Phone</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody id="studentTable"></tbody>
-</table>
-
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
   authDomain: "my-school-project-6e00c.firebaseapp.com",
-  projectId: "my-school-project-6e00c"
+  projectId: "my-school-project-6e00c",
+  storageBucket: "my-school-project-6e00c.firebasestorage.app",
+  messagingSenderId: "14283853516",
+  appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-const schoolId = "school_001"; // later dynamic
+const tableBody = document.createElement("tbody");
+let students = [];
+let currentStudentId = null;
 
-const table = document.getElementById("studentTable");
+// --- Auth check: only nicholasbagenda@gmail.com ---
+onAuthStateChanged(auth, user => {
+  if(!user || user.email !== "nicholasbagenda@gmail.com"){
+    alert("Access denied! Only nicholasbagenda@gmail.com allowed.");
+    window.location.href="admin-dashboard.html";
+  } else loadStudents();
+});
 
-async function loadStudents() {
-  table.innerHTML = "";
-  const snapshot = await getDocs(collection(db, "students", schoolId, "list"));
-  snapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    table.innerHTML += `
-      <tr>
-        <td>${data.name}</td>
-        <td>${data.email}</td>
-        <td>${data.class}</td>
-        <td>${data.parentPhone}</td>
-        <td>
-          <button class="edit" onclick="editStudent('${docSnap.id}','${data.name}','${data.class}')">Edit</button>
-          <button class="delete" onclick="deleteStudent('${docSnap.id}')">Delete</button>
-        </td>
-      </tr>
+function logout(){
+  signOut(auth).then(()=>window.location.href="admin-dashboard.html");
+}
+
+// --- Load students ---
+async function loadStudents(){
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  thead.innerHTML = `<tr>
+    <th>Student Name</th>
+    <th>DOB</th>
+    <th>Class</th>
+    <th>Parent Name</th>
+    <th>Parent Email</th>
+    <th>Actions</th>
+  </tr>`;
+  table.appendChild(thead);
+  table.appendChild(tableBody);
+  document.querySelector(".container").appendChild(table);
+
+  const snapshot = await getDocs(collection(db,"students"));
+  students = [];
+  tableBody.innerHTML="";
+  snapshot.forEach(doc=> students.push({id:doc.id, ...doc.data()}));
+  displayStudents(students);
+
+  // Highlight if studentId in URL
+  const params = new URLSearchParams(window.location.search);
+  const highlightId = params.get("studentId");
+  if(highlightId){
+    const row = tableBody.querySelector(`tr[data-id='${highlightId}']`);
+    if(row) row.style.background="#fff3cd";
+  }
+}
+
+function displayStudents(list){
+  tableBody.innerHTML="";
+  if(!list.length){ tableBody.innerHTML="<tr><td colspan='6' style='text-align:center;padding:20px;'>No students found</td></tr>"; return; }
+  list.forEach(s=>{
+    const row = document.createElement("tr");
+    row.setAttribute("data-id", s.id);
+    row.innerHTML = `
+      <td>${s.studentName||"N/A"}</td>
+      <td>${s.dob||"N/A"}</td>
+      <td>${s.class||"N/A"}</td>
+      <td>${s.parentName||"N/A"}</td>
+      <td>${s.parentEmail||"N/A"}</td>
+      <td class="action-buttons">
+        <button class="btn-edit" onclick="openEditModal('${s.id}')">Edit</button>
+        <button class="btn-reset" onclick="openResetModal('${s.id}','${s.studentName}')">Reset Pass</button>
+      </td>
     `;
+    tableBody.appendChild(row);
   });
 }
 
-window.addStudent = async function() {
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const studentClass = document.getElementById("class").value;
-  const parentPhone = document.getElementById("parentPhone").value;
+// --- Edit modal ---
+function openEditModal(studentId){
+  currentStudentId=studentId;
+  const student = students.find(s=>s.id===studentId);
+  const modal = document.createElement("div"); modal.className="modal"; modal.id="editModal";
+  modal.innerHTML = `<div class="modal-content">
+    <h3>Edit Student</h3>
+    <label>Student Name:</label><input id="editName" value="${student.studentName||''}">
+    <label>DOB:</label><input type="date" id="editDOB" value="${student.dob||''}">
+    <label>Class:</label><input id="editClass" value="${student.class||''}">
+    <label>Parent Name:</label><input id="editParentName" value="${student.parentName||''}">
+    <label>Parent Email:</label><input id="editParentEmail" value="${student.parentEmail||''}">
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn-confirm" onclick="saveEdit()">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.style.display="block";
+}
 
-  await addDoc(collection(db, "students", schoolId, "list"), {
-    name,
-    email,
-    class: studentClass,
-    parentPhone,
-    createdAt: new Date()
+function closeModal(id){ const m=document.getElementById(id); if(m) m.remove(); }
+
+// --- Save Edit ---
+async function saveEdit(){
+  const studentRef = doc(db,"students",currentStudentId);
+  await updateDoc(studentRef,{
+    studentName: document.getElementById("editName").value,
+    dob: document.getElementById("editDOB").value,
+    class: document.getElementById("editClass").value,
+    parentName: document.getElementById("editParentName").value,
+    parentEmail: document.getElementById("editParentEmail").value
   });
-
-  alert("Student Added!");
+  closeModal("editModal");
   loadStudents();
 }
 
-window.deleteStudent = async function(id) {
-  await deleteDoc(doc(db, "students", schoolId, "list", id));
-  alert("Student Deleted");
-  loadStudents();
+// --- Reset modal ---
+function openResetModal(studentId,name){
+  currentStudentId=studentId;
+  const modal = document.createElement("div"); modal.className="modal"; modal.id="resetModal";
+  modal.innerHTML = `<div class="modal-content">
+    <h3>Reset Student Password</h3>
+    <p>Reset password for <strong>${name}</strong>?</p>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('resetModal')">Cancel</button>
+      <button class="btn-confirm" onclick="resetPassword()">Reset</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.style.display="block";
 }
 
-window.editStudent = async function(id, name, studentClass) {
-  const newName = prompt("Edit Name:", name);
-  const newClass = prompt("Edit Class:", studentClass);
-
-  await updateDoc(doc(db, "students", schoolId, "list", id), {
-    name: newName,
-    class: newClass
-  });
-
-  alert("Updated!");
-  loadStudents();
+function resetPassword(){
+  alert("Password reset simulated (EmailJS can be added here).");
+  closeModal("resetModal");
 }
-
-window.logout = function() {
-  signOut(auth);
-  window.location.href="login.html";
-}
-
-loadStudents();
 </script>
+</head>
+<body>
+
+<nav>
+  <h1>Student Manager</h1>
+  <button onclick="logout()">Logout</button>
+</nav>
+
+<div class="container">
+  <h2>All Registered Students</h2>
+</div>
 
 </body>
 </html>
