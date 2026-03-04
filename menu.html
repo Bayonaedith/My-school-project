@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>St Paul Learning Centre | Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    background: #f4f6f9;
+  }
+  header {
+    background: #004aad;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+  }
+  h1 { margin:0; font-size:20px; }
+  .container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 10px;
+  }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  .menu-item {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 600;
+  }
+  .menu-item i {
+    font-size: 30px;
+    margin-bottom: 10px;
+    color: #004aad;
+  }
+  .menu-item:hover {
+    transform: translateY(-5px);
+    background: #e6f0ff;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>St Paul Learning Centre | Menu</h1>
+</header>
+
+<div class="container">
+  <div class="menu-grid">
+    <div class="menu-item" onclick="location.href='admissions.html'">
+      <i class="fa-solid fa-file-pen"></i>
+      <p>Admissions</p>
+    </div>
+    <div class="menu-item" onclick="location.href='admin-dashboard.html'">
+      <i class="fa-solid fa-user-shield"></i>
+      <p>Admin Dashboard</p>
+    </div>
+    <div class="menu-item" onclick="location.href='student-dashboard.html'">
+      <i class="fa-solid fa-user-graduate"></i>
+      <p>Student Portal</p>
+    </div>
+    <div class="menu-item" onclick="location.href='menu.html'">
+      <i class="fa-solid fa-house"></i>
+      <p>Home / Menu</p>
+    </div>
+    <div class="menu-item" onclick="location.href='inspiration.html'">
+      <i class="fa-solid fa-star"></i>
+      <p>Inspiration</p>
+    </div>
+    <div class="menu-item" onclick="location.href='contact.html'">
+      <i class="fa-solid fa-envelope"></i>
+      <p>Contact</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
