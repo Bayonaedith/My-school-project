@@ -6,31 +6,84 @@
 <title>Students | St Paul Learning Centre</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-body { font-family:'Poppins', sans-serif; background:#f4f6f9; margin:0; padding:0; }
-nav { background:#002147; color:white; padding:15px 40px; display:flex; justify-content:space-between; align-items:center; }
-nav h1 { font-size:20px; font-weight:700; }
-nav button { background:#ffcc00; border:none; padding:10px 20px; font-weight:600; cursor:pointer; border-radius:5px; transition:0.3s; }
-nav button:hover { background:#e6b800; }
-.container { padding:40px; max-width:1400px; margin:0 auto; }
-h2 { color:#002147; font-size:28px; margin-bottom:20px; }
-table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:5px; overflow:hidden; }
-th, td { padding:15px; text-align:left; border-bottom:1px solid #eee; }
-th { background:#002147; color:white; font-weight:600; }
-tr:hover { background:#f9f9f9; }
-.action-buttons button { margin-right:5px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; }
-.btn-edit { background:#ffc107; color:#333; }
-.btn-edit:hover { background:#e0a800; }
-.btn-reset { background:#6c757d; color:white; }
-.btn-reset:hover { background:#5a6268; }
-.modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); }
-.modal-content { background:#fff; margin:5% auto; padding:30px; border-radius:8px; width:90%; max-width:600px; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
-.modal-buttons { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
-.btn-confirm { background:#28a745; color:white; }
-.btn-cancel { background:#ccc; color:#333; }
+  body { font-family: 'Poppins', sans-serif; background: #f4f6f9; margin:0; }
+  nav { background: #002147; color: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+  nav h1 { font-size: 20px; font-weight: 700; }
+  nav button { background: #ffcc00; border: none; padding: 10px 20px; font-weight: 600; cursor: pointer; border-radius: 5px; transition: 0.3s; }
+  nav button:hover { background: #e6b800; }
+
+  .container { padding: 40px; max-width: 1200px; margin:0 auto; }
+
+  h2 { color: #002147; font-size: 28px; margin-bottom: 20px; }
+
+  table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 5px; overflow: hidden; }
+  th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #002147; color: white; font-weight: 600; }
+  tr:hover { background: #f9f9f9; }
+
+  .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; margin: 0 2px; transition: 0.3s; }
+  .btn-edit { background: #ffc107; color: #333; }
+  .btn-edit:hover { background: #e0a800; }
+  .btn-reset { background: #6c757d; color: white; }
+  .btn-reset:hover { background: #5a6268; }
+
+  .loading { text-align: center; padding: 40px; color: #666; }
+  .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #002147; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+  @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg); } }
+
+  .modal { display: none; position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.4);}
+  .modal-content { background: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);}
+  .modal-buttons { display:flex; justify-content: flex-end; gap:10px; margin-top:20px; }
+  .btn-cancel { background: #ccc; color: #333; }
+  .btn-cancel:hover { background: #999; }
+  .btn-confirm { background: #28a745; color:white; }
+  .btn-confirm:hover { background: #218838; }
 </style>
+</head>
+<body>
+
+<nav>
+  <h1>Student Directory - St Paul Learning Centre</h1>
+  <button id="logoutBtn" style="display:none;">Logout</button>
+</nav>
+
+<div class="container">
+  <h2>All Students</h2>
+  <div id="loadingDiv" class="loading">
+    <div class="spinner"></div>
+    <p>Loading students...</p>
+  </div>
+
+  <table id="studentsTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Approved On</th>
+        <th>Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetPasswordModal" class="modal">
+  <div class="modal-content">
+    <h3>Reset Student Password</h3>
+    <p><strong>Student:</strong> <span id="resetStudentName"></span></p>
+    <p>A new temporary password will be generated and sent to the student's email.</p>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('resetPasswordModal')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmResetPassword()">Reset Password</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -39,150 +92,105 @@ const firebaseConfig = {
   projectId: "my-school-project-6e00c",
   storageBucket: "my-school-project-6e00c.firebasestorage.app",
   messagingSenderId: "14283853516",
-  appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+  appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
+  measurementId: "G-LTJZ2RDG15"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const tableBody = document.createElement("tbody");
-let students = [];
-let currentStudentId = null;
+const studentsTable = document.getElementById("studentsTable");
+const tableBody = studentsTable.querySelector("tbody");
+const loadingDiv = document.getElementById("loadingDiv");
+const logoutBtn = document.getElementById("logoutBtn");
 
-// --- Auth check: only nicholasbagenda@gmail.com ---
-onAuthStateChanged(auth, user => {
-  if(!user || user.email !== "nicholasbagenda@gmail.com"){
-    alert("Access denied! Only nicholasbagenda@gmail.com allowed.");
-    window.location.href="admin-dashboard.html";
-  } else loadStudents();
+let currentStudentId = null;
+let currentStudentName = "";
+
+// ========== Auth ==========
+onAuthStateChanged(auth, async (user) => {
+  if (user && user.email === "nicholasbagenda@gmail.com") {
+    logoutBtn.style.display = "inline-block";
+    loadStudents(true); // Admin view
+  } else {
+    loadStudents(false); // Public view
+  }
 });
 
-function logout(){
-  signOut(auth).then(()=>window.location.href="admin-dashboard.html");
-}
+logoutBtn.addEventListener("click", () => {
+  signOut(auth).then(() => location.reload());
+});
 
-// --- Load students ---
-async function loadStudents(){
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  thead.innerHTML = `<tr>
-    <th>Student Name</th>
-    <th>DOB</th>
-    <th>Class</th>
-    <th>Parent Name</th>
-    <th>Parent Email</th>
-    <th>Actions</th>
-  </tr>`;
-  table.appendChild(thead);
-  table.appendChild(tableBody);
-  document.querySelector(".container").appendChild(table);
+// ========== Load Students ==========
+async function loadStudents(isAdmin = false) {
+  loadingDiv.style.display = "block";
+  studentsTable.style.display = "none";
+  tableBody.innerHTML = "";
 
-  const snapshot = await getDocs(collection(db,"students"));
-  students = [];
-  tableBody.innerHTML="";
-  snapshot.forEach(doc=> students.push({id:doc.id, ...doc.data()}));
-  displayStudents(students);
+  try {
+    const studentsRef = collection(db, "students");
+    const querySnapshot = await getDocs(studentsRef);
 
-  // Highlight if studentId in URL
-  const params = new URLSearchParams(window.location.search);
-  const highlightId = params.get("studentId");
-  if(highlightId){
-    const row = tableBody.querySelector(`tr[data-id='${highlightId}']`);
-    if(row) row.style.background="#fff3cd";
+    if (querySnapshot.empty) {
+      tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No students found</td></tr>`;
+    } else {
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const approvedOn = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString() : "N/A";
+
+        const actions = isAdmin ? `
+          <button class="btn btn-reset" onclick="openResetPasswordModal('${docSnap.id}','${data.name}')">Reset</button>
+        ` : "-";
+
+        tableBody.innerHTML += `
+          <tr>
+            <td>${data.name || "N/A"}</td>
+            <td>${data.class || "N/A"}</td>
+            <td>${approvedOn}</td>
+            <td>${data.parentEmail || "N/A"}</td>
+            <td>${actions}</td>
+          </tr>
+        `;
+      });
+    }
+
+    loadingDiv.style.display = "none";
+    studentsTable.style.display = "table";
+
+  } catch (err) {
+    console.error("Error loading students:", err);
+    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Error loading students</td></tr>`;
+    loadingDiv.style.display = "none";
+    studentsTable.style.display = "table";
   }
 }
 
-function displayStudents(list){
-  tableBody.innerHTML="";
-  if(!list.length){ tableBody.innerHTML="<tr><td colspan='6' style='text-align:center;padding:20px;'>No students found</td></tr>"; return; }
-  list.forEach(s=>{
-    const row = document.createElement("tr");
-    row.setAttribute("data-id", s.id);
-    row.innerHTML = `
-      <td>${s.studentName||"N/A"}</td>
-      <td>${s.dob||"N/A"}</td>
-      <td>${s.class||"N/A"}</td>
-      <td>${s.parentName||"N/A"}</td>
-      <td>${s.parentEmail||"N/A"}</td>
-      <td class="action-buttons">
-        <button class="btn-edit" onclick="openEditModal('${s.id}')">Edit</button>
-        <button class="btn-reset" onclick="openResetModal('${s.id}','${s.studentName}')">Reset Pass</button>
-      </td>
-    `;
-    tableBody.appendChild(row);
-  });
+// ========== Reset Password ==========
+function openResetPasswordModal(studentId, studentName) {
+  currentStudentId = studentId;
+  currentStudentName = studentName;
+  document.getElementById("resetStudentName").textContent = studentName;
+  document.getElementById("resetPasswordModal").style.display = "block";
 }
 
-// --- Edit modal ---
-function openEditModal(studentId){
-  currentStudentId=studentId;
-  const student = students.find(s=>s.id===studentId);
-  const modal = document.createElement("div"); modal.className="modal"; modal.id="editModal";
-  modal.innerHTML = `<div class="modal-content">
-    <h3>Edit Student</h3>
-    <label>Student Name:</label><input id="editName" value="${student.studentName||''}">
-    <label>DOB:</label><input type="date" id="editDOB" value="${student.dob||''}">
-    <label>Class:</label><input id="editClass" value="${student.class||''}">
-    <label>Parent Name:</label><input id="editParentName" value="${student.parentName||''}">
-    <label>Parent Email:</label><input id="editParentEmail" value="${student.parentEmail||''}">
-    <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
-      <button class="btn-confirm" onclick="saveEdit()">Save</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.style.display="block";
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = "none";
 }
 
-function closeModal(id){ const m=document.getElementById(id); if(m) m.remove(); }
-
-// --- Save Edit ---
-async function saveEdit(){
-  const studentRef = doc(db,"students",currentStudentId);
-  await updateDoc(studentRef,{
-    studentName: document.getElementById("editName").value,
-    dob: document.getElementById("editDOB").value,
-    class: document.getElementById("editClass").value,
-    parentName: document.getElementById("editParentName").value,
-    parentEmail: document.getElementById("editParentEmail").value
-  });
-  closeModal("editModal");
-  loadStudents();
-}
-
-// --- Reset modal ---
-function openResetModal(studentId,name){
-  currentStudentId=studentId;
-  const modal = document.createElement("div"); modal.className="modal"; modal.id="resetModal";
-  modal.innerHTML = `<div class="modal-content">
-    <h3>Reset Student Password</h3>
-    <p>Reset password for <strong>${name}</strong>?</p>
-    <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeModal('resetModal')">Cancel</button>
-      <button class="btn-confirm" onclick="resetPassword()">Reset</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.style.display="block";
-}
-
-function resetPassword(){
-  alert("Password reset simulated (EmailJS can be added here).");
-  closeModal("resetModal");
+async function confirmResetPassword() {
+  if (!currentStudentId) return;
+  const newPassword = Math.random().toString(36).slice(-8);
+  try {
+    await updateDoc(doc(db, "users", currentStudentId), { password: newPassword });
+    alert(`Password reset! New password sent to student's email (mock).`);
+    closeModal('resetPasswordModal');
+  } catch (err) {
+    console.error(err);
+    alert("Failed to reset password.");
+  }
 }
 </script>
-</head>
-<body>
-
-<nav>
-  <h1>Student Manager</h1>
-  <button onclick="logout()">Logout</button>
-</nav>
-
-<div class="container">
-  <h2>All Registered Students</h2>
-</div>
 
 </body>
 </html>
