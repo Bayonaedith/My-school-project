@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<style>
+body{background:#0f172a;color:white;font-family:sans-serif}
+.card{background:#1e293b;padding:30px;margin:50px auto;width:400px;border-radius:12px;box-shadow:0 0 20px #00f0ff}
+input,button{width:100%;padding:10px;margin:5px 0}
+button{background:#00f0ff;border:none}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>Create Student Account</h2>
+<input id="name" placeholder="Full Name">
+<input id="email" placeholder="Student Email">
+<input id="class" placeholder="Class">
+<input id="parent" placeholder="Parent Name">
+<input id="phone" placeholder="Parent Phone">
+<button onclick="createAccount()">Create</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+  authDomain: "my-school-project-6e00c.firebaseapp.com",
+  projectId: "my-school-project-6e00c",
+  storageBucket: "my-school-project-6e00c.firebasestorage.app",
+  messagingSenderId: "14283853516",
+  appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
+  measurementId: "G-LTJZ2RDG15"
+};
+
+const app = initializeApp(firebaseConfig);
+const functions = getFunctions(app);
+const createStudent = httpsCallable(functions,"createStudentAccount");
+
+window.createAccount = async function(){
+  await createStudent({
+    email: email.value,
+    fullName: name.value,
+    studentClass: class.value,
+    parentName: parent.value,
+    parentPhone: phone.value
+  });
+  alert("Student Created!");
+}
+</script>
+</body>
+</html>
