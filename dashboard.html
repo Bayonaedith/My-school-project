@@ -625,13 +625,13 @@
     if (user && user.email === "nicholasbagenda@gmail.com") {
       loadAdmissions();
     } else {
-      window.location.href = "login.html";
+      window.location.href = "admin-dashboard.html";
     }
   });
 
   logoutBtn.addEventListener("click", () => {
     signOut(auth).then(() => {
-      window.location.href = "login.html";
+      window.location.href = "admin-dashboard.html";
     }).catch(err => showAlert("Logout failed: " + err.message, "error"));
   });
 
