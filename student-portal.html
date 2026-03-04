@@ -13,9 +13,8 @@
     button { margin-top:20px; padding:15px; width:100%; background:#004aad; color:#fff; border:none; border-radius:5px; font-size:16px; cursor:pointer; }
     button:hover { background:#003080; }
     .hidden { display:none; }
-    #welcome { font-size:18px; margin-bottom:20px; }
-    #studentData { margin-top:20px; }
-    .data-item { background:#f1f1f1; padding:10px; margin-bottom:10px; border-radius:5px; }
+    input { width: 100%; padding:10px; margin:10px 0; border-radius:5px; border:1px solid #ccc; }
+    #errorMsg { color:red; }
   </style>
 </head>
 <body>
@@ -36,21 +35,14 @@
     <button id="emailSignInBtn">Sign In</button>
     <button id="emailSignUpBtn">Sign Up</button>
     <button id="backBtn">Back</button>
-    <p id="errorMsg" style="color:red;"></p>
-  </div>
-
-  <div id="portalSection" class="hidden">
-    <p id="welcome"></p>
-    <button id="logoutBtn">Logout</button>
-    <div id="studentData"></div>
+    <p id="errorMsg"></p>
   </div>
 </div>
 
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -64,15 +56,10 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
 
-  // DOM Elements
   const loginSection = document.getElementById('loginSection');
-  const portalSection = document.getElementById('portalSection');
   const emailLoginForm = document.getElementById('emailLoginForm');
-  const welcome = document.getElementById('welcome');
-  const studentData = document.getElementById('studentData');
   const errorMsg = document.getElementById('errorMsg');
 
   // Google Sign In
@@ -80,13 +67,13 @@
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      showPortal(user);
+      redirectUser(user.email);
     } catch (error) {
       alert(error.message);
     }
   });
 
-  // Email Sign In
+  // Email Sign In button
   document.getElementById('emailSignIn').addEventListener('click', () => {
     loginSection.classList.add('hidden');
     emailLoginForm.classList.remove('hidden');
@@ -98,12 +85,13 @@
     errorMsg.textContent = '';
   });
 
+  // Email Sign In
   document.getElementById('emailSignInBtn').addEventListener('click', async () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      showPortal(userCredential.user);
+      redirectUser(userCredential.user.email);
     } catch (error) {
       errorMsg.textContent = error.message;
     }
@@ -115,46 +103,24 @@
     const password = document.getElementById('password').value;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      showPortal(userCredential.user);
+      redirectUser(userCredential.user.email);
     } catch (error) {
       errorMsg.textContent = error.message;
     }
   });
 
-  // Logout
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await signOut(auth);
-    portalSection.classList.add('hidden');
-    loginSection.classList.remove('hidden');
-  });
-
-  // Show Portal
-  async function showPortal(user) {
-    emailLoginForm.classList.add('hidden');
-    loginSection.classList.add('hidden');
-    portalSection.classList.remove('hidden');
-    welcome.textContent = `Welcome, ${user.displayName || user.email}!`;
-
-    // Fetch student's admission data
-    const q = query(collection(db, "admissions"), where("email", "==", user.email));
-    const querySnapshot = await getDocs(q);
-    studentData.innerHTML = '';
-    if(querySnapshot.empty){
-      studentData.innerHTML = '<p>No admission data found.</p>';
+  // Redirect function
+  function redirectUser(email){
+    if(email === 'nicholasbagenda@gmail.com'){
+      // Admin email
+      window.location.href = 'admin-students.html';
     } else {
-      querySnapshot.forEach(doc => {
-        const data = doc.data();
-        studentData.innerHTML += `
-          <div class="data-item">
-            <p><strong>Name:</strong> ${data.name}</p>
-            <p><strong>Class:</strong> ${data.class}</p>
-            <p><strong>Phone:</strong> ${data.phone}</p>
-            <p><strong>Message:</strong> ${data.message || '-'}</p>
-          </div>
-        `;
-      });
+      // Regular student login
+      window.location.href = 'admin-students.html';
+      // Optional: create a separate student-portal.html later
     }
   }
 </script>
+
 </body>
 </html>
