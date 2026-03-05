@@ -1,290 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ST Paul Learning Centre | Admissions</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #f4f6f9;
+        }
 
-<title>St Paul Learning Centre | Admission</title>
+        /* --- Navigation Styles --- */
+        .topbar {
+            background: #004aad;
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+        .menu-btn {
+            font-size: 22px;
+            cursor: pointer;
+        }
 
-<style>
+        .sidebar {
+            position: fixed;
+            left: -260px;
+            top: 0;
+            width: 250px;
+            height: 100%;
+            background: #002b80;
+            color: white;
+            transition: 0.3s ease;
+            padding-top: 60px;
+            z-index: 1000;
+        }
 
-body{
-font-family:'Poppins',sans-serif;
-background:#f4f6f9;
-margin:0;
-padding:0;
-}
+        .sidebar.active {
+            left: 0;
+        }
 
-.container{
-max-width:700px;
-margin:50px auto;
-background:white;
-padding:30px;
-border-radius:10px;
-box-shadow:0 4px 15px rgba(0,0,0,0.1);
-}
+        .sidebar a {
+            display: block;
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.2s;
+        }
 
-h2{
-text-align:center;
-color:#002147;
-margin-bottom:25px;
-}
+        .sidebar a:hover {
+            background: #004aad;
+        }
 
-form{
-display:flex;
-flex-direction:column;
-gap:15px;
-margin-bottom:30px;
-}
+        .sidebar i {
+            margin-right: 10px;
+        }
 
-input,textarea,select,button{
-padding:12px;
-font-size:16px;
-border-radius:5px;
-border:1px solid #ccc;
-width:100%;
-box-sizing:border-box;
-}
+        .overlay {
+            position: fixed;
+            display: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 900;
+        }
 
-button{
-background:#004aad;
-color:#fff;
-font-weight:600;
-cursor:pointer;
-border:none;
-}
+        .overlay.active {
+            display: block;
+        }
 
-button:hover{
-background:#003080;
-}
+        /* --- Admission Form Styles --- */
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
 
-.data-item{
-background:#f1f1f1;
-padding:15px;
-margin-bottom:10px;
-border-radius:5px;
-}
+        h2 {
+            text-align: center;
+            color: #002147;
+            margin-bottom: 25px;
+        }
 
-.status-approved{
-color:green;
-font-weight:bold;
-}
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
 
-.status-pending{
-color:orange;
-font-weight:bold;
-}
+        input, textarea, select, button {
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
 
-</style>
+        button {
+            background: #004aad;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: 0.3s;
+        }
 
+        button:hover {
+            background: #003080;
+        }
+
+        .data-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 5px solid #004aad;
+        }
+
+        .status-approved { color: green; font-weight: bold; }
+        .status-pending { color: orange; font-weight: bold; }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background: #004aad;
+            color: white;
+            margin-top: 40px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="container">
-
-<h2>Student Admission Form</h2>
-
-<form id="admissionForm">
-
-<input type="text" name="studentName" placeholder="Student Name" required>
-
-<input type="date" name="dob" required>
-
-<select name="class" required>
-<option value="">Select Class</option>
-<option value="Primary 1">Primary 1</option>
-<option value="Primary 2">Primary 2</option>
-<option value="Primary 3">Primary 3</option>
-<option value="Primary 4">Primary 4</option>
-<option value="Primary 5">Primary 5</option>
-<option value="Primary 6">Primary 6</option>
-</select>
-
-<input type="text" name="parentName" placeholder="Parent Name" required>
-
-<input type="email" name="parentEmail" placeholder="Parent Email" required>
-
-<input type="tel" name="parentPhone" placeholder="Phone Number" required>
-
-<textarea name="additionalInfo" placeholder="Additional Message"></textarea>
-
-<button type="submit">Submit Application</button>
-
-</form>
-
-
-<h2>Check Admission Status</h2>
-
-<form id="searchForm">
-
-<input type="text" id="searchInput" placeholder="Enter Student Name or Email" required>
-
-<button type="submit">Search</button>
-
-</form>
-
-<div id="results"></div>
-
+<div class="topbar">
+    <i class="fa-solid fa-bars menu-btn" onclick="toggleMenu()"></i>
+    <h3>ST Paul Learning Centre</h3>
+    <span></span>
 </div>
 
+<div class="sidebar" id="sidebar">
+    <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+    <a href="about.html"><i class="fa-solid fa-circle-info"></i> About</a>
+    <a href="academics.html"><i class="fa-solid fa-book-open"></i> Academics</a>
+    <a href="gallery.html"><i class="fa-solid fa-images"></i> Gallery</a>
+    <a href="admissions.html"><i class="fa-solid fa-user-graduate"></i> Admissions</a>
+    <a href="admin-dashboard.html"><i class="fa-solid fa-user-lock"></i> Admin Login</a>
+    <a href="student-portal.html"><i class="fa-solid fa-user"></i> Student Login</a>
+</div>
 
-<!-- EmailJS -->
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div class="container">
+    <h2>Student Admission Form</h2>
+    <form id="admissionForm">
+        <input type="text" id="studentName" placeholder="Student Name" required>
+        <input type="date" id="dob" required>
+        <select id="class" required>
+            <option value="">Select Class</option>
+            <option value="Primary 1">Primary 1</option>
+            <option value="Primary 2">Primary 2</option>
+            <option value="Primary 3">Primary 3</option>
+            <option value="Primary 4">Primary 4</option>
+            <option value="Primary 5">Primary 5</option>
+            <option value="Primary 6">Primary 6</option>
+        </select>
+        <input type="text" id="parentName" placeholder="Parent Name" required>
+        <input type="email" id="parentEmail" placeholder="Parent Email" required>
+        <input type="tel" id="parentPhone" placeholder="Phone Number" required>
+        <textarea id="additionalInfo" placeholder="Additional Message"></textarea>
+        <button type="submit">Submit Application</button>
+    </form>
+
+    <hr style="margin: 40px 0; border: 0; border-top: 1px solid #eee;">
+
+    <h2>Check Admission Status</h2>
+    <form id="searchForm">
+        <input type="text" id="searchInput" placeholder="Enter Student Name or Email" required>
+        <button type="submit">Search</button>
+    </form>
+    <div id="results"></div>
+</div>
+
+<footer>
+    &copy; 2026 ST Paul Learning Centre
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
+<script>
+    // Navigation Logic
+    function toggleMenu() {
+        document.getElementById("sidebar").classList.toggle("active");
+        document.getElementById("overlay").classList.toggle("active");
+    }
+</script>
+
 <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    const firebaseConfig = {
+        apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+        authDomain: "my-school-project-6e00c.firebaseapp.com",
+        projectId: "my-school-project-6e00c",
+        storageBucket: "my-school-project-6e00c.appspot.com",
+        messagingSenderId: "14283853516",
+        appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+    };
 
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-const firebaseConfig = {
-apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-authDomain: "my-school-project-6e00c.firebaseapp.com",
-projectId: "my-school-project-6e00c",
-storageBucket: "my-school-project-6e00c.appspot.com",
-messagingSenderId: "14283853516",
-appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-};
+    // EmailJS Init
+    emailjs.init("S17h9x6ExMG6mKaQh");
 
+    const admissionForm = document.getElementById("admissionForm");
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    admissionForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const data = {
+            studentName: document.getElementById("studentName").value,
+            dob: document.getElementById("dob").value,
+            class: document.getElementById("class").value,
+            parentName: document.getElementById("parentName").value,
+            parentEmail: document.getElementById("parentEmail").value,
+            parentPhone: document.getElementById("parentPhone").value,
+            additionalInfo: document.getElementById("additionalInfo").value,
+            status: "pending",
+            submittedAt: serverTimestamp()
+        };
 
+        try {
+            await addDoc(collection(db, "admissions"), data);
+            
+            await emailjs.send("service_ndh30l8", "template_0k9iqza", {
+                student_name: data.studentName,
+                student_dob: data.dob,
+                parent_name: data.parentName,
+                parent_email: data.parentEmail,
+                parent_phone: data.parentPhone,
+                student_class: data.class,
+                message: data.additionalInfo
+            });
 
-/* EMAILJS INIT */
+            alert("Application submitted successfully!");
+            admissionForm.reset();
+        } catch (err) {
+            console.error(err);
+            alert("Error sending application. Check console for details.");
+        }
+    });
 
-emailjs.init("S17h9x6ExMG6mKaQh");
+    // Search Logic
+    const searchForm = document.getElementById("searchForm");
+    const results = document.getElementById("results");
 
+    searchForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        results.innerHTML = "Searching...";
+        const value = document.getElementById("searchInput").value.trim();
 
-const admissionForm = document.getElementById("admissionForm");
+        try {
+            const admissionsCol = collection(db, "admissions");
+            const q1 = query(admissionsCol, where("studentName", "==", value));
+            const q2 = query(admissionsCol, where("parentEmail", "==", value));
 
+            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+            
+            // Combine results and remove duplicates by ID
+            const docsMap = new Map();
+            snap1.forEach(doc => docsMap.set(doc.id, doc.data()));
+            snap2.forEach(doc => docsMap.set(doc.id, doc.data()));
 
-admissionForm.addEventListener("submit", async (e)=>{
+            if (docsMap.size === 0) {
+                results.innerHTML = "No admission data found.";
+                return;
+            }
 
-e.preventDefault();
-
-const data = {
-
-studentName: admissionForm.studentName.value,
-dob: admissionForm.dob.value,
-class: admissionForm.class.value,
-parentName: admissionForm.parentName.value,
-parentEmail: admissionForm.parentEmail.value,
-parentPhone: admissionForm.parentPhone.value,
-additionalInfo: admissionForm.additionalInfo.value,
-status:"pending",
-submittedAt: serverTimestamp()
-
-};
-
-
-try{
-
-/* SAVE TO FIREBASE */
-
-await addDoc(collection(db,"admissions"),data);
-
-
-/* SEND EMAIL */
-
-await emailjs.send(
-"service_ndh30l8",
-"template_0k9iqza",
-{
-student_name: data.studentName,
-student_dob: data.dob,
-parent_name: data.parentName,
-parent_email: data.parentEmail,
-parent_phone: data.parentPhone,
-student_class: data.class,
-message: data.additionalInfo
-}
-);
-
-
-alert("Application submitted successfully!");
-
-admissionForm.reset();
-
-}catch(err){
-
-console.error(err);
-
-alert("Error sending application");
-
-}
-
-});
-
-
-
-/* SEARCH STATUS */
-
-const searchForm=document.getElementById("searchForm");
-const searchInput=document.getElementById("searchInput");
-const results=document.getElementById("results");
-
-searchForm.addEventListener("submit",async(e)=>{
-
-e.preventDefault();
-
-results.innerHTML="Searching...";
-
-const value=searchInput.value.trim();
-
-const admissionsCol=collection(db,"admissions");
-
-const q1=query(admissionsCol,where("studentName","==",value));
-const q2=query(admissionsCol,where("parentEmail","==",value));
-
-const snap1=await getDocs(q1);
-const snap2=await getDocs(q2);
-
-const docs=[...snap1.docs,...snap2.docs];
-
-if(docs.length===0){
-
-results.innerHTML="No admission data found";
-
-return;
-
-}
-
-results.innerHTML="";
-
-docs.forEach(doc=>{
-
-const r=doc.data();
-
-results.innerHTML+=`
-
-<div class="data-item">
-
-<p><strong>Name:</strong> ${r.studentName}</p>
-
-<p><strong>Class:</strong> ${r.class}</p>
-
-<p><strong>Parent Email:</strong> ${r.parentEmail}</p>
-
-<p><strong>Phone:</strong> ${r.parentPhone}</p>
-
-<p><strong>Status:</strong>
-<span class="${r.status==='approved'?'status-approved':'status-pending'}">
-${r.status==='approved'?'Approved ✅':'Pending ⏳'}
-</span>
-</p>
-
-</div>
-
-`;
-
-});
-
-});
-
+            results.innerHTML = "";
+            docsMap.forEach((r) => {
+                results.innerHTML += `
+                    <div class="data-item">
+                        <p><strong>Name:</strong> ${r.studentName}</p>
+                        <p><strong>Class:</strong> ${r.class}</p>
+                        <p><strong>Status:</strong> 
+                            <span class="${r.status === 'approved' ? 'status-approved' : 'status-pending'}">
+                                ${r.status === 'approved' ? 'Approved ✅' : 'Pending ⏳'}
+                            </span>
+                        </p>
+                    </div>`;
+            });
+        } catch (error) {
+            console.error("Search Error:", error);
+            results.innerHTML = "An error occurred while searching.";
+        }
+    });
 </script>
 
 </body>
