@@ -1,253 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>St Paul Learning Centre | Building Future Leaders</title>
-
-<meta name="description" content="St Paul Learning Centre is dedicated to academic excellence, discipline and innovation">
-
+<meta name="description" content="St Paul Learning Centre is dedicated to academic excellence, discipline, and innovation. Admissions now open.">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
 <style>
-
+/* GENERAL */
 body{
-margin:0;
-font-family:'Poppins',sans-serif;
-background:#f4f6f9;
-color:#333;
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background:#f4f6f9;
+  color:#333;
+}
+
+/* SIDEBAR MENU */
+.topbar{
+  background:#002147;
+  color:white;
+  padding:15px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:1000;
+}
+
+.menu-btn{
+  font-size:22px;
+  cursor:pointer;
+}
+
+.sidebar{
+  position:fixed;
+  left:-260px;
+  top:0;
+  width:250px;
+  height:100%;
+  background:#001b3d;
+  color:white;
+  transition:0.3s;
+  padding-top:60px;
+  z-index:1000;
+}
+
+.sidebar.active{
+  left:0;
+}
+
+.sidebar a{
+  display:block;
+  padding:15px 20px;
+  color:white;
+  text-decoration:none;
+  font-weight:500;
+  transition:0.3s;
+}
+
+.sidebar a:hover{
+  background:#004aad;
+}
+
+.sidebar i{
+  margin-right:10px;
+}
+
+.overlay{
+  position:fixed;
+  display:none;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.4);
+  z-index:900;
+}
+
+.overlay.active{
+  display:block;
 }
 
 /* HERO */
-
 .hero{
-background:linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)),
-url('https://images.unsplash.com/photo-1588072432836-e10032774350') center/cover no-repeat;
-color:white;
-text-align:center;
-padding:120px 20px;
+  background:linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)),
+  url('https://images.unsplash.com/photo-1588072432836-e10032774350') center/cover no-repeat;
+  color:white;
+  text-align:center;
+  padding:120px 20px;
 }
 
 .hero h2{
-font-size:40px;
-margin-bottom:10px;
+  font-size:40px;
+  margin-bottom:10px;
 }
 
 .hero p{
-font-size:18px;
-max-width:600px;
-margin:auto;
+  font-size:18px;
+  max-width:600px;
+  margin:auto;
 }
 
 .btn{
-margin-top:25px;
-padding:12px 25px;
-border:none;
-cursor:pointer;
-font-weight:600;
-border-radius:5px;
-text-decoration:none;
-display:inline-block;
+  margin-top:25px;
+  padding:12px 25px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+  border-radius:5px;
+  text-decoration:none;
+  display:inline-block;
 }
 
 .btn-primary{
-background:#ffcc00;
-color:#000;
+  background:#ffcc00;
+  color:#000;
 }
 
 .btn-secondary{
-background:white;
-color:#002147;
-margin-left:10px;
+  background:white;
+  color:#002147;
+  margin-left:10px;
 }
 
 /* FEATURES */
-
 .features{
-display:flex;
-justify-content:center;
-gap:30px;
-padding:60px 20px;
-flex-wrap:wrap;
-background:white;
+  display:flex;
+  justify-content:center;
+  gap:30px;
+  padding:60px 20px;
+  flex-wrap:wrap;
+  background:white;
 }
 
 .feature-card{
-background:#f9f9f9;
-padding:30px;
-width:250px;
-text-align:center;
-border-radius:10px;
-box-shadow:0 4px 15px rgba(0,0,0,0.08);
-transition:0.3s;
+  background:#f9f9f9;
+  padding:30px;
+  width:250px;
+  text-align:center;
+  border-radius:10px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+  transition:0.3s;
 }
 
 .feature-card:hover{
-transform:translateY(-5px);
+  transform:translateY(-5px);
 }
 
 .feature-card h3{
-margin-bottom:10px;
+  margin-bottom:10px;
 }
 
 /* STATS */
-
 .stats{
-background:#002147;
-color:white;
-text-align:center;
-padding:60px 20px;
+  background:#002147;
+  color:white;
+  text-align:center;
+  padding:60px 20px;
 }
 
 .stats-container{
-display:flex;
-justify-content:center;
-gap:50px;
-flex-wrap:wrap;
+  display:flex;
+  justify-content:center;
+  gap:50px;
+  flex-wrap:wrap;
 }
 
 .stats h2{
-margin:0;
-font-size:36px;
+  margin:0;
+  font-size:36px;
 }
 
 /* CTA */
-
 .cta{
-text-align:center;
-padding:60px 20px;
-background:#ffcc00;
+  text-align:center;
+  padding:60px 20px;
+  background:#ffcc00;
 }
 
 .cta h2{
-margin-bottom:20px;
+  margin-bottom:20px;
 }
 
 /* FOOTER */
-
 footer{
-background:#00132b;
-color:white;
-text-align:center;
-padding:20px;
+  background:#00132b;
+  color:white;
+  text-align:center;
+  padding:20px;
 }
-
 </style>
-
 </head>
-
 
 <body>
 
+<!-- TOPBAR -->
+<div class="topbar">
+  <i class="fa-solid fa-bars menu-btn" onclick="toggleMenu()"></i>
+  <h3>St Paul Learning Centre</h3>
+  <span></span>
+</div>
 
-<!-- LOAD NAVBAR -->
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+  <a href="about.html"><i class="fa-solid fa-circle-info"></i> About</a>
+  <a href="academics.html"><i class="fa-solid fa-book-open"></i> Academics</a>
+  <a href="gallery.html"><i class="fa-solid fa-images"></i> Gallery</a>
+  <a href="admissions.html"><i class="fa-solid fa-user-graduate"></i> Admissions</a>
+  <a href="admin-login.html"><i class="fa-solid fa-user-lock"></i> Admin Login</a>
+  <a href="student-login.html"><i class="fa-solid fa-user"></i> Student Login</a>
+</div>
 
-<div id="navbar"></div>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <script>
-
-fetch("navbar.html")
-.then(response=>response.text())
-.then(data=>{
-document.getElementById("navbar").innerHTML=data;
-})
-
+function toggleMenu(){
+  document.getElementById("sidebar").classList.toggle("active");
+  document.getElementById("overlay").classList.toggle("active");
+}
 </script>
 
-
-
 <!-- HERO -->
-
 <section class="hero">
-
-<h2>Building Future Leaders</h2>
-
-<p>
-We are committed to academic excellence, discipline,
-innovation and holistic student development.
-</p>
-
-<a href="admissions.html" class="btn btn-primary">Apply Now</a>
-
-<a href="student-login.html" class="btn btn-secondary">Student Portal</a>
-
+  <h2>Building Future Leaders</h2>
+  <p>We are committed to academic excellence, discipline, innovation, and holistic student development.</p>
+  <a href="admissions.html" class="btn btn-primary">Apply Now</a>
+  <a href="student-login.html" class="btn btn-secondary">Student Portal</a>
 </section>
-
-
 
 <!-- FEATURES -->
-
 <section class="features">
+  <div class="feature-card">
+    <h3>Qualified Teachers</h3>
+    <p>Experienced and professional educators guiding every learner.</p>
+  </div>
 
-<div class="feature-card">
-<h3>Qualified Teachers</h3>
-<p>Experienced and professional educators guiding every learner.</p>
-</div>
+  <div class="feature-card">
+    <h3>Modern Curriculum</h3>
+    <p>Balanced academics and co-curricular excellence.</p>
+  </div>
 
-<div class="feature-card">
-<h3>Modern Curriculum</h3>
-<p>Balanced academics and co-curricular excellence.</p>
-</div>
-
-<div class="feature-card">
-<h3>Safe Environment</h3>
-<p>A secure and supportive space for growth and development.</p>
-</div>
-
+  <div class="feature-card">
+    <h3>Safe Environment</h3>
+    <p>A secure and supportive space for growth and development.</p>
+  </div>
 </section>
-
-
 
 <!-- STATS -->
-
 <section class="stats">
-
-<div class="stats-container">
-
-<div>
-<h2>500+</h2>
-<p>Students</p>
-</div>
-
-<div>
-<h2>30+</h2>
-<p>Teachers</p>
-</div>
-
-<div>
-<h2>10+</h2>
-<p>Years Experience</p>
-</div>
-
-</div>
-
+  <div class="stats-container">
+    <div>
+      <h2>500+</h2>
+      <p>Students</p>
+    </div>
+    <div>
+      <h2>30+</h2>
+      <p>Teachers</p>
+    </div>
+    <div>
+      <h2>10+</h2>
+      <p>Years Experience</p>
+    </div>
+  </div>
 </section>
-
-
 
 <!-- CTA -->
-
 <section class="cta">
-
-<h2>Admissions Now Open for 2026</h2>
-
-<a href="admissions.html" class="btn btn-primary">Start Application</a>
-
+  <h2>Admissions Now Open for 2026</h2>
+  <a href="admissions.html" class="btn btn-primary">Start Application</a>
 </section>
 
-
-
 <!-- FOOTER -->
-
 <footer>
-
 © 2026 St Paul Learning Centre | All Rights Reserved
-
 </footer>
-
 
 </body>
 </html>
