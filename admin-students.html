@@ -123,7 +123,7 @@ margin:auto;
 
 <div class="container">
 
-<h2>All Students</h2>
+<h2>Approved Students</h2>
 
 <div id="loadingDiv" class="loading">
 <div class="spinner"></div>
@@ -160,7 +160,11 @@ signOut
 import {
 getFirestore,
 collection,
-onSnapshot
+query,
+where,
+onSnapshot,
+doc,
+updateDoc
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 
@@ -173,70 +177,67 @@ messagingSenderId: "14283853516",
 appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
 };
 
-
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
-
 const db = getFirestore(app);
 
-
-const tableBody =
-document.querySelector("#studentsTable tbody");
-
-const loadingDiv =
-document.getElementById("loadingDiv");
-
-const studentsTable =
-document.getElementById("studentsTable");
-
-const logoutBtn =
-document.getElementById("logoutBtn");
-
+const tableBody = document.querySelector("#studentsTable tbody");
+const loadingDiv = document.getElementById("loadingDiv");
+const studentsTable = document.getElementById("studentsTable");
+const logoutBtn = document.getElementById("logoutBtn");
 
 let isAdmin = false;
 
-
 onAuthStateChanged(auth,(user)=>{
 
-if(user && user.email === "nicholasbagenda@gmail.com"){
+if(user){
 
+if(user.email === "nicholasbagenda@gmail.com"){
 isAdmin = true;
 logoutBtn.style.display = "inline-block";
-
 }
 
 loadStudents();
 
-});
+}else{
 
+window.location.href="login.html";
+
+}
+
+});
 
 logoutBtn.onclick = ()=>{
 
-signOut(auth).then(()=>location.reload());
+signOut(auth).then(()=>{
+location.reload();
+});
 
 };
 
-
 function loadStudents(){
 
-const studentsRef =
-collection(db,"students");
+const studentsQuery = query(
+collection(db,"students"),
+where("status","==","approved")
+);
 
-onSnapshot(studentsRef,(snapshot)=>{
+onSnapshot(studentsQuery,(snapshot)=>{
 
-tableBody.innerHTML = "";
+tableBody.innerHTML="";
 
 if(snapshot.empty){
 
 tableBody.innerHTML =
-`<tr><td colspan="5" style="text-align:center;">No students found</td></tr>`;
+`<tr>
+<td colspan="5" style="text-align:center;">No approved students found</td>
+</tr>`;
 
 }
 
-snapshot.forEach((doc)=>{
+snapshot.forEach((docSnap)=>{
 
-const data = doc.data();
+const data = docSnap.data();
 
 const date =
 data.createdAt?.toDate ?
@@ -244,11 +245,16 @@ data.createdAt.toDate().toLocaleDateString()
 :
 "N/A";
 
-const actions =
-isAdmin ?
-`<button class="btn btn-reset">Reset</button>`
-:
-"-";
+let actions="-";
+
+if(isAdmin){
+
+actions =
+`<button class="btn btn-reset" data-id="${docSnap.id}">
+Reset
+</button>`;
+
+}
 
 tableBody.innerHTML +=
 
@@ -270,9 +276,30 @@ tableBody.innerHTML +=
 
 });
 
-
 loadingDiv.style.display="none";
 studentsTable.style.display="table";
+
+addResetEvents();
+
+});
+
+}
+
+function addResetEvents(){
+
+document.querySelectorAll(".btn-reset").forEach(btn=>{
+
+btn.onclick = async ()=>{
+
+const id = btn.getAttribute("data-id");
+
+await updateDoc(doc(db,"students",id),{
+status:"pending"
+});
+
+alert("Student reset to pending approval");
+
+};
 
 });
 
