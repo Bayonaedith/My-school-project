@@ -3,194 +3,220 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Academics | St Paul Learning Centre</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
 <style>
-body {
+  /* --- BASE STYLES --- */
+  body {
     margin: 0;
     font-family: 'Poppins', sans-serif;
     background: #f4f6f9;
     color: #333;
-}
+  }
 
-/* NAV */
-nav {
-    background: #002147;
-    padding: 15px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-nav h1 {
+  /* --- NAVIGATION & SIDEBAR --- */
+  .topbar {
+    background: #004aad;
     color: white;
-    margin: 0;
-    font-size: 20px;
-}
-
-nav ul {
-    list-style: none;
+    padding: 15px 25px;
     display: flex;
-    gap: 20px;
-    margin: 0;
-}
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 800;
+  }
 
-nav ul li a {
+  .menu-btn {
+    font-size: 22px;
+    cursor: pointer;
+    margin-right: 20px;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background: #002b80;
+    color: white;
+    transition: 0.3s ease;
+    padding-top: 60px;
+    z-index: 1000;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .sidebar a {
+    display: block;
+    padding: 15px 20px;
     color: white;
     text-decoration: none;
-}
+    font-weight: 500;
+    transition: 0.2s;
+  }
 
-/* HEADER */
-.page-header {
+  .sidebar a:hover {
+    background: #004aad;
+  }
+
+  .sidebar i {
+    margin-right: 10px;
+  }
+
+  .overlay {
+    position: fixed;
+    display: none;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 900;
+  }
+
+  .overlay.active {
+    display: block;
+  }
+
+  /* --- PAGE CONTENT --- */
+  .page-header {
     background: #001f3f;
     color: white;
     text-align: center;
-    padding: 80px 20px;
-}
+    padding: 60px 20px;
+  }
 
-.page-header h2 {
-    margin: 0;
-    font-size: 36px;
-}
-
-/* CONTAINER */
-.container {
+  .container {
     max-width: 1100px;
     margin: auto;
-    padding: 60px 20px;
-}
+    padding: 40px 20px;
+  }
 
-.section {
-    margin-bottom: 60px;
-}
+  .section {
+    margin-bottom: 50px;
+  }
 
-.section h3 {
+  .section h3 {
     color: #002147;
-    margin-bottom: 15px;
-}
+    border-bottom: 2px solid #ffcc00;
+    display: inline-block;
+    margin-bottom: 25px;
+  }
 
-/* PROGRAM CARDS */
-.program-grid {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
-}
+  /* PROGRAM CARDS */
+  .program-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
 
-.program-card {
+  .program-card {
     background: white;
-    padding: 30px;
-    flex: 1;
-    min-width: 250px;
+    padding: 25px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
+    border-top: 4px solid #004aad;
+  }
 
-.program-card h4 {
-    margin-bottom: 10px;
-    color: #002147;
-}
-
-/* SUBJECT LIST */
-.subjects {
+  /* SUBJECT LIST */
+  .subjects {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 15px;
-}
+  }
 
-.subjects div {
+  .subjects div {
     background: white;
     padding: 15px;
     border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
     box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-}
+    transition: transform 0.2s;
+  }
 
-/* FOOTER */
-footer {
-    background: #00132b;
+  .subjects div:hover {
+    transform: translateY(-5px);
+    background: #004aad;
     color: white;
+  }
+
+  footer {
     text-align: center;
     padding: 20px;
-}
+    background: #00132b;
+    color: white;
+  }
 </style>
 </head>
-
 <body>
 
-<nav>
-    <h1>St Paul Learning Centre</h1>
-    <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="academics.html">Academics</a></li>
-        <li><a href="#">Admissions</a></li>
-        <li><a href="#">Contact</a></li>
-    </ul>
-</nav>
+<div class="topbar">
+  <i class="fa-solid fa-bars menu-btn" onclick="toggleMenu()"></i>
+  <h3>St Paul Learning Centre</h3>
+</div>
 
-<section class="page-header">
+<div class="sidebar" id="sidebar">
+  <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+  <a href="about.html"><i class="fa-solid fa-circle-info"></i> About</a>
+  <a href="academics.html"><i class="fa-solid fa-book-open"></i> Academics</a>
+  <a href="gallery.html"><i class="fa-solid fa-images"></i> Gallery</a>
+  <a href="admissions.html"><i class="fa-solid fa-user-graduate"></i> Admissions</a>
+  <a href="admin.html"><i class="fa-solid fa-user-lock"></i> Admin</a>
+  <a href="student-login.html"><i class="fa-solid fa-user"></i> Student Login</a>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<header class="page-header">
     <h2>Our Academic Programs</h2>
-</section>
+    <p>Empowering minds for a brighter future</p>
+</header>
 
 <div class="container">
 
-    <!-- LEVELS -->
     <div class="section">
         <h3>Education Levels</h3>
-
         <div class="program-grid">
-
             <div class="program-card">
-                <h4>Pre-Primary</h4>
-                <p>
-                    A nurturing environment focused on foundational literacy,
-                    numeracy, creativity, and social skills development.
-                </p>
+                <h4><i class="fa-solid fa-child"></i> Pre-Primary</h4>
+                <p>Nurturing foundational literacy, numeracy, and social skills development.</p>
             </div>
-
             <div class="program-card">
-                <h4>Primary School</h4>
-                <p>
-                    Comprehensive curriculum designed to build strong academic
-                    foundations and critical thinking skills.
-                </p>
+                <h4><i class="fa-solid fa-school"></i> Primary School</h4>
+                <p>Building strong academic foundations and critical thinking skills.</p>
             </div>
-
             <div class="program-card">
-                <h4>Junior Secondary</h4>
-                <p>
-                    Advanced subject focus preparing learners for higher
-                    academic and professional pathways.
-                </p>
+                <h4><i class="fa-solid fa-graduation-cap"></i> Junior Secondary</h4>
+                <p>Advanced focus preparing learners for higher academic pathways.</p>
             </div>
-
         </div>
     </div>
 
-    <!-- SUBJECTS -->
     <div class="section">
         <h3>Subjects Offered</h3>
-
         <div class="subjects">
             <div>Mathematics</div>
             <div>English</div>
             <div>Science</div>
             <div>Social Studies</div>
             <div>Computer Studies</div>
-            <div>Religious Education</div>
+            <div>Religious Ed.</div>
             <div>Creative Arts</div>
-            <div>Physical Education</div>
+            <div>Physical Ed.</div>
         </div>
     </div>
 
-    <!-- EXTRACURRICULAR -->
     <div class="section">
         <h3>Co-Curricular Activities</h3>
         <p>
-            We promote holistic development through sports, music, drama,
-            debate clubs, leadership programs, and community engagement activities.
+            We promote holistic development through sports, music, drama, 
+            debate clubs, and community engagement activities.
         </p>
     </div>
 
@@ -200,5 +226,12 @@ footer {
     © 2026 St Paul Learning Centre | All Rights Reserved
 </footer>
 
+<script>
+  function toggleMenu() {
+    document.getElementById("sidebar").classList.toggle("active");
+    document.getElementById("overlay").classList.toggle("active");
+  }
+</script>
+
 </body>
-  </html>
+</html>
