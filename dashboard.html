@@ -219,15 +219,6 @@
     background: #c0392b;
   }
 
-  .btn-contact {
-    background: #17a2b8;
-    color: white;
-  }
-
-  .btn-contact:hover {
-    background: #138496;
-  }
-
   /* Modal Styles */
   .modal {
     display: none;
@@ -355,6 +346,13 @@
     background: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+    display: block;
+  }
+
+  .alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
     display: block;
   }
 
@@ -543,14 +541,15 @@
 <div id="approveModal" class="modal">
   <div class="modal-content">
     <h3>Approve Admission</h3>
+    <div class="info-message">
+      <strong>ℹ️ Auto Email:</strong> Welcome email will be automatically sent to the parent via EmailJS
+    </div>
     <p>Are you sure you want to approve this admission?</p>
     <p><strong>Student:</strong> <span id="approveStudentName"></span></p>
-    <label>
-      <input type="checkbox" id="sendEmailCheckbox" checked> Send Welcome Email to Parent
-    </label>
+    <p><strong>Parent Email:</strong> <span id="approveParentEmail"></span></p>
     <div class="modal-buttons">
       <button class="btn-cancel" onclick="closeModal('approveModal')">Cancel</button>
-      <button class="btn-confirm" onclick="confirmApprove()">Approve</button>
+      <button class="btn-confirm" onclick="confirmApprove()">Approve & Send Welcome Email</button>
     </div>
   </div>
 </div>
@@ -559,13 +558,17 @@
 <div id="rejectModal" class="modal">
   <div class="modal-content">
     <h3>Reject Admission</h3>
+    <div class="info-message">
+      <strong>ℹ️ Auto Email:</strong> Rejection notification will be automatically sent to the parent
+    </div>
     <p>Are you sure you want to reject this admission?</p>
     <p><strong>Student:</strong> <span id="rejectStudentName"></span></p>
+    <p><strong>Parent Email:</strong> <span id="rejectParentEmail"></span></p>
     <label>Reason for Rejection:</label>
     <textarea id="rejectionReason" placeholder="Optional: provide a reason for rejection"></textarea>
     <div class="modal-buttons">
       <button class="btn-cancel" onclick="closeModal('rejectModal')">Cancel</button>
-      <button class="btn-confirm" onclick="confirmReject()">Reject</button>
+      <button class="btn-confirm" onclick="confirmReject()">Reject & Send Notification</button>
     </div>
   </div>
 </div>
@@ -608,11 +611,15 @@
 <div id="resetPasswordModal" class="modal">
   <div class="modal-content">
     <h3>Reset Student Password</h3>
+    <div class="info-message">
+      <strong>ℹ️ Auto Email:</strong> New password will be automatically sent to the parent's email
+    </div>
     <p><strong>Student:</strong> <span id="resetStudentName"></span></p>
-    <p>A new temporary password will be generated and sent to the parent's email.</p>
+    <p><strong>Parent Email:</strong> <span id="resetParentEmail"></span></p>
+    <p>A new temporary password will be generated and sent automatically.</p>
     <div class="modal-buttons">
       <button class="btn-cancel" onclick="closeModal('resetPasswordModal')">Cancel</button>
-      <button class="btn-confirm" onclick="confirmResetPassword()">Reset Password</button>
+      <button class="btn-confirm" onclick="confirmResetPassword()">Reset & Send New Password</button>
     </div>
   </div>
 </div>
@@ -630,43 +637,6 @@
     <div class="modal-buttons">
       <button class="btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
       <button class="btn-delete-confirm" onclick="confirmDelete()">Delete Permanently</button>
-    </div>
-  </div>
-</div>
-
-<!-- Send Welcome Message Modal -->
-<div id="sendWelcomeModal" class="modal">
-  <div class="modal-content">
-    <h3>Send Welcome Message</h3>
-    <div class="info-message">
-      <strong>ℹ️ Info:</strong> A personalized welcome message will be sent to the parent's email address.
-    </div>
-    <p><strong>Student:</strong> <span id="welcomeStudentName"></span></p>
-    <p><strong>Parent Email:</strong> <span id="welcomeParentEmail"></span></p>
-    <label>Custom Welcome Message (Optional):</label>
-    <textarea id="welcomeCustomMessage" placeholder="Leave blank to send default welcome message"></textarea>
-    <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeModal('sendWelcomeModal')">Cancel</button>
-      <button class="btn-confirm" onclick="confirmSendWelcome()">Send Welcome Message</button>
-    </div>
-  </div>
-</div>
-
-<!-- Contact Us Modal -->
-<div id="contactUsModal" class="modal">
-  <div class="modal-content">
-    <h3>Send Contact Us Message</h3>
-    <div class="info-message">
-      <strong>ℹ️ Info:</strong> Send contact and support information to the parent.
-    </div>
-    <p><strong>Parent Email:</strong> <span id="contactParentEmail"></span></p>
-    <label>Subject:</label>
-    <input type="text" id="contactSubject" placeholder="e.g., Important School Updates">
-    <label>Message:</label>
-    <textarea id="contactMessage" placeholder="Type your message here..." required></textarea>
-    <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeModal('contactUsModal')">Cancel</button>
-      <button class="btn-confirm" onclick="confirmSendContact()">Send Message</button>
     </div>
   </div>
 </div>
@@ -701,14 +671,15 @@
   let currentAdmissionId = null;
   let currentAdmissionData = null;
 
-  // ✨ EmailJS Configuration with Welcome and Contact Templates
+  // ✨ EmailJS Configuration with All Templates
   const EMAILJS_CONFIG = {
     publicKey: "S17h9x6ExMG6mKaQh",
     serviceId: "service_ndh30l8",
     templates: {
       welcome: "template_nub0vst",
       contactUs: "template_0k9iqza",
-      passwordReset: "template_password_reset"
+      passwordReset: "template_password_reset",
+      rejection: "template_0k9iqza"  // Using contact us template for rejection
     }
   };
 
@@ -794,15 +765,13 @@
           <div class="action-buttons">
             <button class="btn btn-view" onclick="viewAdmission('${admission.id}')">View</button>
             ${status === "pending" || status === "reviewed" ? `
-              <button class="btn btn-approve" onclick="openApproveModal('${admission.id}', '${admission.studentName}')">Approve</button>
-              <button class="btn btn-reject" onclick="openRejectModal('${admission.id}', '${admission.studentName}')">Reject</button>
+              <button class="btn btn-approve" onclick="openApproveModal('${admission.id}', '${admission.studentName}', '${admission.parentEmail}')">Approve</button>
+              <button class="btn btn-reject" onclick="openRejectModal('${admission.id}', '${admission.studentName}', '${admission.parentEmail}')">Reject</button>
             ` : ""}
             ${status === "approved" ? `
               <button class="btn btn-edit" onclick="openEditModal('${admission.id}')">Edit</button>
-              <button class="btn btn-reset" onclick="openResetPasswordModal('${admission.id}', '${admission.studentName}')">Reset Pass</button>
-              <button class="btn btn-contact" onclick="openSendWelcomeModal('${admission.id}', '${admission.studentName}', '${admission.parentEmail}')">Welcome</button>
+              <button class="btn btn-reset" onclick="openResetPasswordModal('${admission.id}', '${admission.studentName}', '${admission.parentEmail}')">Reset Pass</button>
             ` : ""}
-            <button class="btn btn-contact" onclick="openContactUsModal('${admission.id}', '${admission.parentEmail}')">Contact</button>
             <button class="btn btn-delete" onclick="openDeleteModal('${admission.id}', '${admission.studentName}')">Delete</button>
           </div>
         </td>
@@ -847,10 +816,11 @@
     openModal("viewModal");
   };
 
-  // ============= Approve Workflow =============
-  window.openApproveModal = function(admissionId, studentName) {
+  // ============= Approve Workflow with AUTO EMAIL =============
+  window.openApproveModal = function(admissionId, studentName, parentEmail) {
     currentAdmissionId = admissionId;
     document.getElementById("approveStudentName").textContent = studentName;
+    document.getElementById("approveParentEmail").textContent = parentEmail;
     openModal("approveModal");
   };
 
@@ -896,28 +866,24 @@
       });
       console.log("✅ Login credentials created");
 
-      // 4. Send welcome email if checkbox is checked
-      if (document.getElementById("sendEmailCheckbox").checked) {
-        console.log("📧 Admin chose to send welcome email");
-        
-        const emailSent = await sendWelcomeEmail(
-          admission.parentEmail,
-          admission.parentName,
-          admission.studentName,
-          studentEmail,
-          tempPassword
-        );
-        
-        if (emailSent) {
-          showAlert("✅ Admission approved! Welcome email sent to parent.", "success");
-          console.log("✅ Email successfully sent to:", admission.parentEmail);
-        } else {
-          showAlert("✅ Admission approved! ⚠️ Welcome email could not be sent - check console.", "error");
-          console.warn("⚠️ Email send failed but approval was successful");
-        }
+      // 4. AUTOMATICALLY SEND WELCOME EMAIL VIA EMAILJS
+      showAlert("📧 Sending welcome email... Please wait.", "info");
+      console.log("🚀 AUTO SENDING: Welcome Email to:", admission.parentEmail);
+
+      const emailSent = await sendWelcomeEmailAuto(
+        admission.parentEmail,
+        admission.parentName,
+        admission.studentName,
+        studentEmail,
+        tempPassword
+      );
+
+      if (emailSent) {
+        showAlert("✅ Admission approved! Welcome email sent to parent automatically.", "success");
+        console.log("✅ Email successfully sent to:", admission.parentEmail);
       } else {
-        showAlert("✅ Admission approved successfully!", "success");
-        console.log("ℹ️ Welcome email was not sent");
+        showAlert("✅ Admission approved! ⚠️ Welcome email could not be sent. Check console.", "error");
+        console.warn("⚠️ Email send failed but approval was successful");
       }
 
       closeModal("approveModal");
@@ -929,10 +895,11 @@
     }
   };
 
-  // ============= Reject Workflow =============
-  window.openRejectModal = function(admissionId, studentName) {
+  // ============= Reject Workflow with AUTO EMAIL =============
+  window.openRejectModal = function(admissionId, studentName, parentEmail) {
     currentAdmissionId = admissionId;
     document.getElementById("rejectStudentName").textContent = studentName;
+    document.getElementById("rejectParentEmail").textContent = parentEmail;
     document.getElementById("rejectionReason").value = "";
     openModal("rejectModal");
   };
@@ -946,149 +913,41 @@
       const admission = allAdmissions.find(a => a.id === currentAdmissionId);
       if (!admission) return;
 
+      console.log("❌ Rejecting admission for:", admission.studentName);
+
+      // 1. Update admission status
       await updateDoc(doc(db, "admissions", currentAdmissionId), {
         status: "rejected",
         rejectionReason: reason,
         rejectedAt: new Date()
       });
+      console.log("✅ Admission status updated to rejected");
 
-      closeModal("rejectModal");
-      showAlert("Admission rejected successfully.", "success");
+      // 2. AUTOMATICALLY SEND REJECTION EMAIL VIA EMAILJS
+      showAlert("📧 Sending rejection notification... Please wait.", "info");
+      console.log("🚀 AUTO SENDING: Rejection Email to:", admission.parentEmail);
+
+      const emailSent = await sendRejectionEmailAuto(
+        admission.parentEmail,
+        admission.parentName,
+        admission.studentName,
+        reason
+      );
+
+      if (emailSent) {
+        closeModal("rejectModal");
+        showAlert("✅ Admission rejected! Notification email sent to parent automatically.", "success");
+        console.log("✅ Rejection email sent to:", admission.parentEmail);
+      } else {
+        closeModal("rejectModal");
+        showAlert("✅ Admission rejected! ⚠️ Notification email could not be sent. Check console.", "error");
+        console.warn("⚠️ Email send failed but rejection was recorded");
+      }
+
       loadAdmissions();
     } catch (error) {
       console.error("Error rejecting admission:", error);
       showAlert("Error rejecting admission: " + error.message, "error");
-    }
-  };
-
-  // ============= Send Welcome Message Workflow =============
-  window.openSendWelcomeModal = function(admissionId, studentName, parentEmail) {
-    currentAdmissionId = admissionId;
-    document.getElementById("welcomeStudentName").textContent = studentName;
-    document.getElementById("welcomeParentEmail").textContent = parentEmail;
-    document.getElementById("welcomeCustomMessage").value = "";
-    openModal("sendWelcomeModal");
-  };
-
-  window.confirmSendWelcome = async function() {
-    if (!currentAdmissionId) return;
-
-    try {
-      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
-      if (!admission) return;
-
-      const customMessage = document.getElementById("welcomeCustomMessage").value.trim();
-
-      console.log("📧 Sending welcome message for:", admission.studentName);
-
-      const emailSent = await sendWelcomeMessage(
-        admission.parentEmail,
-        admission.parentName,
-        admission.studentName,
-        customMessage
-      );
-
-      if (emailSent) {
-        closeModal("sendWelcomeModal");
-        showAlert("✅ Welcome message sent successfully to parent!", "success");
-      } else {
-        showAlert("❌ Failed to send welcome message. Please check console for details.", "error");
-      }
-    } catch (error) {
-      console.error("❌ Error sending welcome message:", error);
-      showAlert("Error sending welcome message: " + error.message, "error");
-    }
-  };
-
-  // ============= Contact Us Workflow =============
-  window.openContactUsModal = function(admissionId, parentEmail) {
-    currentAdmissionId = admissionId;
-    document.getElementById("contactParentEmail").textContent = parentEmail;
-    document.getElementById("contactSubject").value = "";
-    document.getElementById("contactMessage").value = "";
-    openModal("contactUsModal");
-  };
-
-  window.confirmSendContact = async function() {
-    if (!currentAdmissionId) return;
-
-    try {
-      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
-      if (!admission) return;
-
-      const subject = document.getElementById("contactSubject").value.trim();
-      const message = document.getElementById("contactMessage").value.trim();
-
-      if (!message) {
-        showAlert("❌ Please enter a message.", "error");
-        return;
-      }
-
-      console.log("📧 Sending contact message to:", admission.parentEmail);
-
-      const emailSent = await sendContactUsEmail(
-        admission.parentEmail,
-        admission.parentName,
-        subject,
-        message
-      );
-
-      if (emailSent) {
-        closeModal("contactUsModal");
-        showAlert("✅ Contact message sent successfully!", "success");
-      } else {
-        showAlert("❌ Failed to send contact message. Please check console for details.", "error");
-      }
-    } catch (error) {
-      console.error("❌ Error sending contact message:", error);
-      showAlert("Error sending contact message: " + error.message, "error");
-    }
-  };
-
-  // ============= Delete Student Workflow =============
-  window.openDeleteModal = function(admissionId, studentName) {
-    currentAdmissionId = admissionId;
-    document.getElementById("deleteStudentName").textContent = studentName;
-    document.getElementById("deleteStudentId").textContent = admissionId;
-    openModal("deleteModal");
-  };
-
-  window.confirmDelete = async function() {
-    if (!currentAdmissionId) return;
-
-    try {
-      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
-      if (!admission) return;
-
-      console.log("🗑️ Starting deletion process for:", admission.studentName);
-
-      // 1. Delete admission record
-      await deleteDoc(doc(db, "admissions", currentAdmissionId));
-      console.log("✅ Admission record deleted");
-
-      // 2. Delete student record if exists
-      try {
-        await deleteDoc(doc(db, "students", currentAdmissionId));
-        console.log("✅ Student record deleted");
-      } catch (error) {
-        console.log("ℹ️ Student record did not exist or already deleted");
-      }
-
-      // 3. Delete user/login record if exists
-      try {
-        await deleteDoc(doc(db, "users", currentAdmissionId));
-        console.log("✅ User record deleted");
-      } catch (error) {
-        console.log("ℹ️ User record did not exist or already deleted");
-      }
-
-      closeModal("deleteModal");
-      showAlert("✅ Student and related records deleted successfully.", "success");
-      loadAdmissions();
-
-    } catch (error) {
-      console.error("❌ Error deleting student:", error);
-      showAlert("Error deleting student: " + error.message, "error");
     }
   };
 
@@ -1146,10 +1005,11 @@
     }
   });
 
-  // ============= Reset Password =============
-  window.openResetPasswordModal = function(admissionId, studentName) {
+  // ============= Reset Password with AUTO EMAIL =============
+  window.openResetPasswordModal = function(admissionId, studentName, parentEmail) {
     currentAdmissionId = admissionId;
     document.getElementById("resetStudentName").textContent = studentName;
+    document.getElementById("resetParentEmail").textContent = parentEmail;
     openModal("resetPasswordModal");
   };
 
@@ -1162,19 +1022,84 @@
 
       const newPassword = generatePassword();
 
+      console.log("🔐 Resetting password for:", admission.studentName);
+
+      // Update password in database
       await updateDoc(doc(db, "users", currentAdmissionId), {
         password: newPassword,
         passwordExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
+      console.log("✅ Password updated in database");
 
-      // Send reset email
-      await sendPasswordResetEmail(admission.parentEmail, admission.parentName, newPassword);
+      // AUTOMATICALLY SEND PASSWORD RESET EMAIL VIA EMAILJS
+      showAlert("📧 Sending new password... Please wait.", "info");
+      console.log("🚀 AUTO SENDING: Password Reset Email to:", admission.parentEmail);
 
-      closeModal("resetPasswordModal");
-      showAlert("Password reset successfully! New password sent to parent's email.", "success");
+      const emailSent = await sendPasswordResetEmailAuto(
+        admission.parentEmail,
+        admission.parentName,
+        newPassword
+      );
+
+      if (emailSent) {
+        closeModal("resetPasswordModal");
+        showAlert("✅ Password reset successfully! New password sent to parent automatically.", "success");
+      } else {
+        closeModal("resetPasswordModal");
+        showAlert("✅ Password changed! ⚠️ Email could not be sent. Check console.", "error");
+      }
+
+      loadAdmissions();
     } catch (error) {
       console.error("Error resetting password:", error);
       showAlert("Error resetting password: " + error.message, "error");
+    }
+  };
+
+  // ============= Delete Student =============
+  window.openDeleteModal = function(admissionId, studentName) {
+    currentAdmissionId = admissionId;
+    document.getElementById("deleteStudentName").textContent = studentName;
+    document.getElementById("deleteStudentId").textContent = admissionId;
+    openModal("deleteModal");
+  };
+
+  window.confirmDelete = async function() {
+    if (!currentAdmissionId) return;
+
+    try {
+      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
+      if (!admission) return;
+
+      console.log("🗑️ Starting deletion process for:", admission.studentName);
+
+      // 1. Delete admission record
+      await deleteDoc(doc(db, "admissions", currentAdmissionId));
+      console.log("✅ Admission record deleted");
+
+      // 2. Delete student record if exists
+      try {
+        await deleteDoc(doc(db, "students", currentAdmissionId));
+        console.log("✅ Student record deleted");
+      } catch (error) {
+        console.log("ℹ️ Student record did not exist or already deleted");
+      }
+
+      // 3. Delete user/login record if exists
+      try {
+        await deleteDoc(doc(db, "users", currentAdmissionId));
+        console.log("✅ User record deleted");
+      } catch (error) {
+        console.log("ℹ️ User record did not exist or already deleted");
+      }
+
+      closeModal("deleteModal");
+      showAlert("✅ Student and related records deleted successfully.", "success");
+      loadAdmissions();
+
+    } catch (error) {
+      console.error("❌ Error deleting student:", error);
+      showAlert("Error deleting student: " + error.message, "error");
     }
   };
 
@@ -1226,15 +1151,15 @@
     return password;
   }
 
-  // ============= EmailJS Email Functions =============
+  // ============= AUTO EMAILJS FUNCTIONS (Automatic on Admin Decision) =============
 
-  // Send Welcome Email
-  async function sendWelcomeEmail(parentEmail, parentName, studentName, studentEmail, tempPassword) {
+  // AUTO: Send Welcome Email on Approval
+  async function sendWelcomeEmailAuto(parentEmail, parentName, studentName, studentEmail, tempPassword) {
     try {
-      console.log("🚀 Starting welcome email send...");
+      console.log("🚀 [AUTO] Sending Welcome Email...");
       
       if (!parentEmail || !studentName) {
-        console.error("❌ Missing required fields:", { parentEmail, studentName });
+        console.error("❌ [AUTO] Missing required fields:", { parentEmail, studentName });
         return false;
       }
 
@@ -1250,7 +1175,7 @@
         support_email: "support@stpaullearning.edu"
       };
 
-      console.log("📧 Welcome Email Parameters:", templateParams);
+      console.log("📧 [AUTO] Welcome Email Parameters:", templateParams);
 
       const response = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
@@ -1258,77 +1183,57 @@
         templateParams
       );
 
-      console.log("✅ Welcome email sent successfully!", response);
+      console.log("✅ [AUTO] Welcome email sent successfully!", response);
       return true;
 
     } catch (error) {
-      console.error("❌ Welcome email send failed:", error);
+      console.error("❌ [AUTO] Welcome email send failed:", error);
+      console.error("Error Details:", {
+        message: error.message,
+        status: error.status,
+        text: error.text
+      });
       return false;
     }
   }
 
-  // Send Welcome Message (Custom Message)
-  async function sendWelcomeMessage(parentEmail, parentName, studentName, customMessage) {
+  // AUTO: Send Rejection Email on Rejection
+  async function sendRejectionEmailAuto(parentEmail, parentName, studentName, reason) {
     try {
-      console.log("🚀 Starting welcome message send...");
+      console.log("🚀 [AUTO] Sending Rejection Email...");
       
       if (!parentEmail) {
-        console.error("❌ Missing parent email");
+        console.error("❌ [AUTO] Missing parent email");
         return false;
       }
 
-      const defaultMessage = `Dear ${parentName || 'Parent/Guardian'},\n\nWelcome to St Paul Learning Centre! We are excited to have ${studentName} join our school community.\n\nIf you have any questions or concerns, please don't hesitate to contact us.\n\nBest regards,\nSt Paul Learning Centre Team`;
+      const rejectionMessage = `
+Dear ${parentName || 'Parent/Guardian'},
+
+We regret to inform you that the admission application for ${studentName} at St Paul Learning Centre could not be approved at this time.
+
+${reason ? `Reason: ${reason}` : "Please contact us for more information."}
+
+If you have any questions, please contact us:
+Email: support@stpaullearning.edu
+Phone: +1 (555) 123-4567
+
+Best regards,
+St Paul Learning Centre Team
+      `.trim();
 
       const templateParams = {
         to_email: parentEmail,
         to_name: parentName,
-        student_name: studentName,
-        message: customMessage || defaultMessage,
+        subject: `Admission Status Update - ${studentName}`,
+        message: rejectionMessage,
         school_name: "St Paul Learning Centre",
         school_email: "info@stpaullearning.edu",
         school_phone: "+1 (555) 123-4567",
         support_email: "support@stpaullearning.edu"
       };
 
-      console.log("📧 Welcome Message Parameters:", templateParams);
-
-      const response = await emailjs.send(
-        EMAILJS_CONFIG.serviceId,
-        EMAILJS_CONFIG.templates.welcome,
-        templateParams
-      );
-
-      console.log("✅ Welcome message sent successfully!", response);
-      return true;
-
-    } catch (error) {
-      console.error("❌ Welcome message send failed:", error);
-      return false;
-    }
-  }
-
-  // Send Contact Us Email
-  async function sendContactUsEmail(parentEmail, parentName, subject, message) {
-    try {
-      console.log("🚀 Starting contact us email send...");
-      
-      if (!parentEmail || !message) {
-        console.error("❌ Missing required fields");
-        return false;
-      }
-
-      const templateParams = {
-        to_email: parentEmail,
-        to_name: parentName,
-        subject: subject || "Message from St Paul Learning Centre",
-        message: message,
-        school_name: "St Paul Learning Centre",
-        school_email: "info@stpaullearning.edu",
-        school_phone: "+1 (555) 123-4567",
-        support_email: "support@stpaullearning.edu"
-      };
-
-      console.log("📧 Contact Us Email Parameters:", templateParams);
+      console.log("📧 [AUTO] Rejection Email Parameters:", templateParams);
 
       const response = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
@@ -1336,22 +1241,22 @@
         templateParams
       );
 
-      console.log("✅ Contact us email sent successfully!", response);
+      console.log("✅ [AUTO] Rejection email sent successfully!", response);
       return true;
 
     } catch (error) {
-      console.error("❌ Contact us email send failed:", error);
+      console.error("❌ [AUTO] Rejection email send failed:", error);
       return false;
     }
   }
 
-  // Send Password Reset Email
-  async function sendPasswordResetEmail(parentEmail, parentName, newPassword) {
+  // AUTO: Send Password Reset Email
+  async function sendPasswordResetEmailAuto(parentEmail, parentName, newPassword) {
     try {
-      console.log("🔐 Sending password reset email...");
+      console.log("🚀 [AUTO] Sending Password Reset Email...");
       
       if (!parentEmail) {
-        console.error("❌ Missing parent email");
+        console.error("❌ [AUTO] Missing parent email");
         return false;
       }
 
@@ -1360,10 +1265,11 @@
         to_name: parentName,
         new_password: newPassword,
         school_name: "St Paul Learning Centre",
-        support_email: "support@stpaullearning.edu"
+        support_email: "support@stpaullearning.edu",
+        message: `Your student password has been reset. The temporary password is: ${newPassword}. Please change it after logging in.`
       };
 
-      console.log("📧 Reset Email Parameters:", templateParams);
+      console.log("📧 [AUTO] Password Reset Email Parameters:", templateParams);
 
       const response = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
@@ -1371,11 +1277,11 @@
         templateParams
       );
 
-      console.log("✅ Password reset email sent!", response);
+      console.log("✅ [AUTO] Password reset email sent successfully!", response);
       return true;
 
     } catch (error) {
-      console.error("❌ Password reset email failed:", error);
+      console.error("❌ [AUTO] Password reset email send failed:", error);
       return false;
     }
   }
@@ -1387,7 +1293,7 @@
 
     setTimeout(() => {
       alertBox.innerHTML = "";
-    }, 5000);
+    }, 6000);
   }
 
   window.openModal = function(modalId) {
@@ -1415,10 +1321,6 @@
   window.confirmResetPassword = confirmResetPassword;
   window.openDeleteModal = openDeleteModal;
   window.confirmDelete = confirmDelete;
-  window.openSendWelcomeModal = openSendWelcomeModal;
-  window.confirmSendWelcome = confirmSendWelcome;
-  window.openContactUsModal = openContactUsModal;
-  window.confirmSendContact = confirmSendContact;
   window.applyFilters = applyFilters;
   window.loadAdmissions = loadAdmissions;
 </script>
