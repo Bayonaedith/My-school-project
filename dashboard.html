@@ -219,6 +219,15 @@
     background: #c0392b;
   }
 
+  .btn-contact {
+    background: #17a2b8;
+    color: white;
+  }
+
+  .btn-contact:hover {
+    background: #138496;
+  }
+
   /* Modal Styles */
   .modal {
     display: none;
@@ -403,6 +412,15 @@
     border-radius: 4px;
     margin-bottom: 15px;
     color: #856404;
+  }
+
+  .info-message {
+    background: #cfe2ff;
+    border: 1px solid #b6d4fe;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    color: #084298;
   }
 
   @media (max-width: 768px) {
@@ -616,6 +634,43 @@
   </div>
 </div>
 
+<!-- Send Welcome Message Modal -->
+<div id="sendWelcomeModal" class="modal">
+  <div class="modal-content">
+    <h3>Send Welcome Message</h3>
+    <div class="info-message">
+      <strong>ℹ️ Info:</strong> A personalized welcome message will be sent to the parent's email address.
+    </div>
+    <p><strong>Student:</strong> <span id="welcomeStudentName"></span></p>
+    <p><strong>Parent Email:</strong> <span id="welcomeParentEmail"></span></p>
+    <label>Custom Welcome Message (Optional):</label>
+    <textarea id="welcomeCustomMessage" placeholder="Leave blank to send default welcome message"></textarea>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('sendWelcomeModal')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmSendWelcome()">Send Welcome Message</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Us Modal -->
+<div id="contactUsModal" class="modal">
+  <div class="modal-content">
+    <h3>Send Contact Us Message</h3>
+    <div class="info-message">
+      <strong>ℹ️ Info:</strong> Send contact and support information to the parent.
+    </div>
+    <p><strong>Parent Email:</strong> <span id="contactParentEmail"></span></p>
+    <label>Subject:</label>
+    <input type="text" id="contactSubject" placeholder="e.g., Important School Updates">
+    <label>Message:</label>
+    <textarea id="contactMessage" placeholder="Type your message here..." required></textarea>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeModal('contactUsModal')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmSendContact()">Send Message</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
@@ -646,12 +701,13 @@
   let currentAdmissionId = null;
   let currentAdmissionData = null;
 
-  // ✨ CORRECTED: EmailJS Configuration
+  // ✨ EmailJS Configuration with Welcome and Contact Templates
   const EMAILJS_CONFIG = {
     publicKey: "S17h9x6ExMG6mKaQh",
     serviceId: "service_ndh30l8",
     templates: {
       welcome: "template_nub0vst",
+      contactUs: "template_0k9iqza",
       passwordReset: "template_password_reset"
     }
   };
@@ -744,7 +800,9 @@
             ${status === "approved" ? `
               <button class="btn btn-edit" onclick="openEditModal('${admission.id}')">Edit</button>
               <button class="btn btn-reset" onclick="openResetPasswordModal('${admission.id}', '${admission.studentName}')">Reset Pass</button>
+              <button class="btn btn-contact" onclick="openSendWelcomeModal('${admission.id}', '${admission.studentName}', '${admission.parentEmail}')">Welcome</button>
             ` : ""}
+            <button class="btn btn-contact" onclick="openContactUsModal('${admission.id}', '${admission.parentEmail}')">Contact</button>
             <button class="btn btn-delete" onclick="openDeleteModal('${admission.id}', '${admission.studentName}')">Delete</button>
           </div>
         </td>
@@ -840,7 +898,7 @@
 
       // 4. Send welcome email if checkbox is checked
       if (document.getElementById("sendEmailCheckbox").checked) {
-        console.log("📧 Parent chose to send welcome email");
+        console.log("📧 Admin chose to send welcome email");
         
         const emailSent = await sendWelcomeEmail(
           admission.parentEmail,
@@ -859,7 +917,7 @@
         }
       } else {
         showAlert("✅ Admission approved successfully!", "success");
-        console.log("ℹ️ Parent chose not to send welcome email");
+        console.log("ℹ️ Welcome email was not sent");
       }
 
       closeModal("approveModal");
@@ -900,6 +958,90 @@
     } catch (error) {
       console.error("Error rejecting admission:", error);
       showAlert("Error rejecting admission: " + error.message, "error");
+    }
+  };
+
+  // ============= Send Welcome Message Workflow =============
+  window.openSendWelcomeModal = function(admissionId, studentName, parentEmail) {
+    currentAdmissionId = admissionId;
+    document.getElementById("welcomeStudentName").textContent = studentName;
+    document.getElementById("welcomeParentEmail").textContent = parentEmail;
+    document.getElementById("welcomeCustomMessage").value = "";
+    openModal("sendWelcomeModal");
+  };
+
+  window.confirmSendWelcome = async function() {
+    if (!currentAdmissionId) return;
+
+    try {
+      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
+      if (!admission) return;
+
+      const customMessage = document.getElementById("welcomeCustomMessage").value.trim();
+
+      console.log("📧 Sending welcome message for:", admission.studentName);
+
+      const emailSent = await sendWelcomeMessage(
+        admission.parentEmail,
+        admission.parentName,
+        admission.studentName,
+        customMessage
+      );
+
+      if (emailSent) {
+        closeModal("sendWelcomeModal");
+        showAlert("✅ Welcome message sent successfully to parent!", "success");
+      } else {
+        showAlert("❌ Failed to send welcome message. Please check console for details.", "error");
+      }
+    } catch (error) {
+      console.error("❌ Error sending welcome message:", error);
+      showAlert("Error sending welcome message: " + error.message, "error");
+    }
+  };
+
+  // ============= Contact Us Workflow =============
+  window.openContactUsModal = function(admissionId, parentEmail) {
+    currentAdmissionId = admissionId;
+    document.getElementById("contactParentEmail").textContent = parentEmail;
+    document.getElementById("contactSubject").value = "";
+    document.getElementById("contactMessage").value = "";
+    openModal("contactUsModal");
+  };
+
+  window.confirmSendContact = async function() {
+    if (!currentAdmissionId) return;
+
+    try {
+      const admission = allAdmissions.find(a => a.id === currentAdmissionId);
+      if (!admission) return;
+
+      const subject = document.getElementById("contactSubject").value.trim();
+      const message = document.getElementById("contactMessage").value.trim();
+
+      if (!message) {
+        showAlert("❌ Please enter a message.", "error");
+        return;
+      }
+
+      console.log("📧 Sending contact message to:", admission.parentEmail);
+
+      const emailSent = await sendContactUsEmail(
+        admission.parentEmail,
+        admission.parentName,
+        subject,
+        message
+      );
+
+      if (emailSent) {
+        closeModal("contactUsModal");
+        showAlert("✅ Contact message sent successfully!", "success");
+      } else {
+        showAlert("❌ Failed to send contact message. Please check console for details.", "error");
+      }
+    } catch (error) {
+      console.error("❌ Error sending contact message:", error);
+      showAlert("Error sending contact message: " + error.message, "error");
     }
   };
 
@@ -1084,18 +1226,18 @@
     return password;
   }
 
-  // ✨ CORRECTED: EmailJS email sending functions
+  // ============= EmailJS Email Functions =============
+
+  // Send Welcome Email
   async function sendWelcomeEmail(parentEmail, parentName, studentName, studentEmail, tempPassword) {
     try {
-      console.log("🚀 Starting email send process...");
+      console.log("🚀 Starting welcome email send...");
       
-      // Validate inputs
       if (!parentEmail || !studentName) {
         console.error("❌ Missing required fields:", { parentEmail, studentName });
         return false;
       }
 
-      // Prepare template parameters - MUST MATCH template variable names exactly
       const templateParams = {
         to_email: parentEmail,
         to_name: parentName,
@@ -1108,57 +1250,102 @@
         support_email: "support@stpaullearning.edu"
       };
 
-      console.log("📧 Email Parameters:", templateParams);
-      console.log("🔧 Config:", {
-        serviceId: EMAILJS_CONFIG.serviceId,
-        templateId: EMAILJS_CONFIG.templates.welcome,
-        publicKey: EMAILJS_CONFIG.publicKey.substring(0, 5) + "..."
-      });
+      console.log("📧 Welcome Email Parameters:", templateParams);
 
-      console.log("⏳ Sending email via EmailJS...");
-      
       const response = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
         EMAILJS_CONFIG.templates.welcome,
         templateParams
       );
 
-      console.log("✅ Email sent successfully!", response);
-      console.log("📨 Response:", {
-        status: response.status,
-        text: response.text,
-        id: response.id
-      });
-      
+      console.log("✅ Welcome email sent successfully!", response);
       return true;
 
     } catch (error) {
-      console.error("❌ Email send failed:", error);
-      console.error("Error Details:", {
-        message: error.message,
-        name: error.name,
-        status: error.status,
-        text: error.text
-      });
-
-      // Provide specific error messages
-      if (error.status === 0) {
-        console.error("🔴 Network error - check your internet connection");
-      } else if (error.status === 400) {
-        console.error("🔴 Bad request - check template variables match");
-      } else if (error.status === 401) {
-        console.error("🔴 Unauthorized - check public key and service ID");
-      } else if (error.status === 404) {
-        console.error("🔴 Not found - verify template ID exists");
-      } else if (error.status === 422) {
-        console.error("🔴 Template variable mismatch");
-      }
-
+      console.error("❌ Welcome email send failed:", error);
       return false;
     }
   }
 
-  // CORRECTED: Password Reset Email
+  // Send Welcome Message (Custom Message)
+  async function sendWelcomeMessage(parentEmail, parentName, studentName, customMessage) {
+    try {
+      console.log("🚀 Starting welcome message send...");
+      
+      if (!parentEmail) {
+        console.error("❌ Missing parent email");
+        return false;
+      }
+
+      const defaultMessage = `Dear ${parentName || 'Parent/Guardian'},\n\nWelcome to St Paul Learning Centre! We are excited to have ${studentName} join our school community.\n\nIf you have any questions or concerns, please don't hesitate to contact us.\n\nBest regards,\nSt Paul Learning Centre Team`;
+
+      const templateParams = {
+        to_email: parentEmail,
+        to_name: parentName,
+        student_name: studentName,
+        message: customMessage || defaultMessage,
+        school_name: "St Paul Learning Centre",
+        school_email: "info@stpaullearning.edu",
+        school_phone: "+1 (555) 123-4567",
+        support_email: "support@stpaullearning.edu"
+      };
+
+      console.log("📧 Welcome Message Parameters:", templateParams);
+
+      const response = await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.templates.welcome,
+        templateParams
+      );
+
+      console.log("✅ Welcome message sent successfully!", response);
+      return true;
+
+    } catch (error) {
+      console.error("❌ Welcome message send failed:", error);
+      return false;
+    }
+  }
+
+  // Send Contact Us Email
+  async function sendContactUsEmail(parentEmail, parentName, subject, message) {
+    try {
+      console.log("🚀 Starting contact us email send...");
+      
+      if (!parentEmail || !message) {
+        console.error("❌ Missing required fields");
+        return false;
+      }
+
+      const templateParams = {
+        to_email: parentEmail,
+        to_name: parentName,
+        subject: subject || "Message from St Paul Learning Centre",
+        message: message,
+        school_name: "St Paul Learning Centre",
+        school_email: "info@stpaullearning.edu",
+        school_phone: "+1 (555) 123-4567",
+        support_email: "support@stpaullearning.edu"
+      };
+
+      console.log("📧 Contact Us Email Parameters:", templateParams);
+
+      const response = await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.templates.contactUs,
+        templateParams
+      );
+
+      console.log("✅ Contact us email sent successfully!", response);
+      return true;
+
+    } catch (error) {
+      console.error("❌ Contact us email send failed:", error);
+      return false;
+    }
+  }
+
+  // Send Password Reset Email
   async function sendPasswordResetEmail(parentEmail, parentName, newPassword) {
     try {
       console.log("🔐 Sending password reset email...");
@@ -1228,9 +1415,13 @@
   window.confirmResetPassword = confirmResetPassword;
   window.openDeleteModal = openDeleteModal;
   window.confirmDelete = confirmDelete;
+  window.openSendWelcomeModal = openSendWelcomeModal;
+  window.confirmSendWelcome = confirmSendWelcome;
+  window.openContactUsModal = openContactUsModal;
+  window.confirmSendContact = confirmSendContact;
   window.applyFilters = applyFilters;
   window.loadAdmissions = loadAdmissions;
 </script>
 
 </body>
- </html>
+</html>
