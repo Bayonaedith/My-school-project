@@ -1,238 +1,337 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>St Paul Learning Centre | Building Future Leaders</title>
-<meta name="description" content="St Paul Learning Centre is dedicated to academic excellence, discipline, and innovation. Admissions now open.">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: #f4f6f9;
-    color: #333;
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+background:#0f172a;
+color:white;
+line-height:1.6;
 }
 
 /* NAVBAR */
-nav {
-    background: #002147;
-    padding: 15px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+
+nav{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px 60px;
+background:#020617;
+border-bottom:1px solid rgba(255,255,255,0.1);
+position:sticky;
+top:0;
+z-index:1000;
 }
 
-nav h1 {
-    color: white;
-    margin: 0;
-    font-size: 20px;
+nav h1{
+font-size:20px;
+color:#38bdf8;
 }
 
-nav ul {
-    list-style: none;
-    display: flex;
-    gap: 20px;
-    margin: 0;
+nav ul{
+display:flex;
+list-style:none;
+gap:30px;
 }
 
-nav ul li a {
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
+nav ul li a{
+text-decoration:none;
+color:white;
+font-weight:500;
+transition:0.3s;
 }
 
-nav ul li a:hover {
-    text-decoration: underline;
+nav ul li a:hover{
+color:#38bdf8;
 }
 
 /* HERO */
-.hero {
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-    url('https://images.unsplash.com/photo-1588072432836-e10032774350') center/cover no-repeat;
-    color: white;
-    text-align: center;
-    padding: 120px 20px;
+
+.hero{
+height:90vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center;
+padding:20px;
+
+background:
+linear-gradient(rgba(2,6,23,0.85),rgba(2,6,23,0.95)),
+url("https://images.unsplash.com/photo-1588072432836-e10032774350") center/cover;
 }
 
-.hero h2 {
-    font-size: 40px;
-    margin-bottom: 15px;
+.hero h2{
+font-size:50px;
+max-width:900px;
+margin-bottom:20px;
 }
 
-.hero p {
-    font-size: 18px;
-    max-width: 600px;
-    margin: auto;
+.hero p{
+max-width:700px;
+font-size:18px;
+opacity:0.9;
 }
 
-.hero .btn {
-    margin-top: 25px;
-    padding: 12px 25px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    border-radius: 5px;
-    text-decoration: none;
-    display: inline-block;
+.hero button{
+margin-top:30px;
+padding:15px 35px;
+border:none;
+border-radius:30px;
+background:linear-gradient(45deg,#38bdf8,#0ea5e9);
+color:white;
+font-size:16px;
+cursor:pointer;
+transition:0.4s;
 }
 
-.btn-primary {
-    background: #ffcc00;
-    color: #000;
+.hero button:hover{
+transform:scale(1.05);
+box-shadow:0 0 20px #38bdf8;
 }
 
-.btn-secondary {
-    background: white;
-    color: #002147;
-    margin-left: 10px;
+/* SECTION */
+
+section{
+padding:90px 40px;
+text-align:center;
 }
 
-/* FEATURES */
-.features {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    padding: 60px 20px;
-    flex-wrap: wrap;
-    background: white;
+.section-title{
+font-size:32px;
+margin-bottom:50px;
+color:#38bdf8;
 }
 
-.feature-card {
-    background: #f9f9f9;
-    padding: 30px;
-    width: 250px;
-    text-align: center;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+/* CARDS */
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:30px;
+max-width:1100px;
+margin:auto;
 }
 
-.feature-card h3 {
-    margin-bottom: 10px;
+.card{
+background:rgba(255,255,255,0.05);
+border-radius:15px;
+padding:35px;
+backdrop-filter:blur(10px);
+border:1px solid rgba(255,255,255,0.1);
+transition:0.4s;
+}
+
+.card:hover{
+transform:translateY(-10px);
+box-shadow:0 10px 30px rgba(0,0,0,0.5);
+}
+
+.card i{
+font-size:40px;
+margin-bottom:15px;
+color:#38bdf8;
 }
 
 /* STATS */
-.stats {
-    background: #002147;
-    color: white;
-    text-align: center;
-    padding: 60px 20px;
+
+.stats{
+background:#020617;
 }
 
-.stats-container {
-    display: flex;
-    justify-content: center;
-    gap: 50px;
-    flex-wrap: wrap;
+.stat-number{
+font-size:40px;
+font-weight:bold;
+color:#38bdf8;
 }
 
-.stats h2 {
-    margin: 0;
-    font-size: 36px;
+/* ADMISSIONS */
+
+.admissions{
+background:linear-gradient(135deg,#0ea5e9,#0284c7);
+padding:90px 30px;
 }
 
-/* CTA */
-.cta {
-    text-align: center;
-    padding: 60px 20px;
-    background: #ffcc00;
+.admissions h2{
+font-size:36px;
+margin-bottom:20px;
 }
 
-.cta h2 {
-    margin-bottom: 20px;
+.admissions button{
+margin-top:20px;
+padding:15px 40px;
+border:none;
+border-radius:30px;
+background:white;
+color:#0284c7;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+.admissions button:hover{
+transform:scale(1.05);
 }
 
 /* FOOTER */
-footer {
-    background: #00132b;
-    color: white;
-    text-align: center;
-    padding: 20px;
+
+footer{
+background:#020617;
+padding:30px;
+text-align:center;
+border-top:1px solid rgba(255,255,255,0.1);
 }
+
+footer p{
+opacity:0.7;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+nav{
+flex-direction:column;
+gap:15px;
+}
+
+.hero h2{
+font-size:32px;
+}
+
+}
+
 </style>
 </head>
 
 <body>
-   
-    <div id="navbar"></div>
 
-<script>
-fetch("navbar.html")
-  .then(response => response.text())
-  .then(data => {
-    document.getElementById("navbar").innerHTML = data;
-  });
-</script>
+<!-- NAVBAR -->
 
-<!-- NAVIGATION -->
 <nav>
-    <h1>St Paul Learning Centre</h1>
-    <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="academics.html">Academics</a></li>
-         <li><a href="contact.html">Contact</a></li>
-    </ul>
+
+<h1>St Paul Learning Centre</h1>
+
+<ul>
+<li><a href="#">Home</a></li>
+<li><a href="#">About</a></li>
+<li><a href="#">Admissions</a></li>
+<li><a href="#">Contact</a></li>
+</ul>
+
 </nav>
 
-<!-- HERO SECTION -->
+
+<!-- HERO -->
+
 <section class="hero">
-    <h2>Building Future Leaders</h2>
-    <p>We are committed to academic excellence, discipline, innovation, and holistic student development.</p>
-    <a href="admissions.html" class="btn btn-primary">Apply Now</a>
-    <a href="menu.html" class="btn btn-secondary">Menu</a>
-    <a href="student-portal.html" class="btn btn-secondary">Students</a>
-    <a href="admin-dashboard.html" class="btn btn-secondary">Admin Dashboard</a>
+
+<h2>Building Future Leaders Through Knowledge and Discipline</h2>
+
+<p>
+St Paul Learning Centre nurtures young minds with quality education, modern learning methods, and a safe environment for growth.
+</p>
+
+<button>Apply Now</button>
+
 </section>
+
 
 <!-- FEATURES -->
-<section class="features">
-    <div class="feature-card">
-        <h3>Qualified Teachers</h3>
-        <p>Experienced and professional educators guiding every learner.</p>
-    </div>
 
-    <div class="feature-card">
-        <h3>Modern Curriculum</h3>
-        <p>Balanced academics and co-curricular excellence.</p>
-    </div>
+<section>
 
-    <div class="feature-card">
-        <h3>Safe Environment</h3>
-        <p>A secure and supportive space for growth and development.</p>
-    </div>
+<h2 class="section-title">Why Choose Our School</h2>
+
+<div class="grid">
+
+<div class="card">
+<i class="fas fa-chalkboard-teacher"></i>
+<h3>Qualified Teachers</h3>
+<p>Experienced and professional educators guiding every learner.</p>
+</div>
+
+<div class="card">
+<i class="fas fa-book-open"></i>
+<h3>Modern Curriculum</h3>
+<p>Balanced academics and co-curricular excellence.</p>
+</div>
+
+<div class="card">
+<i class="fas fa-shield-alt"></i>
+<h3>Safe Environment</h3>
+<p>A secure and supportive space for growth and development.</p>
+</div>
+
+</div>
+
 </section>
+
 
 <!-- STATS -->
+
 <section class="stats">
-    <div class="stats-container">
-        <div>
-            <h2>500+</h2>
-            <p>Students</p>
-        </div>
-        <div>
-            <h2>30+</h2>
-            <p>Teachers</p>
-        </div>
-        <div>
-            <h2>10+</h2>
-            <p>Years Experience</p>
-        </div>
-    </div>
+
+<h2 class="section-title">Our Impact</h2>
+
+<div class="grid">
+
+<div class="card">
+<div class="stat-number">500+</div>
+<p>Students</p>
+</div>
+
+<div class="card">
+<div class="stat-number">30+</div>
+<p>Teachers</p>
+</div>
+
+<div class="card">
+<div class="stat-number">10+</div>
+<p>Years Experience</p>
+</div>
+
+</div>
+
 </section>
 
-<!-- CTA -->
-<section class="cta">
-    <h2>Admissions Now Open for 2026</h2>
-    <a href="admissions.html" class="btn btn-primary">Start Application</a>
+
+<!-- ADMISSIONS -->
+
+<section class="admissions">
+
+<h2>Admissions Now Open for 2026</h2>
+
+<p>Join St Paul Learning Centre and start your journey toward excellence.</p>
+
+<button>Start Application</button>
+
 </section>
+
 
 <!-- FOOTER -->
+
 <footer>
-    © 2026 St Paul Learning Centre | All Rights Reserved
+
+<p>© 2026 St Paul Learning Centre | Building Future Leaders</p>
+
 </footer>
 
 </body>
