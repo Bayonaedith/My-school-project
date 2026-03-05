@@ -1,49 +1,321 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Student Dashboard</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Student Dashboard | St Paul Learning Centre</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
-body{background:#0f172a;color:white;font-family:sans-serif}
-.card{background:#1e293b;padding:30px;margin:50px auto;width:500px;border-radius:12px;box-shadow:0 0 20px #00f0ff}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+background:#f4f6f9;
+}
+
+/* NAVBAR */
+
+nav{
+background:#002147;
+color:white;
+padding:15px 40px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+nav h1{
+font-size:18px;
+}
+
+nav button{
+background:#ffcc00;
+border:none;
+padding:10px 18px;
+border-radius:5px;
+font-weight:600;
+cursor:pointer;
+}
+
+nav button:hover{
+background:#e6b800;
+}
+
+/* CONTAINER */
+
+.container{
+max-width:1100px;
+margin:auto;
+padding:40px;
+}
+
+/* PROFILE */
+
+.profile-card{
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,0.1);
+margin-bottom:30px;
+}
+
+.profile-card h2{
+color:#002147;
+margin-bottom:20px;
+}
+
+.profile-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+}
+
+.profile-grid div{
+background:#f9f9f9;
+padding:15px;
+border-radius:6px;
+}
+
+.profile-grid strong{
+color:#002147;
+}
+
+/* DASHBOARD */
+
+.dashboard{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 3px 10px rgba(0,0,0,0.08);
+text-align:center;
+}
+
+.card h3{
+color:#002147;
+margin-bottom:10px;
+}
+
+.loading{
+text-align:center;
+margin-top:80px;
+font-size:18px;
+color:#555;
+}
+
 </style>
+
 </head>
+
 <body>
 
-<div class="card">
-<h2 id="welcome"></h2>
+<nav>
+
+<h1>Student Portal | St Paul Learning Centre</h1>
+
+<button id="logoutBtn">Logout</button>
+
+</nav>
+
+
+<div class="container">
+
+<div id="loading" class="loading">
+Loading student data...
+</div>
+
+
+<div id="dashboard" style="display:none">
+
+<div class="profile-card">
+
+<h2>Student Profile</h2>
+
+<div class="profile-grid">
+
+<div>
+<strong>Name</strong>
+<p id="name"></p>
+</div>
+
+<div>
+<strong>Class</strong>
 <p id="class"></p>
 </div>
 
+<div>
+<strong>Date of Birth</strong>
+<p id="dob"></p>
+</div>
+
+<div>
+<strong>Parent</strong>
+<p id="parent"></p>
+</div>
+
+<div>
+<strong>Email</strong>
+<p id="email"></p>
+</div>
+
+<div>
+<strong>Phone</strong>
+<p id="phone"></p>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="dashboard">
+
+<div class="card">
+<h3>📚 Subjects</h3>
+<p>Learning materials</p>
+</div>
+
+<div class="card">
+<h3>📊 Grades</h3>
+<p>View performance</p>
+</div>
+
+<div class="card">
+<h3>📅 Attendance</h3>
+<p>Attendance record</p>
+</div>
+
+<div class="card">
+<h3>📢 Announcements</h3>
+<p>School updates</p>
+</div>
+
+<div class="card">
+<h3>💳 Fees</h3>
+<p>Fees status</p>
+</div>
+
+<div class="card">
+<h3>📥 Downloads</h3>
+<p>Reports & materials</p>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore,doc,getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+
+import { 
+getAuth,
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+import { 
+getFirestore,
+doc,
+getDoc
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-  authDomain: "my-school-project-6e00c.firebaseapp.com",
-  projectId: "my-school-project-6e00c",
-  storageBucket: "my-school-project-6e00c.firebasestorage.app",
-  messagingSenderId: "14283853516",
-  appId: "1:14283853516:web:c7999ae32d83166cb8bc69",
-  measurementId: "G-LTJZ2RDG15"
+apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+authDomain: "my-school-project-6e00c.firebaseapp.com",
+projectId: "my-school-project-6e00c",
+storageBucket: "my-school-project-6e00c.firebasestorage.app",
+messagingSenderId: "14283853516",
+appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
 };
 
+
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
+
 const db = getFirestore(app);
 
+
+const loading = document.getElementById("loading");
+const dashboard = document.getElementById("dashboard");
+
+
 onAuthStateChanged(auth, async (user)=>{
-  if(user){
-    const snap = await getDoc(doc(db,"students",user.uid));
-    if(snap.exists()){
-      welcome.innerText="Welcome "+snap.data().fullName;
-      class.innerText="Class: "+snap.data().class;
-    }
-  } else {
-    window.location.href="student-login.html";
-  }
+
+if(user){
+
+try{
+
+const ref = doc(db,"students",user.uid);
+
+const snap = await getDoc(ref);
+
+if(snap.exists()){
+
+const data = snap.data();
+
+document.getElementById("name").innerText = data.studentName;
+document.getElementById("class").innerText = data.class;
+document.getElementById("dob").innerText = data.dob;
+document.getElementById("parent").innerText = data.parentName;
+document.getElementById("email").innerText = data.parentEmail;
+document.getElementById("phone").innerText = data.parentPhone;
+
+loading.style.display="none";
+dashboard.style.display="block";
+
+}else{
+
+loading.innerText="Student record not found.";
+
+}
+
+}catch(err){
+
+loading.innerText="Error loading student data.";
+
+}
+
+}else{
+
+window.location.href="student-login.html";
+
+}
+
 });
+
+
+document.getElementById("logoutBtn").onclick = ()=>{
+
+signOut(auth).then(()=>{
+
+window.location.href="student-login.html";
+
+});
+
+};
+
 </script>
+
+
 </body>
 </html>
