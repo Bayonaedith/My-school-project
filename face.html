@@ -1,97 +1,123 @@
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Face Registration</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 15px; border: 1px solid #00f7ff; }
+        video { border: 3px solid #00f7ff; border-radius: 10px; width: 100%; max-width: 400px; background: #000; margin-bottom: 15px; }
+        input { padding: 12px; margin: 8px 0; width: 90%; border: none; border-radius: 5px; font-size: 16px; }
+        button { padding: 15px 30px; margin-top: 15px; background: #00f7ff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: #0a0f2c; transition: 0.3s; }
+        button:hover { background: #00c4cc; transform: scale(1.05); }
+        #status { margin-top: 15px; font-weight: bold; color: #00f7ff; }
+    </style>
+</head>
+<body>
 
-    // Your provided Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-        authDomain: "my-school-project-6e00c.firebaseapp.com",
-        projectId: "my-school-project-6e00c",
-        storageBucket: "my-school-project-6e00c.appspot.com",
-        messagingSenderId: "14283853516",
-        appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const video = document.getElementById("video");
-    const status = document.getElementById("status");
-    const regBtn = document.getElementById("regBtn");
-
-    // Load AI Models
-    async function loadModels() {
-        status.innerText = "Loading AI Models...";
-        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+    <div class="container">
+        <h2>🎓 Student Registration</h2>
+        <video id="video" autoplay muted playsinline></video>
         
-        try {
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-            ]);
-            status.innerText = "AI Loaded. Initializing Camera...";
-            startCamera();
-        } catch (err) {
-            status.innerText = "Error loading AI: Check internet connection.";
-            console.error(err);
+        <input type="text" id="name" placeholder="Full Name">
+        <input type="text" id="class" placeholder="Class/Grade">
+        
+        <button id="regBtn">Register Face</button>
+        <p id="status">Loading AI Models...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Your Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+            authDomain: "my-school-project-6e00c.firebaseapp.com",
+            projectId: "my-school-project-6e00c",
+            storageBucket: "my-school-project-6e00c.appspot.com",
+            messagingSenderId: "14283853516",
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const video = document.getElementById("video");
+        const status = document.getElementById("status");
+        const regBtn = document.getElementById("regBtn");
+
+        // Load models from a reliable CDN repository
+        async function loadModels() {
+            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+                status.innerText = "AI Ready. Starting Camera...";
+                startCamera();
+            } catch (err) {
+                status.innerText = "Error loading AI models.";
+                console.error(err);
+            }
         }
-    }
 
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            video.srcObject = stream;
-            status.innerText = "System Ready";
-        } catch (err) {
-            status.innerText = "Camera access denied.";
-        }
-    }
-
-    // Handle Registration Click
-    regBtn.addEventListener('click', async () => {
-        const name = document.getElementById("name").value.trim();
-        const studentClass = document.getElementById("class").value.trim();
-
-        if (!name || !studentClass) {
-            status.innerText = "Error: Please provide Name and Class.";
-            return;
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+                status.innerText = "System Ready";
+            } catch (err) {
+                status.innerText = "Camera access denied.";
+            }
         }
 
-        status.innerText = "Scanning face...";
+        regBtn.addEventListener('click', async () => {
+            const name = document.getElementById("name").value.trim();
+            const studentClass = document.getElementById("class").value.trim();
 
-        const detection = await faceapi
-            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
+            if (!name || !studentClass) {
+                status.innerText = "Please fill in all details.";
+                return;
+            }
 
-        if (!detection) {
-            status.innerText = "Face not found. Please look at the camera.";
-            return;
-        }
+            status.innerText = "Scanning face... stay still.";
 
-        // Convert the face descriptor to a standard array for Firestore
-        const descriptorArray = Array.from(detection.descriptor);
+            // TinyFaceDetector is faster for web use
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
 
-        try {
-            await addDoc(collection(db, "students"), {
-                name: name,
-                class: studentClass,
-                faceDescriptor: descriptorArray,
-                approved: false,
-                createdAt: serverTimestamp()
-            });
-            status.innerText = "Success! " + name + " is registered and pending approval.";
-            
-            // Clear inputs
-            document.getElementById("name").value = "";
-            document.getElementById("class").value = "";
-        } catch (error) {
-            status.innerText = "Database error. Check Firebase Rules.";
-            console.error("Firebase Error:", error);
-        }
-    });
+            if (!detection) {
+                status.innerText = "Face not detected. Try again.";
+                return;
+            }
 
-    loadModels();
-</script>
+            // Convert the descriptor (Float32Array) to a normal Array for Firestore
+            const descriptorArray = Array.from(detection.descriptor);
+
+            try {
+                await addDoc(collection(db, "students"), {
+                    name: name,
+                    class: studentClass,
+                    faceDescriptor: descriptorArray,
+                    approved: false, // Set to true manually in Firebase Console to test Attendance
+                    createdAt: serverTimestamp()
+                });
+                status.innerText = "Registration Successful! Pending Admin Approval.";
+                document.getElementById("name").value = "";
+                document.getElementById("class").value = "";
+            } catch (error) {
+                status.innerText = "Database Error. Check console.";
+                console.error(error);
+            }
+        });
+
+        loadModels();
+    </script>
+</body>
+</html>
