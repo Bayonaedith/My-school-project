@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin 1.9 - User Management & Search</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0a1128; color: white; padding: 30px; }
+        h1 { color: #00f7ff; border-bottom: 2px solid #00f7ff; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        /* Search Box Styles */
+        .search-container { margin-bottom: 20px; text-align: left; }
+        #searchInput { 
+            width: 100%; 
+            max-width: 400px; 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #00f7ff; 
+            background: #1a264d; 
+            color: white; 
+            font-size: 1rem;
+        }
+        #searchInput:focus { outline: none; box-shadow: 0 0 10px #00f7ff; }
+
+        .user-table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.05); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #222; }
+        th { background: #1a264d; color: #00f7ff; text-transform: uppercase; font-size: 0.8rem; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .status-approved { background: #00ff88; color: #0a1128; }
+        .status-pending { background: #ffcc00; color: #0a1128; }
+
+        .btn-delete { 
+            background: #ff4b2b; color: white; border: none; padding: 8px 15px; 
+            border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;
+        }
+        .btn-delete:hover { background: #ff0000; transform: scale(1.05); }
+        
+        #loading { color: #00f7ff; font-style: italic; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>👥 User Management System (v1.9)</h1>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="🔍 Search by student name or class..." onkeyup="filterUsers()">
+    </div>
+
+    <p id="loading">Syncing with database...</p>
+
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Class</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="userList">
+            </tbody>
+    </table>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+            authDomain: "my-school-project-6e00c.firebaseapp.com",
+            projectId: "my-school-project-6e00c",
+            storageBucket: "my-school-project-6e00c.appspot.com",
+            messagingSenderId: "14283853516",
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const userList = document.getElementById("userList");
+        const loadingStatus = document.getElementById("loading");
+
+        const q = query(collection(db, "students"), orderBy("name", "asc"));
+
+        onSnapshot(q, (snapshot) => {
+            userList.innerHTML = "";
+            loadingStatus.innerText = snapshot.empty ? "No students found." : `Managing ${snapshot.size} student(s)`;
+
+            snapshot.forEach((studentDoc) => {
+                const student = studentDoc.data();
+                const id = studentDoc.id;
+
+                const row = document.createElement("tr");
+                // Add a class for filtering
+                row.className = "student-row";
+                
+                const statusClass = student.approved ? "status-approved" : "status-pending";
+                const statusText = student.approved ? "APPROVED" : "PENDING";
+
+                row.innerHTML = `
+                    <td class="name-cell"><strong>${student.name}</strong></td>
+                    <td class="class-cell">${student.class}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <button class="btn-delete" onclick="confirmDelete('${id}', '${student.name}')">Delete User</button>
+                    </td>
+                `;
+                userList.appendChild(row);
+            });
+        });
+
+        // Global function to filter table rows locally
+        window.filterUsers = () => {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll(".student-row");
+
+            rows.forEach(row => {
+                const name = row.querySelector(".name-cell").innerText.toLowerCase();
+                const studentClass = row.querySelector(".class-cell").innerText.toLowerCase();
+                
+                if (name.includes(input) || studentClass.includes(input)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        };
+
+        window.confirmDelete = async (id, name) => {
+            if (confirm(`⚠️ Delete ${name} permanently?`)) {
+                try {
+                    await deleteDoc(doc(db, "students", id));
+                } catch (error) {
+                    alert("Error: " + error.message);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
