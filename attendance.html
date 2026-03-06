@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance System</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <style>
+        body { font-family: Arial; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
+        video { border: 3px solid #00f7ff; border-radius: 10px; width: 400px; background: #000; }
+        #status { margin-top: 15px; font-size: 1.2rem; color: #00f7ff; font-weight: bold; }
+        .log-container { margin-top: 20px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; display: inline-block; min-width: 300px; }
+    </style>
+</head>
+<body>
+
+    <h2>⏱️ Student Attendance Scan</h2>
+    <video id="video" autoplay muted playsinline></video>
+    <p id="status">Initializing AI...</p>
+
+    <div class="log-container">
+        <h3>Recent Attendance:</h3>
+        <ul id="attendanceList" style="list-style: none; padding: 0;"></ul>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+            authDomain: "my-school-project-6e00c.firebaseapp.com",
+            projectId: "my-school-project-6e00c",
+            storageBucket: "my-school-project-6e00c.appspot.com",
+            messagingSenderId: "14283853516",
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const video = document.getElementById("video");
+        const status = document.getElementById("status");
+        const list = document.getElementById("attendanceList");
+
+        let faceMatcher = null;
+
+        // 1. Load AI and Data
+        async function init() {
+            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+            
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+
+                status.innerText = "Loading Registered Students...";
+                await loadStudents();
+                startCamera();
+            } catch (err) {
+                status.innerText = "Init Error: " + err.message;
+            }
+        }
+
+        // 2. Fetch approved students and prepare the "Matcher"
+        async function loadStudents() {
+            const q = query(collection(db, "students"), where("approved", "==", true));
+            const querySnapshot = await getDocs(q);
+            const labeledDescriptors = [];
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Firestore stores arrays, we need Float32Array for face-api
+                const desc = new Float32Array(data.faceDescriptor);
+                labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
+            });
+
+            if (labeledDescriptors.length === 0) {
+                status.innerText = "No approved students found in database!";
+                return;
+            }
+
+            // 0.6 distance threshold (Lower is stricter)
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+            status.innerText = "Ready to Scan";
+            startRecognitionLoop();
+        }
+
+        async function startCamera() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+            video.srcObject = stream;
+        }
+
+        // 3. The Recognition Loop (Runs every 2 seconds)
+        async function startRecognitionLoop() {
+            setInterval(async () => {
+                if (!faceMatcher) return;
+
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (detection) {
+                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                    
+                    if (bestMatch.label !== 'unknown') {
+                        status.innerText = `Recognized: ${bestMatch.label}`;
+                        markAttendance(bestMatch.label);
+                    } else {
+                        status.innerText = "Unknown face detected.";
+                    }
+                }
+            }, 2000); 
+        }
+
+        // 4. Save to "attendance" collection
+        async function markAttendance(studentName) {
+            try {
+                await addDoc(collection(db, "attendance"), {
+                    studentName: studentName,
+                    time: serverTimestamp()
+                });
+                
+                const li = document.createElement("li");
+                li.innerText = `✅ ${studentName} - ${new Date().toLocaleTimeString()}`;
+                list.prepend(li);
+            } catch (e) {
+                console.error("Error logging attendance:", e);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
