@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Approve Students</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0a0f2c; color: white; padding: 20px; }
+        .student-card { 
+            background: rgba(255, 255, 255, 0.1); 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-left: 5px solid #00f7ff;
+        }
+        button { 
+            padding: 10px 20px; 
+            background: #00f7ff; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
+        button.delete { background: #ff4b2b; color: white; margin-left: 10px; }
+        h1 { color: #00f7ff; }
+    </style>
+</head>
+<body>
+
+    <h1>🔑 Admin Approval Dashboard</h1>
+    <p id="status">Fetching pending registrations...</p>
+    
+    <div id="pendingList"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+            authDomain: "my-school-project-6e00c.firebaseapp.com",
+            projectId: "my-school-project-6e00c",
+            storageBucket: "my-school-project-6e00c.appspot.com",
+            messagingSenderId: "14283853516",
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const pendingList = document.getElementById("pendingList");
+
+        // Real-time listener for students waiting approval
+        const q = query(collection(db, "students"), where("approved", "==", false));
+        
+        onSnapshot(q, (snapshot) => {
+            pendingList.innerHTML = "";
+            if (snapshot.empty) {
+                document.getElementById("status").innerText = "No pending registrations.";
+                return;
+            }
+            document.getElementById("status").innerText = `Found ${snapshot.size} pending student(s):`;
+
+            snapshot.forEach((studentDoc) => {
+                const student = studentDoc.data();
+                const id = studentDoc.id;
+
+                const card = document.createElement("div");
+                card.className = "student-card";
+                card.innerHTML = `
+                    <div>
+                        <strong>${student.name}</strong><br>
+                        <small>Class: ${student.class}</small>
+                    </div>
+                    <div>
+                        <button onclick="approveStudent('${id}')">Approve</button>
+                        <button class="delete" onclick="rejectStudent('${id}')">Reject</button>
+                    </div>
+                `;
+                pendingList.appendChild(card);
+            });
+        });
+
+        // Function to approve student
+        window.approveStudent = async (id) => {
+            const studentRef = doc(db, "students", id);
+            try {
+                await updateDoc(studentRef, { approved: true });
+                alert("Student Approved!");
+            } catch (e) {
+                console.error("Error approving:", e);
+            }
+        };
+
+        // Function to delete/reject student
+        window.rejectStudent = async (id) => {
+            if(confirm("Are you sure you want to reject this student?")) {
+                try {
+                    await deleteDoc(doc(db, "students", id));
+                } catch (e) {
+                    console.error("Error deleting:", e);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
