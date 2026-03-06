@@ -3,45 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Auto Face Recognition Attendance | St Paul Learning Centre</title>
-
-<!-- Firebase -->
+<title>Smart Attendance | Step-by-Step Detection</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<!-- Face-api.js -->
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 
 <style>
-body {
-    font-family: 'Poppins', sans-serif;
-    background:#0f172a;
-    color:#fff;
-    text-align:center;
-    margin:0;
-    padding:0;
-}
-h1 { color:#22c55e; margin-top:20px; text-shadow: 0 0 10px #22c55e;}
-#videoElement { width:480px; height:360px; border:2px solid #22c55e; border-radius:12px; margin-top:20px;}
-#status { margin-top:15px; font-weight:bold; font-size:18px;}
-#dashboard { margin-top:30px; display:flex; flex-wrap:wrap; justify-content:center; }
-.studentCard { background:#1e293b; margin:10px; padding:10px; border-radius:10px; width:150px; text-align:center; box-shadow:0 0 10px #22c55e; }
-.studentCard img { width:100px; height:100px; border-radius:50%; border:2px solid #22c55e; }
-.studentCard p { margin:5px 0; }
+body { font-family:'Poppins',sans-serif; background:#0f172a; color:#fff; text-align:center; }
+#videoElement { width:480px; height:360px; border:2px solid #22c55e; margin-top:20px; border-radius:12px; }
+#status { margin-top:10px; font-size:18px; font-weight:bold; }
+#dashboard { margin-top:20px; display:flex; flex-wrap:wrap; justify-content:center; }
+.studentCard { background:#1e293b; margin:10px; padding:10px; border-radius:10px; width:150px; box-shadow:0 0 10px #22c55e; }
 </style>
 </head>
 <body>
 
-<h1>Smart School Attendance — Auto Detect</h1>
-<p>Registered students will be detected automatically</p>
-
+<h1>Smart Attendance — Step-by-Step</h1>
 <video id="videoElement" autoplay muted></video>
 <p id="status">Loading models…</p>
 <div id="dashboard"></div>
 
 <script>
-// Firebase Config
+// Firebase Setup
 const firebaseConfig = {
   apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
   authDomain: "my-school-project-6e00c.firebaseapp.com",
@@ -57,13 +40,13 @@ const video = document.getElementById('videoElement');
 const status = document.getElementById('status');
 const dashboard = document.getElementById('dashboard');
 
-// Start webcam
+// Start camera
 async function startVideo() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video:true });
         video.srcObject = stream;
     } catch (e) {
-        status.innerText = "Cannot access camera. Close other apps and allow permission!";
+        status.innerText = "Cannot access camera! Close other apps & allow permission.";
     }
 }
 startVideo();
@@ -73,37 +56,35 @@ Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
     faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
     faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-]).then(async () => {
-    status.innerText = "Models loaded. Starting auto-detection… 😎";
+]).then(() => status.innerText = "Models loaded! Starting step-by-step detection… 😎")
+  .then(() => initAttendance());
 
-    // Load all student descriptors
+async function initAttendance(){
+    // Load student descriptors
     const snapshot = await db.collection('students').get();
-    const labeledDescriptors = snapshot.docs.map(doc => {
-        return new faceapi.LabeledFaceDescriptors(
-            doc.data().name,
-            [new Float32Array(doc.data().faceDescriptor)]
-        );
-    });
+    const labeledDescriptors = snapshot.docs.map(doc => new faceapi.LabeledFaceDescriptors(
+        doc.data().name,
+        [new Float32Array(doc.data().faceDescriptor)]
+    ));
     const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5);
 
-    // Setup dashboard
-    dashboard.innerHTML = '';
+    // Setup dashboard cards
     snapshot.docs.forEach(doc => {
         const card = document.createElement('div');
-        card.classList.add('studentCard');
+        card.className = 'studentCard';
         card.id = 'card-' + doc.data().name;
         card.innerHTML = `<p>${doc.data().name}</p><p id="time-${doc.data().name}">Not marked</p>`;
         dashboard.appendChild(card);
     });
 
-    // Start detecting faces automatically
+    // Step-by-step detection
     video.addEventListener('play', () => {
         const canvas = faceapi.createCanvasFromMedia(video);
         document.body.append(canvas);
         const displaySize = { width: video.width, height: video.height };
         faceapi.matchDimensions(canvas, displaySize);
 
-        setInterval(async () => {
+        async function detectLoop() {
             const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
                 .withFaceLandmarks()
                 .withFaceDescriptors();
@@ -112,24 +93,28 @@ Promise.all([
             canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
             faceapi.draw.drawDetections(canvas, resizedDetections);
 
-            resizedDetections.forEach(async det => {
+            // Process one face at a time
+            for(const det of resizedDetections){
                 const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                if(bestMatch.label !== "unknown") {
+                if(bestMatch.label !== "unknown"){
                     const studentRef = db.collection('students').doc(bestMatch.label);
                     const studentDoc = await studentRef.get();
                     const now = new Date().toLocaleString();
 
-                    // Only mark if not already marked today
-                    if(!studentDoc.data().lastAttendance || studentDoc.data().lastAttendance.split(',')[0] !== new Date().toLocaleDateString()) {
+                    if(!studentDoc.data().lastAttendance || studentDoc.data().lastAttendance.split(',')[0] !== new Date().toLocaleDateString()){
                         await studentRef.update({ lastAttendance: now });
                         status.innerText = `Attendance marked: ${bestMatch.label} at ${now}`;
                         document.getElementById('time-' + bestMatch.label).innerText = now;
                     }
                 }
-            });
-        }, 2000);
+            }
+
+            requestAnimationFrame(detectLoop); // loop smoothly
+        }
+
+        detectLoop();
     });
-});
+}
 </script>
 </body>
 </html>
