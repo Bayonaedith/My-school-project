@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Report</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: white; padding: 40px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(255, 255, 255, 0.05); }
+        th, td { padding: 15px; border: 1px solid #444; text-align: left; }
+        th { background: #00f7ff; color: #0a0f2c; }
+        tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+        h1 { color: #00f7ff; }
+    </style>
+</head>
+<body>
+
+    <h1>📅 Daily Attendance Log</h1>
+    <div id="reportContainer">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+                </tbody>
+        </table>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+            authDomain: "my-school-project-6e00c.firebaseapp.com",
+            projectId: "my-school-project-6e00c",
+            storageBucket: "my-school-project-6e00c.appspot.com",
+            messagingSenderId: "14283853516",
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tableBody = document.getElementById("attendanceTableBody");
+
+        // Listen for all attendance records, newest first
+        const q = query(collection(db, "attendance"), orderBy("time", "desc"));
+
+        onSnapshot(q, (snapshot) => {
+            tableBody.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const row = document.createElement("tr");
+                
+                // Format the Firebase Timestamp to a readable string
+                const date = data.time ? data.time.toDate().toLocaleString() : "Processing...";
+                
+                row.innerHTML = `
+                    <td>${data.studentName}</td>
+                    <td>${date}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        });
+    </script>
+</body>
+</html>
