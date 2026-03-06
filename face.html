@@ -3,118 +3,175 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Attendance | Step-by-Step Detection</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+
+<title>Student Face Registration</title>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 
 <style>
-body { font-family:'Poppins',sans-serif; background:#0f172a; color:#fff; text-align:center; }
-#videoElement { width:480px; height:360px; border:2px solid #22c55e; margin-top:20px; border-radius:12px; }
-#status { margin-top:10px; font-size:18px; font-weight:bold; }
-#dashboard { margin-top:20px; display:flex; flex-wrap:wrap; justify-content:center; }
-.studentCard { background:#1e293b; margin:10px; padding:10px; border-radius:10px; width:150px; box-shadow:0 0 10px #22c55e; }
+
+body{
+font-family:Arial;
+background:#0a0f2c;
+color:white;
+text-align:center;
+padding:20px;
+}
+
+video{
+border:3px solid #00f7ff;
+border-radius:10px;
+width:300px;
+}
+
+input{
+padding:10px;
+margin:5px;
+width:250px;
+border:none;
+border-radius:5px;
+}
+
+button{
+padding:12px 25px;
+margin-top:10px;
+background:#00f7ff;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+button:hover{
+background:#00c4cc;
+}
+
 </style>
 </head>
+
 <body>
 
-<h1>Smart Attendance — Step-by-Step</h1>
-<video id="videoElement" autoplay muted></video>
-<p id="status">Loading models…</p>
-<div id="dashboard"></div>
+<h2>🎓 Student Face Registration</h2>
 
-<script>
-// Firebase Setup
+<video id="video" autoplay muted></video>
+
+<br><br>
+
+<input type="text" id="name" placeholder="Student Name"><br>
+<input type="text" id="class" placeholder="Class"><br>
+
+<button onclick="registerFace()">Register Face</button>
+
+<p id="status">Loading camera...</p>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-  authDomain: "my-school-project-6e00c.firebaseapp.com",
-  projectId: "my-school-project-6e00c",
-  storageBucket: "my-school-project-6e00c.appspot.com",
-  messagingSenderId: "14283853516",
-  appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+
+apiKey: "YOUR_API_KEY",
+
+authDomain: "YOUR_PROJECT.firebaseapp.com",
+
+projectId: "YOUR_PROJECT_ID",
+
+storageBucket: "YOUR_PROJECT.appspot.com",
+
+messagingSenderId: "XXXX",
+
+appId: "XXXX"
+
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
 
-const video = document.getElementById('videoElement');
-const status = document.getElementById('status');
-const dashboard = document.getElementById('dashboard');
+const app = initializeApp(firebaseConfig);
 
-// Start camera
-async function startVideo() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video:true });
-        video.srcObject = stream;
-    } catch (e) {
-        status.innerText = "Cannot access camera! Close other apps & allow permission.";
-    }
+const db = getFirestore(app);
+
+const video = document.getElementById("video");
+const status = document.getElementById("status");
+
+async function startCamera(){
+
+try{
+
+const stream = await navigator.mediaDevices.getUserMedia({video:true});
+
+video.srcObject = stream;
+
+status.innerText="Camera ready";
+
+}catch(err){
+
+status.innerText="Camera error";
+
 }
-startVideo();
 
-// Load models
-Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-    faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-    faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-]).then(() => status.innerText = "Models loaded! Starting step-by-step detection… 😎")
-  .then(() => initAttendance());
-
-async function initAttendance(){
-    // Load student descriptors
-    const snapshot = await db.collection('students').get();
-    const labeledDescriptors = snapshot.docs.map(doc => new faceapi.LabeledFaceDescriptors(
-        doc.data().name,
-        [new Float32Array(doc.data().faceDescriptor)]
-    ));
-    const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5);
-
-    // Setup dashboard cards
-    snapshot.docs.forEach(doc => {
-        const card = document.createElement('div');
-        card.className = 'studentCard';
-        card.id = 'card-' + doc.data().name;
-        card.innerHTML = `<p>${doc.data().name}</p><p id="time-${doc.data().name}">Not marked</p>`;
-        dashboard.appendChild(card);
-    });
-
-    // Step-by-step detection
-    video.addEventListener('play', () => {
-        const canvas = faceapi.createCanvasFromMedia(video);
-        document.body.append(canvas);
-        const displaySize = { width: video.width, height: video.height };
-        faceapi.matchDimensions(canvas, displaySize);
-
-        async function detectLoop() {
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptors();
-            const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
-            canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-            faceapi.draw.drawDetections(canvas, resizedDetections);
-
-            // Process one face at a time
-            for(const det of resizedDetections){
-                const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                if(bestMatch.label !== "unknown"){
-                    const studentRef = db.collection('students').doc(bestMatch.label);
-                    const studentDoc = await studentRef.get();
-                    const now = new Date().toLocaleString();
-
-                    if(!studentDoc.data().lastAttendance || studentDoc.data().lastAttendance.split(',')[0] !== new Date().toLocaleDateString()){
-                        await studentRef.update({ lastAttendance: now });
-                        status.innerText = `Attendance marked: ${bestMatch.label} at ${now}`;
-                        document.getElementById('time-' + bestMatch.label).innerText = now;
-                    }
-                }
-            }
-
-            requestAnimationFrame(detectLoop); // loop smoothly
-        }
-
-        detectLoop();
-    });
 }
+
+startCamera();
+
+async function loadModels(){
+
+status.innerText="Loading AI...";
+
+await faceapi.nets.tinyFaceDetector.loadFromUri("https://cdn.jsdelivr.net/npm/face-api.js/models");
+
+await faceapi.nets.faceLandmark68Net.loadFromUri("https://cdn.jsdelivr.net/npm/face-api.js/models");
+
+await faceapi.nets.faceRecognitionNet.loadFromUri("https://cdn.jsdelivr.net/npm/face-api.js/models");
+
+status.innerText="AI Ready";
+
+}
+
+loadModels();
+
+window.registerFace = async function(){
+
+status.innerText="Scanning face...";
+
+const detection = await faceapi
+.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
+.withFaceLandmarks()
+.withFaceDescriptor();
+
+if(!detection){
+
+status.innerText="No face detected";
+
+return;
+
+}
+
+const name = document.getElementById("name").value;
+const studentClass = document.getElementById("class").value;
+
+if(name=="" || studentClass==""){
+
+status.innerText="Enter student info";
+
+return;
+
+}
+
+const descriptor = Array.from(detection.descriptor);
+
+await addDoc(collection(db,"students"),{
+
+name:name,
+class:studentClass,
+faceDescriptor:descriptor,
+approved:false
+
+});
+
+status.innerText="Student registered. Waiting admin approval.";
+
+}
+
 </script>
+
 </body>
 </html>
