@@ -6,10 +6,20 @@
     <title>Student Attendance System</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        body { font-family: Arial; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
-        video { border: 3px solid #00f7ff; border-radius: 10px; width: 400px; background: #000; }
-        #status { margin-top: 15px; font-size: 1.2rem; color: #00f7ff; font-weight: bold; }
-        .log-container { margin-top: 20px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; display: inline-block; min-width: 300px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
+        video { border: 3px solid #00f7ff; border-radius: 10px; width: 400px; background: #000; box-shadow: 0 0 20px rgba(0, 247, 255, 0.3); }
+        
+        /* Information Display Card */
+        #profileCard { 
+            max-width: 400px; margin: 20px auto; padding: 20px; 
+            background: rgba(0, 247, 255, 0.1); border: 2px solid #00f7ff; 
+            border-radius: 12px; display: none; /* Hidden until face detected */
+        }
+        .info-label { color: #00f7ff; font-size: 0.8rem; text-transform: uppercase; margin-top: 10px; }
+        .info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
+
+        #status { margin-top: 15px; font-size: 1.1rem; color: #00f7ff; }
+        .log-container { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block; min-width: 350px; }
     </style>
 </head>
 <body>
@@ -18,9 +28,19 @@
     <video id="video" autoplay muted playsinline></video>
     <p id="status">Initializing AI...</p>
 
+    <div id="profileCard">
+        <div class="info-label">Student Name</div>
+        <div id="resName" class="info-value">-</div>
+        
+        <div class="info-label">Location Details</div>
+        <div id="resLocation" class="info-value">-</div>
+        
+        <div id="resStatus" style="color: #00ff88; margin-top: 10px; font-weight: bold;">✅ Attendance Marked</div>
+    </div>
+
     <div class="log-container">
-        <h3>Recent Attendance:</h3>
-        <ul id="attendanceList" style="list-style: none; padding: 0;"></ul>
+        <h3>Recent Logs:</h3>
+        <ul id="attendanceList" style="list-style: none; padding: 0; text-align: left;"></ul>
     </div>
 
     <script type="module">
@@ -38,53 +58,49 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
         const video = document.getElementById("video");
         const status = document.getElementById("status");
         const list = document.getElementById("attendanceList");
+        const profileCard = document.getElementById("profileCard");
 
         let faceMatcher = null;
+        let allStudentsData = []; // Store full student info here
 
-        // 1. Load AI and Data
         async function init() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-            
             try {
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
-
-                status.innerText = "Loading Registered Students...";
                 await loadStudents();
                 startCamera();
-            } catch (err) {
-                status.innerText = "Init Error: " + err.message;
-            }
+            } catch (err) { status.innerText = "Error: " + err.message; }
         }
 
-        // 2. Fetch approved students and prepare the "Matcher"
         async function loadStudents() {
+            status.innerText = "Downloading student database...";
             const q = query(collection(db, "students"), where("approved", "==", true));
             const querySnapshot = await getDocs(q);
             const labeledDescriptors = [];
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                // Firestore stores arrays, we need Float32Array for face-api
+                allStudentsData.push(data); // Save the whole object (Name, Country, etc)
+                
                 const desc = new Float32Array(data.faceDescriptor);
                 labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
             });
 
-            if (labeledDescriptors.length === 0) {
-                status.innerText = "No approved students found in database!";
-                return;
+            if (labeledDescriptors.length > 0) {
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+                status.innerText = "System Ready. Please face the camera.";
+                startRecognitionLoop();
+            } else {
+                status.innerText = "No approved students found.";
             }
-
-            // 0.6 distance threshold (Lower is stricter)
-            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
-            status.innerText = "Ready to Scan";
-            startRecognitionLoop();
         }
 
         async function startCamera() {
@@ -92,7 +108,6 @@
             video.srcObject = stream;
         }
 
-        // 3. The Recognition Loop (Runs every 2 seconds)
         async function startRecognitionLoop() {
             setInterval(async () => {
                 if (!faceMatcher) return;
@@ -105,29 +120,40 @@
                     const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
                     
                     if (bestMatch.label !== 'unknown') {
-                        status.innerText = `Recognized: ${bestMatch.label}`;
-                        markAttendance(bestMatch.label);
+                        // Find the full details from our local array
+                        const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
+                        displayStudentInfo(studentInfo);
                     } else {
-                        status.innerText = "Unknown face detected.";
+                        status.innerText = "Face not recognized.";
+                        profileCard.style.display = "none";
                     }
                 }
-            }, 2000); 
+            }, 3000); // 3 seconds between scans to give time to read the card
         }
 
-        // 4. Save to "attendance" collection
-        async function markAttendance(studentName) {
+        function displayStudentInfo(info) {
+            // Update the UI Card
+            document.getElementById("resName").innerText = info.name;
+            document.getElementById("resLocation").innerText = `${info.country} / ${info.district} / ${info.village}`;
+            profileCard.style.display = "block";
+            status.innerText = "Recognition Successful!";
+
+            markAttendance(info);
+        }
+
+        async function markAttendance(info) {
             try {
                 await addDoc(collection(db, "attendance"), {
-                    studentName: studentName,
+                    studentName: info.name,
+                    district: info.district,
                     time: serverTimestamp()
                 });
                 
                 const li = document.createElement("li");
-                li.innerText = `✅ ${studentName} - ${new Date().toLocaleTimeString()}`;
+                li.innerHTML = `✅ <strong>${info.name}</strong> (${info.district}) - ${new Date().toLocaleTimeString()}`;
+                if (list.children.length > 5) list.lastChild.remove(); // Keep last 5 logs
                 list.prepend(li);
-            } catch (e) {
-                console.error("Error logging attendance:", e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         init();
