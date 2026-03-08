@@ -3,45 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Attendance System</title>
+    <title>Student Attendance System - Live Scan</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
-        video { border: 3px solid #00f7ff; border-radius: 10px; width: 400px; background: #000; box-shadow: 0 0 20px rgba(0, 247, 255, 0.3); }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; margin: 0; }
         
-        /* Loading Bar Styles */
-        .progress-container { width: 400px; height: 10px; background: #1a264d; margin: 10px auto; border-radius: 5px; overflow: hidden; display: none; }
+        h2 { color: #00f7ff; margin-bottom: 10px; }
+        
+        video { 
+            border: 3px solid #00f7ff; 
+            border-radius: 10px; 
+            width: 100%; 
+            max-width: 500px; 
+            background: #000; 
+            box-shadow: 0 0 20px rgba(0, 247, 255, 0.3); 
+        }
+        
+        /* Loading/Cooldown Bar */
+        .progress-container { 
+            width: 100%; 
+            max-width: 500px; 
+            height: 10px; 
+            background: #1a264d; 
+            margin: 15px auto; 
+            border-radius: 5px; 
+            overflow: hidden; 
+            display: none; 
+        }
         #progressBar { width: 0%; height: 100%; background: #00f7ff; transition: width 0.1s linear; }
 
+        /* Profile Result Card */
         #profileCard { 
-            max-width: 400px; margin: 20px auto; padding: 20px; 
-            background: rgba(0, 247, 255, 0.1); border: 2px solid #00f7ff; 
-            border-radius: 12px; display: none;
+            max-width: 400px; 
+            margin: 20px auto; 
+            padding: 20px; 
+            background: rgba(0, 247, 255, 0.1); 
+            border: 2px solid #00f7ff; 
+            border-radius: 12px; 
+            display: none;
+            animation: fadeIn 0.5s;
         }
-        .info-label { color: #00f7ff; font-size: 0.8rem; text-transform: uppercase; margin-top: 10px; }
-        .info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        #status { margin-top: 15px; font-size: 1.1rem; color: #00f7ff; min-height: 1.5em; }
-        .log-container { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block; min-width: 350px; }
+        .info-label { color: #00f7ff; font-size: 0.75rem; text-transform: uppercase; margin-top: 10px; letter-spacing: 1px; }
+        .info-value { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; }
+
+        #status { margin-top: 15px; font-size: 1.1rem; color: #00f7ff; min-height: 1.5em; font-weight: 500; }
+        
+        .log-container { 
+            margin-top: 20px; 
+            background: rgba(255,255,255,0.05); 
+            padding: 15px; 
+            border-radius: 10px; 
+            display: inline-block; 
+            min-width: 350px; 
+            border: 1px solid #333;
+        }
+        #attendanceList li { 
+            padding: 8px; 
+            border-bottom: 1px solid #333; 
+            font-size: 0.9rem; 
+        }
     </style>
 </head>
 <body>
 
     <h2>⏱️ Student Attendance Scan</h2>
+    
     <video id="video" autoplay muted playsinline></video>
     
     <div class="progress-container" id="progressWrap">
         <div id="progressBar"></div>
     </div>
 
-    <p id="status">Initializing AI...</p>
+    <p id="status">Initializing AI Models...</p>
 
     <div id="profileCard">
         <div class="info-label">Student Name</div>
         <div id="resName" class="info-value">-</div>
+        
         <div class="info-label">Location Details</div>
         <div id="resLocation" class="info-value">-</div>
-        <div id="resStatus" style="color: #00ff88; margin-top: 10px; font-weight: bold;">✅ Attendance Marked</div>
+        
+        <div id="resStatus" style="color: #00ff88; margin-top: 15px; font-weight: bold; font-size: 1.1rem;">✅ Attendance Marked</div>
     </div>
 
     <div class="log-container">
@@ -76,7 +120,7 @@
         let allStudentsData = [];
         let isProcessing = false;
 
-        // --- AUDIO HELPERS ---
+        // --- AUDIO ENGINE ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playSuccessSound() {
@@ -94,17 +138,19 @@
         function playErrorSound() {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sawtooth'; // Rougher sound for error
+            osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
         }
 
+        // --- INITIALIZATION ---
         async function init() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
             try {
+                status.innerText = "Loading AI Intelligence...";
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -116,7 +162,7 @@
         }
 
         async function loadStudents() {
-            status.innerText = "Downloading student database...";
+            status.innerText = "Fetching approved student list...";
             const q = query(collection(db, "students"), where("approved", "==", true));
             const querySnapshot = await getDocs(q);
             const labeledDescriptors = [];
@@ -130,10 +176,10 @@
 
             if (labeledDescriptors.length > 0) {
                 faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
-                status.innerText = "System Ready. Please face the camera.";
+                status.innerText = "Scanner Ready. Please look at the camera.";
                 startRecognitionLoop();
             } else {
-                status.innerText = "No approved students found.";
+                status.innerText = "Database is empty or no students approved.";
             }
         }
 
@@ -142,6 +188,7 @@
             video.srcObject = stream;
         }
 
+        // --- CORE RECOGNITION LOOP ---
         async function startRecognitionLoop() {
             setInterval(async () => {
                 if (!faceMatcher || isProcessing) return;
@@ -157,16 +204,20 @@
                         const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
                         handleMatch(studentInfo);
                     } else {
-                        // Unknown face detected
-                        status.innerText = "❌ Unknown Face";
-                        playErrorSound();
+                        // UNRECOGNIZED FACE - REDIRECT
                         isProcessing = true;
-                        setTimeout(() => { isProcessing = false; status.innerText = "Ready..."; }, 2000); 
+                        status.innerText = "❌ Face Not Recognized. Redirecting to Register...";
+                        playErrorSound();
+                        
+                        setTimeout(() => {
+                            window.location.href = "face.html";
+                        }, 2500); 
                     }
                 }
             }, 1000); 
         }
 
+        // --- HANDLING SUCCESSFUL MATCH ---
         async function handleMatch(info) {
             isProcessing = true; 
             playSuccessSound();
@@ -178,6 +229,7 @@
 
             await markAttendance(info);
 
+            // Cooldown animation (4 seconds)
             progressWrap.style.display = "block";
             let timeLeft = 0;
             const duration = 4000; 
@@ -215,7 +267,7 @@
                 li.innerHTML = `✅ <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;
                 if (list.children.length > 5) list.lastChild.remove();
                 list.prepend(li);
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Database Error:", e); }
         }
 
         init();
