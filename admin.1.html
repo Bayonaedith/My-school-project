@@ -3,48 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Super Dashboard</title>
+    <title>Admin Super Dashboard v2.0</title>
     <style>
-        :root { --neon: #00f7ff; --bg: #0a0f2c; --card: rgba(255, 255, 255, 0.05); }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding: 20px; margin: 0; }
+        :root { --neon: #00f7ff; --bg: #0a0f2c; --card: rgba(255, 255, 255, 0.05); --danger: #ff4b2b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding: 20px; margin: 0; scroll-behavior: smooth; }
         
-        /* Navigation */
-        nav { background: rgba(0,0,0,0.5); padding: 15px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid var(--neon); margin-bottom: 30px; }
-        nav a { color: white; text-decoration: none; font-weight: bold; padding: 8px 16px; border-radius: 5px; transition: 0.3s; }
+        /* Navigation & Search */
+        .sticky-header { position: sticky; top: 0; z-index: 100; background: #060b1f; padding: 15px; border-bottom: 1px solid var(--neon); box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .nav-wrapper { max-width: 1000px; margin: auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .nav-links { display: flex; gap: 15px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; padding: 8px 12px; border-radius: 5px; transition: 0.3s; font-size: 0.9rem; }
         nav a:hover { background: var(--neon); color: var(--bg); }
 
-        h1, h2 { color: var(--neon); text-align: center; }
-        .section-container { max-width: 1000px; margin: 20px auto; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; }
-        
+        #globalSearch { padding: 10px; width: 250px; border-radius: 5px; border: 1px solid var(--neon); background: #1a264d; color: white; outline: none; }
+
+        .section-container { max-width: 1000px; margin: 30px auto; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        h2 { color: var(--neon); margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
+        .count-badge { font-size: 1rem; background: var(--neon); color: var(--bg); padding: 2px 10px; border-radius: 20px; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; font-size: 14px; }
-        th { background: #1a264d; color: var(--neon); }
+        th { background: #1a264d; color: var(--neon); position: sticky; top: 70px; }
         
-        /* Buttons & Badges */
-        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; transition: 0.3s; }
+        .btn { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 12px; }
         .btn-approve { background: var(--neon); color: #0a0f2c; }
-        .btn-delete { background: #ff4b2b; color: white; }
+        .btn-delete { background: var(--danger); color: white; }
         .btn:hover { opacity: 0.8; transform: scale(1.05); }
 
-        .badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
-        .badge-pending { background: #ffcc00; color: black; }
-        .badge-approved { background: #00ff88; color: black; }
-        
-        .empty-msg { text-align: center; color: #888; padding: 20px; }
+        .hidden-row { display: none; }
         tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
     </style>
 </head>
 <body>
 
-    <nav>
-        <a href="#management">User Management</a>
-        <a href="#reports">Attendance Logs</a>
-    </nav>
-
-    <h1>🔐 Admin Control Center</h1>
+    <div class="sticky-header">
+        <div class="nav-wrapper">
+            <nav class="nav-links">
+                <a href="#management">Management</a>
+                <a href="#reports">Attendance Logs</a>
+            </nav>
+            <input type="text" id="globalSearch" placeholder="🔍 Search student, district, village..." onkeyup="doGlobalSearch()">
+        </div>
+    </div>
 
     <div id="management" class="section-container">
-        <h2>👥 Student Management</h2>
+        <h2>👥 Student Management <span class="count-badge" id="totalStudents">0</span></h2>
         
         <h3>⏳ Pending Approval</h3>
         <table>
@@ -57,7 +60,6 @@
             </thead>
             <tbody id="pendingTable"></tbody>
         </table>
-        <div id="noPending" class="empty-msg" style="display:none;">No pending requests.</div>
 
         <h3 style="margin-top: 40px;">✅ Approved Students</h3>
         <table>
@@ -70,17 +72,17 @@
             </thead>
             <tbody id="approvedTable"></tbody>
         </table>
-        <div id="noApproved" class="empty-msg" style="display:none;">No approved students.</div>
     </div>
 
     <div id="reports" class="section-container" style="border-color: #00ff88;">
-        <h2>📅 Live Attendance Report</h2>
+        <h2>📅 Attendance Logs <span class="count-badge" id="totalLogs" style="background:#00ff88">0</span></h2>
         <table>
             <thead>
                 <tr>
                     <th>Student Name</th>
                     <th>District</th>
                     <th>Date & Time</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody id="attendanceTableBody"></tbody>
@@ -103,58 +105,79 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- PART 1: STUDENT MANAGEMENT LOGIC ---
-        const pendingTable = document.getElementById("pendingTable");
-        const approvedTable = document.getElementById("approvedTable");
-
-        onSnapshot(query(collection(db, "students"), orderBy("createdAt", "desc")), (snapshot) => {
-            pendingTable.innerHTML = "";
-            approvedTable.innerHTML = "";
-            let pCount = 0, aCount = 0;
-
+        // --- PART 1: STUDENT MANAGEMENT ---
+        onSnapshot(query(collection(db, "students"), orderBy("name", "asc")), (snapshot) => {
+            const pendingTable = document.getElementById("pendingTable");
+            const approvedTable = document.getElementById("approvedTable");
+            pendingTable.innerHTML = ""; approvedTable.innerHTML = "";
+            
             snapshot.forEach((studentDoc) => {
                 const s = studentDoc.data();
                 const id = studentDoc.id;
-                const location = `${s.country || '-'} / ${s.district || '-'} / ${s.village || '-'}`;
+                const searchStr = `${s.name} ${s.country} ${s.district} ${s.village}`.toLowerCase();
                 const row = document.createElement("tr");
+                row.className = "searchable-row";
+                row.setAttribute("data-search", searchStr);
 
                 row.innerHTML = `
                     <td><strong>${s.name}</strong></td>
-                    <td>${location}</td>
+                    <td>${s.country || '-'}/${s.district || '-'}/${s.village || '-'}</td>
                     <td>
                         ${!s.approved ? `<button class="btn btn-approve" onclick="updateStatus('${id}', true)">Approve</button>` : ''}
-                        <button class="btn btn-delete" onclick="deleteUser('${id}', '${s.name}')">Delete</button>
+                        <button class="btn btn-delete" onclick="deleteItem('students', '${id}', '${s.name}')">Delete</button>
                     </td>
                 `;
-
-                if (s.approved) { approvedTable.appendChild(row); aCount++; } 
-                else { pendingTable.appendChild(row); pCount++; }
+                s.approved ? approvedTable.appendChild(row) : pendingTable.appendChild(row);
             });
-            document.getElementById("noPending").style.display = pCount === 0 ? "block" : "none";
-            document.getElementById("noApproved").style.display = aCount === 0 ? "block" : "none";
+            document.getElementById("totalStudents").innerText = snapshot.size;
+            doGlobalSearch(); 
         });
 
-        // --- PART 2: ATTENDANCE LOGIC ---
-        const reportTable = document.getElementById("attendanceTableBody");
+        // --- PART 2: ATTENDANCE LOGS WITH DELETE ---
         onSnapshot(query(collection(db, "attendance"), orderBy("time", "desc")), (snapshot) => {
+            const reportTable = document.getElementById("attendanceTableBody");
             reportTable.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
+            
+            snapshot.forEach((aDoc) => {
+                const data = aDoc.data();
+                const id = aDoc.id;
                 const date = data.time ? data.time.toDate().toLocaleString() : "Syncing...";
+                const searchStr = `${data.studentName} ${data.district}`.toLowerCase();
                 const row = document.createElement("tr");
-                row.innerHTML = `<td>${data.studentName}</td><td>${data.district || 'N/A'}</td><td>${date}</td>`;
+                row.className = "searchable-row";
+                row.setAttribute("data-search", searchStr);
+
+                row.innerHTML = `
+                    <td>${data.studentName}</td>
+                    <td>${data.district || 'N/A'}</td>
+                    <td>${date}</td>
+                    <td><button class="btn btn-delete" onclick="deleteItem('attendance', '${id}', 'this log')">Delete</button></td>
+                `;
                 reportTable.appendChild(row);
             });
+            document.getElementById("totalLogs").innerText = snapshot.size;
+            doGlobalSearch();
         });
+
+        // --- SEARCH LOGIC ---
+        window.doGlobalSearch = () => {
+            const term = document.getElementById("globalSearch").value.toLowerCase();
+            document.querySelectorAll(".searchable-row").forEach(row => {
+                const text = row.getAttribute("data-search");
+                row.classList.toggle("hidden-row", !text.includes(term));
+            });
+        };
 
         // --- GLOBAL ACTIONS ---
         window.updateStatus = async (id, status) => {
             await updateDoc(doc(db, "students", id), { approved: status });
         };
 
-        window.deleteUser = async (id, name) => {
-            if (confirm(`Delete ${name} permanently?`)) {
-                await deleteDoc(doc(db, "students", id));
+        window.deleteItem = async (coll, id, label) => {
+            if (confirm(`Confirm: Delete ${label}?`)) {
+                try {
+                    await deleteDoc(doc(db, coll, id));
+                } catch (e) { alert("Error: " + e.message); }
             }
         };
     </script>
