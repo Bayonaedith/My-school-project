@@ -4,154 +4,99 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Lyric Video Studio</title>
+<title>AI Lyric Generator</title>
 
 <style>
 
 body{
-margin:0;
 background:black;
-font-family:Arial;
 color:white;
+font-family:Arial;
 text-align:center;
-}
-
-header{
-padding:20px;
-font-size:28px;
-background:#111;
-}
-
-#videoArea{
-position:relative;
-width:100%;
-height:60vh;
-overflow:hidden;
-background:black;
-}
-
-video{
-position:absolute;
-width:100%;
-height:100%;
-object-fit:cover;
-opacity:0.5;
+padding:40px;
 }
 
 #lyrics{
-position:absolute;
-bottom:80px;
-width:100%;
-font-size:35px;
+font-size:32px;
+margin-top:50px;
 color:#00ffcc;
-animation:fade 0.5s;
-}
-
-@keyframes fade{
-from{opacity:0;}
-to{opacity:1;}
-}
-
-.controls{
-padding:20px;
-}
-
-textarea{
-width:90%;
-height:120px;
-margin-top:10px;
 }
 
 button{
-padding:10px 20px;
-margin:10px;
-border:none;
+padding:12px 25px;
+margin-top:20px;
+font-size:18px;
 background:#00ffcc;
+border:none;
 cursor:pointer;
 }
 
+audio{
+margin-top:20px;
+}
+
 </style>
+
 </head>
 
 <body>
 
-<header>
-🎵 Lyric Video Generator Studio
-</header>
+<h1>🎵 AI Lyric Generator</h1>
 
-<div id="videoArea">
-
-<video id="bgVideo" loop autoplay muted></video>
-
-<div id="lyrics">Upload audio and paste lyrics</div>
-
-</div>
-
-<div class="controls">
-
-<input type="file" id="audioUpload" accept="audio/*"><br>
-
-<audio id="audio" controls></audio>
-
-<br><br>
-
-<textarea id="lyricsInput" placeholder="Paste lyrics line by line"></textarea>
+<input type="file" id="audioUpload" accept="audio/*">
 
 <br>
 
-<button onclick="startSync()">Start Auto Sync</button>
+<audio id="audio" controls></audio>
 
-</div>
+<br>
+
+<button onclick="startRecognition()">Generate Lyrics</button>
+
+<div id="lyrics">Lyrics will appear here...</div>
 
 <script>
 
 const audioUpload = document.getElementById("audioUpload");
 const audio = document.getElementById("audio");
-const lyricsDiv = document.getElementById("lyrics");
-
-let lyricLines = [];
-let index = 0;
+const lyrics = document.getElementById("lyrics");
 
 audioUpload.onchange = function(){
 const file = this.files[0];
 audio.src = URL.createObjectURL(file);
 }
 
-function startSync(){
+function startRecognition(){
 
-const text = document.getElementById("lyricsInput").value;
+const SpeechRecognition =
+window.SpeechRecognition || window.webkitSpeechRecognition;
 
-lyricLines = text.split("\n");
+const recognition = new SpeechRecognition();
 
-index = 0;
+recognition.continuous = true;
+recognition.interimResults = true;
+
+recognition.onresult = function(event){
+
+let transcript = "";
+
+for(let i = event.resultIndex; i < event.results.length; i++){
+
+transcript += event.results[i][0].transcript;
+
+}
+
+lyrics.innerText = transcript;
+
+};
+
+recognition.start();
 
 audio.play();
 
 }
 
-audio.addEventListener("timeupdate", ()=>{
-
-if(!lyricLines.length) return;
-
-let current = Math.floor(audio.currentTime);
-
-if(current % 3 === 0){
-
-lyricsDiv.innerText = lyricLines[index];
-
-index++;
-
-if(index >= lyricLines.length){
-
-index = lyricLines.length-1;
-
-}
-
-}
-
-});
-
 </script>
 
 </body>
-  </html>
+</html>
