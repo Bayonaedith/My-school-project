@@ -9,16 +9,19 @@
         body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
         video { border: 3px solid #00f7ff; border-radius: 10px; width: 400px; background: #000; box-shadow: 0 0 20px rgba(0, 247, 255, 0.3); }
         
-        /* Information Display Card */
+        /* Loading Bar Styles */
+        .progress-container { width: 400px; height: 10px; background: #1a264d; margin: 10px auto; border-radius: 5px; overflow: hidden; display: none; }
+        #progressBar { width: 0%; height: 100%; background: #00f7ff; transition: width 0.1s linear; }
+
         #profileCard { 
             max-width: 400px; margin: 20px auto; padding: 20px; 
             background: rgba(0, 247, 255, 0.1); border: 2px solid #00f7ff; 
-            border-radius: 12px; display: none; /* Hidden until face detected */
+            border-radius: 12px; display: none;
         }
         .info-label { color: #00f7ff; font-size: 0.8rem; text-transform: uppercase; margin-top: 10px; }
         .info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
 
-        #status { margin-top: 15px; font-size: 1.1rem; color: #00f7ff; }
+        #status { margin-top: 15px; font-size: 1.1rem; color: #00f7ff; min-height: 1.5em; }
         .log-container { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block; min-width: 350px; }
     </style>
 </head>
@@ -26,15 +29,18 @@
 
     <h2>⏱️ Student Attendance Scan</h2>
     <video id="video" autoplay muted playsinline></video>
+    
+    <div class="progress-container" id="progressWrap">
+        <div id="progressBar"></div>
+    </div>
+
     <p id="status">Initializing AI...</p>
 
     <div id="profileCard">
         <div class="info-label">Student Name</div>
         <div id="resName" class="info-value">-</div>
-        
         <div class="info-label">Location Details</div>
         <div id="resLocation" class="info-value">-</div>
-        
         <div id="resStatus" style="color: #00ff88; margin-top: 10px; font-weight: bold;">✅ Attendance Marked</div>
     </div>
 
@@ -63,9 +69,38 @@
         const status = document.getElementById("status");
         const list = document.getElementById("attendanceList");
         const profileCard = document.getElementById("profileCard");
+        const progressBar = document.getElementById("progressBar");
+        const progressWrap = document.getElementById("progressWrap");
 
         let faceMatcher = null;
-        let allStudentsData = []; // Store full student info here
+        let allStudentsData = [];
+        let isProcessing = false;
+
+        // --- AUDIO HELPERS ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSuccessSound() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1); 
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function playErrorSound() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; // Rougher sound for error
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
 
         async function init() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
@@ -88,8 +123,7 @@
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                allStudentsData.push(data); // Save the whole object (Name, Country, etc)
-                
+                allStudentsData.push(data);
                 const desc = new Float32Array(data.faceDescriptor);
                 labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
             });
@@ -110,7 +144,7 @@
 
         async function startRecognitionLoop() {
             setInterval(async () => {
-                if (!faceMatcher) return;
+                if (!faceMatcher || isProcessing) return;
 
                 const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                     .withFaceLandmarks()
@@ -120,25 +154,53 @@
                     const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
                     
                     if (bestMatch.label !== 'unknown') {
-                        // Find the full details from our local array
                         const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
-                        displayStudentInfo(studentInfo);
+                        handleMatch(studentInfo);
                     } else {
-                        status.innerText = "Face not recognized.";
-                        profileCard.style.display = "none";
+                        // Unknown face detected
+                        status.innerText = "❌ Unknown Face";
+                        playErrorSound();
+                        isProcessing = true;
+                        setTimeout(() => { isProcessing = false; status.innerText = "Ready..."; }, 2000); 
                     }
                 }
-            }, 3000); // 3 seconds between scans to give time to read the card
+            }, 1000); 
         }
 
-        function displayStudentInfo(info) {
-            // Update the UI Card
+        async function handleMatch(info) {
+            isProcessing = true; 
+            playSuccessSound();
+
             document.getElementById("resName").innerText = info.name;
             document.getElementById("resLocation").innerText = `${info.country} / ${info.district} / ${info.village}`;
             profileCard.style.display = "block";
-            status.innerText = "Recognition Successful!";
+            status.innerText = "✅ Attendance Logged!";
 
-            markAttendance(info);
+            await markAttendance(info);
+
+            progressWrap.style.display = "block";
+            let timeLeft = 0;
+            const duration = 4000; 
+            const interval = 100; 
+            
+            const timer = setInterval(() => {
+                timeLeft += interval;
+                const percent = (timeLeft / duration) * 100;
+                progressBar.style.width = percent + "%";
+
+                if (timeLeft >= duration) {
+                    clearInterval(timer);
+                    resetScanner();
+                }
+            }, interval);
+        }
+
+        function resetScanner() {
+            isProcessing = false; 
+            progressWrap.style.display = "none";
+            progressBar.style.width = "0%";
+            profileCard.style.display = "none";
+            status.innerText = "Ready for next student...";
         }
 
         async function markAttendance(info) {
@@ -150,8 +212,8 @@
                 });
                 
                 const li = document.createElement("li");
-                li.innerHTML = `✅ <strong>${info.name}</strong> (${info.district}) - ${new Date().toLocaleTimeString()}`;
-                if (list.children.length > 5) list.lastChild.remove(); // Keep last 5 logs
+                li.innerHTML = `✅ <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;
+                if (list.children.length > 5) list.lastChild.remove();
                 list.prepend(li);
             } catch (e) { console.error(e); }
         }
