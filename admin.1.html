@@ -3,41 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Approve Students</title>
+    <title>Admin Panel - Student Management</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #0a0f2c; color: white; padding: 20px; }
-        .student-card { 
-            background: rgba(255, 255, 255, 0.1); 
-            padding: 15px; 
-            margin: 10px 0; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-left: 5px solid #00f7ff;
-        }
-        button { 
-            padding: 10px 20px; 
-            background: #00f7ff; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-weight: bold; 
-        }
-        button.delete { background: #ff4b2b; color: white; margin-left: 10px; }
-        h1 { color: #00f7ff; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: white; padding: 20px; }
+        h1, h2 { color: #00f7ff; text-align: center; }
+        .section-container { max-width: 900px; margin: 20px auto; background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; font-size: 14px; }
+        th { background: #1a264d; color: #00f7ff; }
+        
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; transition: 0.3s; }
+        .btn-approve { background: #00f7ff; color: #0a0f2c; }
+        .btn-delete { background: #ff4b2b; color: white; }
+        .btn:hover { opacity: 0.8; transform: scale(1.05); }
+
+        .empty-msg { text-align: center; color: #888; padding: 20px; }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .badge-pending { background: #ffcc00; color: black; }
+        .badge-approved { background: #00ff88; color: black; }
     </style>
 </head>
 <body>
 
-    <h1>🔑 Admin Approval Dashboard</h1>
-    <p id="status">Fetching pending registrations...</p>
-    
-    <div id="pendingList"></div>
+    <h1>🔐 Admin Dashboard</h1>
+
+    <div class="section-container">
+        <h2>⏳ Pending Approval</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Location (C/D/V)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="pendingTable"></tbody>
+        </table>
+        <div id="noPending" class="empty-msg" style="display:none;">No pending requests.</div>
+    </div>
+
+    <div class="section-container">
+        <h2>✅ Approved Students</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Location (C/D/V)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="approvedTable"></tbody>
+        </table>
+        <div id="noApproved" class="empty-msg" style="display:none;">No approved students yet.</div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -50,58 +75,62 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const pendingList = document.getElementById("pendingList");
 
-        // Real-time listener for students waiting approval
-        const q = query(collection(db, "students"), where("approved", "==", false));
-        
+        const pendingTable = document.getElementById("pendingTable");
+        const approvedTable = document.getElementById("approvedTable");
+
+        // Listen for all students
+        const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
+
         onSnapshot(q, (snapshot) => {
-            pendingList.innerHTML = "";
-            if (snapshot.empty) {
-                document.getElementById("status").innerText = "No pending registrations.";
-                return;
-            }
-            document.getElementById("status").innerText = `Found ${snapshot.size} pending student(s):`;
+            pendingTable.innerHTML = "";
+            approvedTable.innerHTML = "";
+            
+            let pendingCount = 0;
+            let approvedCount = 0;
 
             snapshot.forEach((studentDoc) => {
-                const student = studentDoc.data();
+                const s = studentDoc.data();
                 const id = studentDoc.id;
-
-                const card = document.createElement("div");
-                card.className = "student-card";
-                card.innerHTML = `
-                    <div>
-                        <strong>${student.name}</strong><br>
-                        <small>Class: ${student.class}</small>
-                    </div>
-                    <div>
-                        <button onclick="approveStudent('${id}')">Approve</button>
-                        <button class="delete" onclick="rejectStudent('${id}')">Reject</button>
-                    </div>
+                const location = `${s.country || '-'} / ${s.district || '-'} / ${s.village || '-'}`;
+                
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td><strong>${s.name}</strong></td>
+                    <td>${location}</td>
+                    <td><span class="badge ${s.approved ? 'badge-approved' : 'badge-pending'}">${s.approved ? 'Approved' : 'Pending'}</span></td>
+                    <td>
+                        ${!s.approved ? `<button class="btn btn-approve" onclick="updateStatus('${id}', true)">Approve</button>` : ''}
+                        <button class="btn btn-delete" onclick="deleteUser('${id}', '${s.name}')">Delete</button>
+                    </td>
                 `;
-                pendingList.appendChild(card);
+
+                if (s.approved) {
+                    approvedTable.appendChild(row);
+                    approvedCount++;
+                } else {
+                    pendingTable.appendChild(row);
+                    pendingCount++;
+                }
             });
+
+            document.getElementById("noPending").style.display = pendingCount === 0 ? "block" : "none";
+            document.getElementById("noApproved").style.display = approvedCount === 0 ? "block" : "none";
         });
 
-        // Function to approve student
-        window.approveStudent = async (id) => {
-            const studentRef = doc(db, "students", id);
+        // ACTION: Approve Student
+        window.updateStatus = async (id, status) => {
             try {
-                await updateDoc(studentRef, { approved: true });
-                alert("Student Approved!");
-            } catch (e) {
-                console.error("Error approving:", e);
-            }
+                await updateDoc(doc(db, "students", id), { approved: status });
+            } catch (err) { alert("Error: " + err.message); }
         };
 
-        // Function to delete/reject student
-        window.rejectStudent = async (id) => {
-            if(confirm("Are you sure you want to reject this student?")) {
+        // ACTION: Delete Student
+        window.deleteUser = async (id, name) => {
+            if (confirm(`Are you sure you want to PERMANENTLY delete ${name}?`)) {
                 try {
                     await deleteDoc(doc(db, "students", id));
-                } catch (e) {
-                    console.error("Error deleting:", e);
-                }
+                } catch (err) { alert("Error: " + err.message); }
             }
         };
     </script>
