@@ -2,41 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Instant AI Lyric Video</title>
+    <title>Instant Sync Lyric Video</title>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; }
-        .wrapper { max-width: 800px; margin: 40px auto; }
+        body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .wrapper { max-width: 900px; margin: auto; }
         
         canvas {
             width: 100%;
+            aspect-ratio: 16/9;
             background: #000;
-            border: 3px solid #00ffcc;
-            border-radius: 10px;
+            border: 2px solid #00ffcc;
+            border-radius: 12px;
+            margin-top: 20px;
         }
 
-        .controls { margin: 20px 0; padding: 30px; background: #1a1a1a; border-radius: 10px; border: 1px solid #333; }
-        
-        /* Styled Upload Button */
-        input[type="file"] {
-            background: #222;
-            padding: 10px;
-            border-radius: 5px;
-            color: #00ffcc;
-            cursor: pointer;
+        .upload-zone {
+            padding: 40px;
+            background: #111;
+            border: 2px dashed #333;
+            border-radius: 15px;
+            margin-bottom: 20px;
         }
 
-        #status { color: #00ffcc; margin-top: 15px; font-weight: bold; font-size: 1.2em; }
+        #status { color: #00ffcc; font-weight: bold; margin-top: 15px; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div class="wrapper">
-        <h1>🎙️ Auto-Lyric Video Generator</h1>
-        
-        <div class="controls">
-            <p>Select a song to start automatically:</p>
+        <div class="upload-zone" id="dropZone">
+            <h1>🎬 Instant Lyric Video</h1>
+            <p>Upload your MP3/WAV file below</p>
             <input type="file" id="audioUpload" accept="audio/*">
-            <div id="status">Ready for upload...</div>
+            <div id="status">IDLE - Waiting for File</div>
         </div>
 
         <canvas id="videoCanvas" width="1280" height="720"></canvas>
@@ -50,71 +48,75 @@
         const status = document.getElementById("status");
         const fileInput = document.getElementById("audioUpload");
         
-        let liveLyrics = "Upload a song to begin...";
+        let liveLyrics = "LYRICS WILL APPEAR HERE";
 
-        // 1. THE RENDERING LOOP (Always running)
+        // 1. Smooth Animation Loop
         function render() {
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Lyrics
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "#00ffcc";
+            // Text Styles
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "rgba(0, 255, 204, 0.5)";
             ctx.fillStyle = "#00ffcc";
-            ctx.font = "italic bold 60px Arial";
+            ctx.font = "bold 55px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText(liveLyrics, canvas.width / 2, canvas.height / 2);
+            ctx.textBaseline = "middle";
+            
+            // Draw Lyrics
+            ctx.fillText(liveLyrics.toUpperCase(), canvas.width / 2, canvas.height / 2);
 
-            // Draw Progress Bar
+            // Progress Bar
             if (audio.duration) {
-                const progress = audio.currentTime / audio.duration;
+                const pct = audio.currentTime / audio.duration;
                 ctx.shadowBlur = 0;
-                ctx.fillStyle = "#333";
-                ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+                ctx.fillStyle = "#1a1a1a";
+                ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
                 ctx.fillStyle = "#00ffcc";
-                ctx.fillRect(0, canvas.height - 20, canvas.width * progress, 20);
+                ctx.fillRect(0, canvas.height - 10, canvas.width * pct, 10);
             }
 
             requestAnimationFrame(render);
         }
         render();
 
-        // 2. THE AUTO-START TRIGGER
+        // 2. The Logic to Remove Delays
         fileInput.onchange = function() {
             const file = this.files[0];
             if (!file) return;
 
-            // Load the audio
+            status.innerText = "⚡ BOOTING AI ENGINE...";
             audio.src = URL.createObjectURL(file);
-            status.innerText = "🎤 AI is listening...";
-            liveLyrics = "Initializing...";
 
-            // Start Speech Recognition
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                status.innerText = "Error: Browser not supported.";
-                return;
-            }
-
             const recognition = new SpeechRecognition();
+            
             recognition.continuous = true;
             recognition.interimResults = true;
             recognition.lang = 'en-US';
 
+            // When the AI is actually ready to listen
             recognition.onstart = () => {
-                audio.play().catch(err => {
-                    status.innerText = "Click anywhere on the page to enable audio!";
+                status.innerText = "🎤 RECORDING LIVE...";
+                liveLyrics = "Listening...";
+                audio.play().catch(() => {
+                    status.innerText = "⚠️ CLICK SCREEN TO ENABLE AUDIO";
                 });
             };
 
             recognition.onresult = (event) => {
-                let currentBatch = "";
+                let currentText = "";
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    currentBatch = event.results[i][0].transcript;
+                    currentText = event.results[i][0].transcript;
                 }
-                liveLyrics = currentBatch;
+                liveLyrics = currentText;
             };
 
+            recognition.onerror = (e) => {
+                status.innerText = "ERROR: " + e.error;
+            };
+
+            // Start recognition first, then the song
             recognition.start();
         };
     </script>
