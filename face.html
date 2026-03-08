@@ -9,10 +9,11 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
         .container { max-width: 500px; margin: auto; background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 15px; border: 1px solid #00f7ff; }
         video { border: 3px solid #00f7ff; border-radius: 10px; width: 100%; max-width: 400px; background: #000; margin-bottom: 15px; }
-        input { padding: 12px; margin: 8px 0; width: 90%; border: none; border-radius: 5px; font-size: 16px; }
-        button { padding: 15px 30px; margin-top: 15px; background: #00f7ff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: #0a0f2c; transition: 0.3s; }
-        button:hover { background: #00c4cc; transform: scale(1.05); }
-        #status { margin-top: 15px; font-weight: bold; color: #00f7ff; }
+        input { padding: 12px; margin: 8px 0; width: 90%; border: none; border-radius: 5px; font-size: 16px; background: #1a264d; color: white; }
+        button { padding: 15px 30px; margin-top: 15px; background: #00f7ff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: #0a0f2c; transition: 0.3s; width: 95%; }
+        button:hover { background: #00c4cc; transform: scale(1.02); }
+        #status { margin-top: 15px; font-weight: bold; color: #00f7ff; min-height: 1.2em; }
+        .pending-box { color: #ffcc00; border: 1px solid #ffcc00; padding: 10px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -23,16 +24,18 @@
         
         <input type="text" id="name" placeholder="Full Name">
         <input type="text" id="class" placeholder="Class/Grade">
+        <input type="text" id="nationalId" placeholder="National ID (NIN)">
+        <input type="text" id="studentId" placeholder="Student ID Number">
         
-        <button id="regBtn">Register Face</button>
+        <button id="regBtn">Check & Register</button>
         <p id="status">Loading AI Models...</p>
+        <div id="pendingMsg" class="pending-box">⚠️ Your registration is still pending admin approval.</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Your Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
             authDomain: "my-school-project-6e00c.firebaseapp.com",
@@ -48,8 +51,8 @@
         const video = document.getElementById("video");
         const status = document.getElementById("status");
         const regBtn = document.getElementById("regBtn");
+        const pendingMsg = document.getElementById("pendingMsg");
 
-        // Load models from a reliable CDN repository
         async function loadModels() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
             try {
@@ -62,7 +65,6 @@
                 startCamera();
             } catch (err) {
                 status.innerText = "Error loading AI models.";
-                console.error(err);
             }
         }
 
@@ -79,40 +81,68 @@
         regBtn.addEventListener('click', async () => {
             const name = document.getElementById("name").value.trim();
             const studentClass = document.getElementById("class").value.trim();
+            const nationalId = document.getElementById("nationalId").value.trim();
+            const studentId = document.getElementById("studentId").value.trim();
 
-            if (!name || !studentClass) {
-                status.innerText = "Please fill in all details.";
-                return;
-            }
+            status.innerText = "Analyzing face...";
+            pendingMsg.style.display = "none";
 
-            status.innerText = "Scanning face... stay still.";
-
-            // TinyFaceDetector is faster for web use
+            // 1. Capture Face
             const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                 .withFaceLandmarks()
                 .withFaceDescriptor();
 
             if (!detection) {
-                status.innerText = "Face not detected. Try again.";
+                status.innerText = "❌ Face not detected.";
                 return;
             }
 
-            // Convert the descriptor (Float32Array) to a normal Array for Firestore
-            const descriptorArray = Array.from(detection.descriptor);
+            // 2. CHECK IF ALREADY REGISTERED
+            status.innerText = "Checking existing records...";
+            const querySnapshot = await getDocs(collection(db, "students"));
+            let existingStudent = null;
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const distance = faceapi.euclideanDistance(detection.descriptor, new Float32Array(data.faceDescriptor));
+                
+                // If distance is less than 0.5, it's likely the same person
+                if (distance < 0.5) {
+                    existingStudent = data;
+                }
+            });
+
+            if (existingStudent) {
+                if (existingStudent.approved) {
+                    status.innerText = "✅ Recognized! Redirecting...";
+                    setTimeout(() => window.location.href = "attendance.html", 1500);
+                } else {
+                    status.innerText = "";
+                    pendingMsg.style.display = "block";
+                }
+                return;
+            }
+
+            // 3. IF NEW: VALIDATE FIELDS AND SAVE
+            if (!name || !studentClass || !nationalId || !studentId) {
+                status.innerText = "❗ Fill all fields for new registration.";
+                return;
+            }
 
             try {
                 await addDoc(collection(db, "students"), {
-                    name: name,
+                    name,
                     class: studentClass,
-                    faceDescriptor: descriptorArray,
-                    approved: false, // Set to true manually in Firebase Console to test Attendance
+                    nationalId,
+                    studentId,
+                    faceDescriptor: Array.from(detection.descriptor),
+                    approved: false,
                     createdAt: serverTimestamp()
                 });
-                status.innerText = "Registration Successful! Pending Admin Approval.";
-                document.getElementById("name").value = "";
-                document.getElementById("class").value = "";
+                status.innerText = "🎉 Registration Successful! Wait for approval.";
+                document.querySelectorAll('input').forEach(i => i.value = "");
             } catch (error) {
-                status.innerText = "Database Error. Check console.";
+                status.innerText = "Database Error.";
                 console.error(error);
             }
         });
