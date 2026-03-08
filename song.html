@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Instant Sync Lyric Video</title>
+    <title>Instant Lyric Video - Fixed Permissions</title>
     <style>
-        body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; }
+        body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
         .wrapper { max-width: 900px; margin: auto; }
         
         canvas {
@@ -17,24 +17,38 @@
         }
 
         .upload-zone {
-            padding: 40px;
+            padding: 30px;
             background: #111;
-            border: 2px dashed #333;
+            border: 1px solid #333;
             border-radius: 15px;
-            margin-bottom: 20px;
         }
 
-        #status { color: #00ffcc; font-weight: bold; margin-top: 15px; letter-spacing: 1px; }
+        button {
+            padding: 15px 40px;
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 15px;
+        }
+
+        button:disabled { background: #333; color: #777; cursor: not-allowed; }
+        #status { color: #ffcc00; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="wrapper">
-        <div class="upload-zone" id="dropZone">
+        <div class="upload-zone">
             <h1>🎬 Instant Lyric Video</h1>
-            <p>Upload your MP3/WAV file below</p>
+            <p>1. Select Music File -> 2. Click Start</p>
             <input type="file" id="audioUpload" accept="audio/*">
-            <div id="status">IDLE - Waiting for File</div>
+            <br>
+            <button id="startBtn">Start AI & Play</button>
+            <div id="status">Waiting for file...</div>
         </div>
 
         <canvas id="videoCanvas" width="1280" height="720"></canvas>
@@ -46,62 +60,55 @@
         const ctx = canvas.getContext("2d");
         const audio = document.getElementById("audioPlayer");
         const status = document.getElementById("status");
+        const startBtn = document.getElementById("startBtn");
         const fileInput = document.getElementById("audioUpload");
         
-        let liveLyrics = "LYRICS WILL APPEAR HERE";
+        let liveLyrics = "READY TO START";
 
-        // 1. Smooth Animation Loop
+        // Render Loop
         function render() {
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Text Styles
             ctx.shadowBlur = 20;
-            ctx.shadowColor = "rgba(0, 255, 204, 0.5)";
+            ctx.shadowColor = "#00ffcc";
             ctx.fillStyle = "#00ffcc";
-            ctx.font = "bold 55px sans-serif";
+            ctx.font = "bold 60px sans-serif";
             ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            
-            // Draw Lyrics
             ctx.fillText(liveLyrics.toUpperCase(), canvas.width / 2, canvas.height / 2);
 
-            // Progress Bar
             if (audio.duration) {
                 const pct = audio.currentTime / audio.duration;
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = "#1a1a1a";
-                ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+                ctx.fillRect(0, canvas.height - 15, canvas.width, 15);
                 ctx.fillStyle = "#00ffcc";
-                ctx.fillRect(0, canvas.height - 10, canvas.width * pct, 10);
+                ctx.fillRect(0, canvas.height - 15, canvas.width * pct, 15);
             }
-
             requestAnimationFrame(render);
         }
         render();
 
-        // 2. The Logic to Remove Delays
-        fileInput.onchange = function() {
-            const file = this.files[0];
-            if (!file) return;
+        fileInput.onchange = () => { status.innerText = "File loaded. Click Start!"; };
 
-            status.innerText = "⚡ BOOTING AI ENGINE...";
+        startBtn.onclick = function() {
+            const file = fileInput.files[0];
+            if (!file) return alert("Please select a file first!");
+
             audio.src = URL.createObjectURL(file);
+            status.innerText = "Checking Microphone Permissions...";
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return alert("Browser not supported!");
+
             const recognition = new SpeechRecognition();
-            
             recognition.continuous = true;
             recognition.interimResults = true;
-            recognition.lang = 'en-US';
 
-            // When the AI is actually ready to listen
             recognition.onstart = () => {
-                status.innerText = "🎤 RECORDING LIVE...";
+                status.innerText = "🎤 AI ACTIVE - PLAYING SONG";
                 liveLyrics = "Listening...";
-                audio.play().catch(() => {
-                    status.innerText = "⚠️ CLICK SCREEN TO ENABLE AUDIO";
-                });
+                audio.play();
+                startBtn.disabled = true;
             };
 
             recognition.onresult = (event) => {
@@ -113,10 +120,11 @@
             };
 
             recognition.onerror = (e) => {
-                status.innerText = "ERROR: " + e.error;
+                status.innerText = "PERMISSION ERROR: " + e.error;
+                console.error(e);
             };
 
-            // Start recognition first, then the song
+            // Requesting microphone access
             recognition.start();
         };
     </script>
