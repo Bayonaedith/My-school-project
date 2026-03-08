@@ -1,102 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lyric Generator</title>
+    <style>
+        body {
+            background: #121212;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
 
-<title>AI Lyric Generator</title>
+        #lyrics {
+            font-size: 20px;
+            margin-top: 30px;
+            color: #00ffcc;
+            min-height: 150px;
+            padding: 20px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            white-space: pre-wrap; /* Maintains line breaks */
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
-<style>
+        .controls {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
 
-body{
-background:black;
-color:white;
-font-family:Arial;
-text-align:center;
-padding:40px;
-}
+        button {
+            padding: 12px 20px;
+            margin: 10px;
+            font-size: 16px;
+            background: #00ffcc;
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
 
-#lyrics{
-font-size:32px;
-margin-top:50px;
-color:#00ffcc;
-}
+        button:hover {
+            background: #00ccaa;
+        }
 
-button{
-padding:12px 25px;
-margin-top:20px;
-font-size:18px;
-background:#00ffcc;
-border:none;
-cursor:pointer;
-}
+        .download-btn {
+            background: #ffcc00;
+        }
 
-audio{
-margin-top:20px;
-}
-
-</style>
-
+        audio {
+            margin-top: 20px;
+            width: 100%;
+        }
+    </style>
 </head>
-
 <body>
 
-<h1>🎵 AI Lyric Generator</h1>
+    <h1>🎵 AI Lyric Generator</h1>
+    
+    <div class="controls">
+        <input type="file" id="audioUpload" accept="audio/*">
+        <br>
+        <audio id="audio" controls></audio>
+        <br>
+        <button id="startBtn" onclick="startRecognition()">Start Listening</button>
+        <button class="download-btn" onclick="saveLyrics()">Download .txt</button>
+    </div>
 
-<input type="file" id="audioUpload" accept="audio/*">
+    <div id="lyrics">Generated lyrics will appear here...</div>
 
-<br>
+    <script>
+        const audioUpload = document.getElementById("audioUpload");
+        const audio = document.getElementById("audio");
+        const lyricsDiv = document.getElementById("lyrics");
 
-<audio id="audio" controls></audio>
+        audioUpload.onchange = function() {
+            const file = this.files[0];
+            if (file) {
+                audio.src = URL.createObjectURL(file);
+            }
+        }
 
-<br>
+        function startRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Speech recognition not supported in this browser.");
+                return;
+            }
 
-<button onclick="startRecognition()">Generate Lyrics</button>
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
 
-<div id="lyrics">Lyrics will appear here...</div>
+            recognition.onstart = () => {
+                lyricsDiv.innerText = "Listening...";
+                audio.play();
+            };
 
-<script>
+            recognition.onresult = (event) => {
+                let transcript = "";
+                for (let i = 0; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript + " ";
+                }
+                lyricsDiv.innerText = transcript;
+            };
 
-const audioUpload = document.getElementById("audioUpload");
-const audio = document.getElementById("audio");
-const lyrics = document.getElementById("lyrics");
+            recognition.start();
+        }
 
-audioUpload.onchange = function(){
-const file = this.files[0];
-audio.src = URL.createObjectURL(file);
-}
+        // --- NEW DOWNLOAD FUNCTION ---
+        function saveLyrics() {
+            const content = lyricsDiv.innerText;
+            
+            if (content === "Generated lyrics will appear here..." || content === "") {
+                alert("No lyrics to save yet!");
+                return;
+            }
 
-function startRecognition(){
+            // 1. Create the Blob object with plain text type
+            const blob = new Blob([content], { type: "text/plain" });
 
-const SpeechRecognition =
-window.SpeechRecognition || window.webkitSpeechRecognition;
+            // 2. Create a temporary anchor element
+            const link = document.createElement("a");
 
-const recognition = new SpeechRecognition();
+            // 3. Create a URL for the blob and set it as the href
+            link.href = URL.createObjectURL(blob);
+            link.download = "lyrics.txt"; // The default filename
 
-recognition.continuous = true;
-recognition.interimResults = true;
-
-recognition.onresult = function(event){
-
-let transcript = "";
-
-for(let i = event.resultIndex; i < event.results.length; i++){
-
-transcript += event.results[i][0].transcript;
-
-}
-
-lyrics.innerText = transcript;
-
-};
-
-recognition.start();
-
-audio.play();
-
-}
-
-</script>
-
+            // 4. Trigger the download and remove the link
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up the URL object
+            URL.revokeObjectURL(link.href);
+        }
+    </script>
 </body>
 </html>
