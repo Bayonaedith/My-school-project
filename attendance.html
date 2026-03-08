@@ -27,7 +27,7 @@
 </head>
 <body>
 
-    <h2>⏱️ Attendance Scan</h2>
+    <h2>⏱️ Student Attendance Scan</h2>
     <video id="video" autoplay muted playsinline></video>
     
     <div class="progress-container" id="progressWrap">
@@ -157,11 +157,13 @@
                         const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
                         handleMatch(studentInfo);
                     } else {
-                        // Unknown face detected
-                        status.innerText = "❌ Unknown Face";
+                        // Unknown face detected - redirect to face.html
+                        status.innerText = "❌ Unknown Face - Redirecting...";
                         playErrorSound();
                         isProcessing = true;
-                        setTimeout(() => { isProcessing = false; status.innerText = "Ready..."; }, 2000); 
+                        setTimeout(() => { 
+                            window.location.href = 'face.html'; 
+                        }, 1500);
                     }
                 }
             }, 1000); 
