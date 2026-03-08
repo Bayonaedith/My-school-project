@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Instant AI Lyric Video with Progress</title>
+    <title>Instant AI Lyric Video</title>
     <style>
         body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; }
         .wrapper { max-width: 800px; margin: 40px auto; }
@@ -12,29 +12,31 @@
             background: #000;
             border: 3px solid #00ffcc;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
         }
 
-        .controls { margin: 20px 0; padding: 20px; background: #1a1a1a; border-radius: 10px; }
-        button { 
-            padding: 15px 30px; background: #00ffcc; border: none; 
-            font-weight: bold; cursor: pointer; border-radius: 5px;
-            transition: 0.2s;
+        .controls { margin: 20px 0; padding: 30px; background: #1a1a1a; border-radius: 10px; border: 1px solid #333; }
+        
+        /* Styled Upload Button */
+        input[type="file"] {
+            background: #222;
+            padding: 10px;
+            border-radius: 5px;
+            color: #00ffcc;
+            cursor: pointer;
         }
-        button:hover { background: #00d4aa; transform: scale(1.05); }
-        #status { color: #888; margin-top: 10px; }
+
+        #status { color: #00ffcc; margin-top: 15px; font-weight: bold; font-size: 1.2em; }
     </style>
 </head>
 <body>
 
     <div class="wrapper">
-        <h1>🎙️ Real-Time Lyric Video</h1>
+        <h1>🎙️ Auto-Lyric Video Generator</h1>
         
         <div class="controls">
+            <p>Select a song to start automatically:</p>
             <input type="file" id="audioUpload" accept="audio/*">
-            <br><br>
-            <button id="startBtn" onclick="startGeneration()">Start Generating</button>
-            <div id="status">Upload a file and hit Start</div>
+            <div id="status">Ready for upload...</div>
         </div>
 
         <canvas id="videoCanvas" width="1280" height="720"></canvas>
@@ -46,15 +48,16 @@
         const ctx = canvas.getContext("2d");
         const audio = document.getElementById("audioPlayer");
         const status = document.getElementById("status");
+        const fileInput = document.getElementById("audioUpload");
         
-        let liveLyrics = "Waiting for audio...";
+        let liveLyrics = "Upload a song to begin...";
 
+        // 1. THE RENDERING LOOP (Always running)
         function render() {
-            // 1. Clear Screen
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Draw Lyrics
+            // Draw Lyrics
             ctx.shadowBlur = 15;
             ctx.shadowColor = "#00ffcc";
             ctx.fillStyle = "#00ffcc";
@@ -62,43 +65,46 @@
             ctx.textAlign = "center";
             ctx.fillText(liveLyrics, canvas.width / 2, canvas.height / 2);
 
-            // 3. --- NEW: DRAW PROGRESS BAR ---
+            // Draw Progress Bar
             if (audio.duration) {
                 const progress = audio.currentTime / audio.duration;
-                const barHeight = 15;
-                const barWidth = canvas.width * progress;
-
-                // Background track (dark grey)
-                ctx.shadowBlur = 0; // Turn off glow for the bar
+                ctx.shadowBlur = 0;
                 ctx.fillStyle = "#333";
-                ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
-
-                // Active progress (bright cyan)
+                ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
                 ctx.fillStyle = "#00ffcc";
-                ctx.fillRect(0, canvas.height - barHeight, barWidth, barHeight);
+                ctx.fillRect(0, canvas.height - 20, canvas.width * progress, 20);
             }
 
             requestAnimationFrame(render);
         }
-
         render();
 
-        async function startGeneration() {
-            const file = document.getElementById("audioUpload").files[0];
-            if (!file) return alert("Please select a music file first!");
+        // 2. THE AUTO-START TRIGGER
+        fileInput.onchange = function() {
+            const file = this.files[0];
+            if (!file) return;
 
+            // Load the audio
             audio.src = URL.createObjectURL(file);
-            
+            status.innerText = "🎤 AI is listening...";
+            liveLyrics = "Initializing...";
+
+            // Start Speech Recognition
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                status.innerText = "Error: Browser not supported.";
+                return;
+            }
+
             const recognition = new SpeechRecognition();
-            
             recognition.continuous = true;
             recognition.interimResults = true;
             recognition.lang = 'en-US';
 
             recognition.onstart = () => {
-                status.innerText = "Recording & Playing...";
-                audio.play();
+                audio.play().catch(err => {
+                    status.innerText = "Click anywhere on the page to enable audio!";
+                });
             };
 
             recognition.onresult = (event) => {
@@ -110,7 +116,7 @@
             };
 
             recognition.start();
-        }
+        };
     </script>
 </body>
 </html>
