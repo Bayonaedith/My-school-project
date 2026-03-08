@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Super Dashboard v2.0</title>
+    <title>Admin Super Dashboard v2.1</title>
     <style>
-        :root { --neon: #00f7ff; --bg: #0a0f2c; --card: rgba(255, 255, 255, 0.05); --danger: #ff4b2b; }
+        :root { --neon: #00f7ff; --bg: #0a0f2c; --card: rgba(255, 255, 255, 0.05); --danger: #ff4b2b; --warning: #ffcc00; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding: 20px; margin: 0; scroll-behavior: smooth; }
         
         /* Navigation & Search */
@@ -19,6 +19,7 @@
 
         .section-container { max-width: 1000px; margin: 30px auto; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; }
         h2 { color: var(--neon); margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
         .count-badge { font-size: 1rem; background: var(--neon); color: var(--bg); padding: 2px 10px; border-radius: 20px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -28,6 +29,8 @@
         .btn { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 12px; }
         .btn-approve { background: var(--neon); color: #0a0f2c; }
         .btn-delete { background: var(--danger); color: white; }
+        .btn-clear { background: none; border: 1px solid var(--danger); color: var(--danger); }
+        .btn-clear:hover { background: var(--danger); color: white; }
         .btn:hover { opacity: 0.8; transform: scale(1.05); }
 
         .hidden-row { display: none; }
@@ -42,40 +45,31 @@
                 <a href="#management">Management</a>
                 <a href="#reports">Attendance Logs</a>
             </nav>
-            <input type="text" id="globalSearch" placeholder="🔍 Search student, district, village..." onkeyup="doGlobalSearch()">
+            <input type="text" id="globalSearch" placeholder="🔍 Search name, district, village..." onkeyup="doGlobalSearch()">
         </div>
     </div>
 
     <div id="management" class="section-container">
         <h2>👥 Student Management <span class="count-badge" id="totalStudents">0</span></h2>
-        
         <h3>⏳ Pending Approval</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Location (C/D/V)</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+        <table id="pTable">
+            <thead><tr><th>Name</th><th>Location</th><th>Actions</th></tr></thead>
             <tbody id="pendingTable"></tbody>
         </table>
-
         <h3 style="margin-top: 40px;">✅ Approved Students</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Location (C/D/V)</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+        <table id="aTable">
+            <thead><tr><th>Name</th><th>Location</th><th>Actions</th></tr></thead>
             <tbody id="approvedTable"></tbody>
         </table>
     </div>
 
     <div id="reports" class="section-container" style="border-color: #00ff88;">
-        <h2>📅 Attendance Logs <span class="count-badge" id="totalLogs" style="background:#00ff88">0</span></h2>
+        <h2>
+            <span>📅 Attendance Logs <span class="count-badge" id="totalLogs" style="background:#00ff88">0</span></span>
+            <div class="header-actions">
+                <button class="btn btn-clear" onclick="deleteAllLogs()">🗑️ Delete All Logs</button>
+            </div>
+        </h2>
         <table>
             <thead>
                 <tr>
@@ -91,7 +85,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, query, onSnapshot, doc, updateDoc, deleteDoc, getDocs, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -105,7 +99,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- PART 1: STUDENT MANAGEMENT ---
+        // --- REAL-TIME STUDENT UPDATES ---
         onSnapshot(query(collection(db, "students"), orderBy("name", "asc")), (snapshot) => {
             const pendingTable = document.getElementById("pendingTable");
             const approvedTable = document.getElementById("approvedTable");
@@ -118,7 +112,6 @@
                 const row = document.createElement("tr");
                 row.className = "searchable-row";
                 row.setAttribute("data-search", searchStr);
-
                 row.innerHTML = `
                     <td><strong>${s.name}</strong></td>
                     <td>${s.country || '-'}/${s.district || '-'}/${s.village || '-'}</td>
@@ -133,11 +126,10 @@
             doGlobalSearch(); 
         });
 
-        // --- PART 2: ATTENDANCE LOGS WITH DELETE ---
+        // --- REAL-TIME ATTENDANCE UPDATES ---
         onSnapshot(query(collection(db, "attendance"), orderBy("time", "desc")), (snapshot) => {
             const reportTable = document.getElementById("attendanceTableBody");
             reportTable.innerHTML = "";
-            
             snapshot.forEach((aDoc) => {
                 const data = aDoc.data();
                 const id = aDoc.id;
@@ -146,7 +138,6 @@
                 const row = document.createElement("tr");
                 row.className = "searchable-row";
                 row.setAttribute("data-search", searchStr);
-
                 row.innerHTML = `
                     <td>${data.studentName}</td>
                     <td>${data.district || 'N/A'}</td>
@@ -168,16 +159,39 @@
             });
         };
 
-        // --- GLOBAL ACTIONS ---
+        // --- ACTIONS ---
         window.updateStatus = async (id, status) => {
             await updateDoc(doc(db, "students", id), { approved: status });
         };
 
         window.deleteItem = async (coll, id, label) => {
             if (confirm(`Confirm: Delete ${label}?`)) {
-                try {
-                    await deleteDoc(doc(db, coll, id));
-                } catch (e) { alert("Error: " + e.message); }
+                await deleteDoc(doc(db, coll, id));
+            }
+        };
+
+        // --- DELETE ALL LOGS FUNCTION ---
+        window.deleteAllLogs = async () => {
+            const confirm1 = confirm("⚠️ ATTENTION: You are about to wipe ALL attendance records.");
+            if (confirm1) {
+                const confirm2 = confirm("Are you ABSOLUTELY sure? This cannot be undone.");
+                if (confirm2) {
+                    try {
+                        const q = query(collection(db, "attendance"));
+                        const snapshot = await getDocs(q);
+                        
+                        // Use a batch to delete up to 500 docs at once (efficient)
+                        const batch = writeBatch(db);
+                        snapshot.forEach((d) => {
+                            batch.delete(d.ref);
+                        });
+                        
+                        await batch.commit();
+                        alert("Attendance logs cleared successfully.");
+                    } catch (e) {
+                        alert("Error clearing logs: " + e.message);
+                    }
+                }
             }
         };
     </script>
