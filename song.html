@@ -2,147 +2,130 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Lyric Generator</title>
+    <title>AI Audio to Video Generator</title>
     <style>
-        body {
-            background: #121212;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            padding: 40px;
-        }
-
-        #lyrics {
-            font-size: 20px;
-            margin-top: 30px;
-            color: #00ffcc;
-            min-height: 150px;
-            padding: 20px;
-            border: 1px solid #333;
-            background: #1a1a1a;
-            white-space: pre-wrap; /* Maintains line breaks */
-            text-align: left;
-            max-width: 600px;
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .container { max-width: 600px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 15px; }
+        
+        /* This is where the "Video" is drawn */
+        canvas {
+            width: 100%;
+            max-width: 400px;
+            background: #111;
+            border: 2px solid #00ffcc;
+            margin-top: 20px;
+            display: block;
             margin-left: auto;
             margin-right: auto;
         }
 
-        .controls {
-            background: #1e1e1e;
-            padding: 25px;
-            border-radius: 12px;
-            display: inline-block;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
         button {
-            padding: 12px 20px;
-            margin: 10px;
-            font-size: 16px;
+            padding: 15px 30px;
             background: #00ffcc;
-            color: black;
             border: none;
-            cursor: pointer;
             font-weight: bold;
-            border-radius: 5px;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background: #00ccaa;
-        }
-
-        .download-btn {
-            background: #ffcc00;
-        }
-
-        audio {
+            cursor: pointer;
             margin-top: 20px;
-            width: 100%;
         }
+
+        #status { color: #ffcc00; margin-top: 10px; font-style: italic; }
     </style>
 </head>
 <body>
 
-    <h1>🎵 AI Lyric Generator</h1>
-    
-    <div class="controls">
+    <div class="container">
+        <h1>📹 Audio to Lyric Video</h1>
         <input type="file" id="audioUpload" accept="audio/*">
         <br>
-        <audio id="audio" controls></audio>
+        <canvas id="videoCanvas" width="1280" height="720"></canvas>
         <br>
-        <button id="startBtn" onclick="startRecognition()">Start Listening</button>
-        <button class="download-btn" onclick="saveLyrics()">Download .txt</button>
+        <button id="recordBtn" onclick="processVideo()">Upload & Generate Video</button>
+        <div id="status">Waiting for upload...</div>
+        <audio id="audioSource"></audio>
     </div>
 
-    <div id="lyrics">Generated lyrics will appear here...</div>
-
     <script>
-        const audioUpload = document.getElementById("audioUpload");
-        const audio = document.getElementById("audio");
-        const lyricsDiv = document.getElementById("lyrics");
+        const canvas = document.getElementById("videoCanvas");
+        const ctx = canvas.getContext("2d");
+        const audio = document.getElementById("audioSource");
+        const status = document.getElementById("status");
+        let currentText = "Waiting to start...";
 
-        audioUpload.onchange = function() {
-            const file = this.files[0];
-            if (file) {
-                audio.src = URL.createObjectURL(file);
-            }
+        // 1. Draw the initial frame
+        function drawFrame(text) {
+            // Background
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Text Settings
+            ctx.fillStyle = "#00ffcc";
+            ctx.font = "bold 50px Arial";
+            ctx.textAlign = "center";
+            
+            // Wrap text if too long
+            ctx.fillText(text, canvas.width/2, canvas.height/2);
         }
+        drawFrame(currentText);
 
-        function startRecognition() {
+        async function processVideo() {
+            const file = document.getElementById("audioUpload").files[0];
+            if (!file) return alert("Please upload an audio file first!");
+
+            audio.src = URL.createObjectURL(file);
+            status.innerText = "Initializing AI Voice Capture...";
+
+            // Setup Speech Recognition
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("Speech recognition not supported in this browser.");
-                return;
-            }
-
             const recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
 
-            recognition.onstart = () => {
-                lyricsDiv.innerText = "Listening...";
-                audio.play();
+            // Setup Recording
+            const canvasStream = canvas.captureStream(30); // 30 FPS
+            const mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+            let chunks = [];
+
+            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const videoURL = URL.createObjectURL(blob);
+                
+                // Provide download link
+                const a = document.createElement("a");
+                a.href = videoURL;
+                a.download = "lyric-video.webm";
+                a.innerText = "⬇️ Download Your Video";
+                a.style.display = "block";
+                a.style.color = "#00ffcc";
+                document.body.appendChild(a);
+                status.innerText = "Video Ready!";
             };
 
             recognition.onresult = (event) => {
-                let transcript = "";
-                for (let i = 0; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript + " ";
+                let result = "";
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    result = event.results[i][0].transcript;
                 }
-                lyricsDiv.innerText = transcript;
+                currentText = result;
             };
 
-            recognition.start();
-        }
-
-        // --- NEW DOWNLOAD FUNCTION ---
-        function saveLyrics() {
-            const content = lyricsDiv.innerText;
-            
-            if (content === "Generated lyrics will appear here..." || content === "") {
-                alert("No lyrics to save yet!");
-                return;
+            // Animation Loop to keep the canvas updating
+            function updateCanvas() {
+                drawFrame(currentText);
+                if (!audio.ended) requestAnimationFrame(updateCanvas);
             }
 
-            // 1. Create the Blob object with plain text type
-            const blob = new Blob([content], { type: "text/plain" });
+            // Start everything
+            recognition.start();
+            audio.play();
+            mediaRecorder.start();
+            updateCanvas();
+            status.innerText = "Recording Video... Speak/Play Audio now!";
 
-            // 2. Create a temporary anchor element
-            const link = document.createElement("a");
-
-            // 3. Create a URL for the blob and set it as the href
-            link.href = URL.createObjectURL(blob);
-            link.download = "lyrics.txt"; // The default filename
-
-            // 4. Trigger the download and remove the link
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Clean up the URL object
-            URL.revokeObjectURL(link.href);
+            audio.onended = () => {
+                mediaRecorder.stop();
+                recognition.stop();
+            };
         }
     </script>
 </body>
