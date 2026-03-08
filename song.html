@@ -2,130 +2,114 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Audio to Video Generator</title>
+    <title>Instant AI Lyric Video with Progress</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .container { max-width: 600px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 15px; }
+        body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; }
+        .wrapper { max-width: 800px; margin: 40px auto; }
         
-        /* This is where the "Video" is drawn */
         canvas {
             width: 100%;
-            max-width: 400px;
-            background: #111;
-            border: 2px solid #00ffcc;
-            margin-top: 20px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            background: #000;
+            border: 3px solid #00ffcc;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
         }
 
-        button {
-            padding: 15px 30px;
-            background: #00ffcc;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
+        .controls { margin: 20px 0; padding: 20px; background: #1a1a1a; border-radius: 10px; }
+        button { 
+            padding: 15px 30px; background: #00ffcc; border: none; 
+            font-weight: bold; cursor: pointer; border-radius: 5px;
+            transition: 0.2s;
         }
-
-        #status { color: #ffcc00; margin-top: 10px; font-style: italic; }
+        button:hover { background: #00d4aa; transform: scale(1.05); }
+        #status { color: #888; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>📹 Audio to Lyric Video</h1>
-        <input type="file" id="audioUpload" accept="audio/*">
-        <br>
+    <div class="wrapper">
+        <h1>🎙️ Real-Time Lyric Video</h1>
+        
+        <div class="controls">
+            <input type="file" id="audioUpload" accept="audio/*">
+            <br><br>
+            <button id="startBtn" onclick="startGeneration()">Start Generating</button>
+            <div id="status">Upload a file and hit Start</div>
+        </div>
+
         <canvas id="videoCanvas" width="1280" height="720"></canvas>
-        <br>
-        <button id="recordBtn" onclick="processVideo()">Upload & Generate Video</button>
-        <div id="status">Waiting for upload...</div>
-        <audio id="audioSource"></audio>
+        <audio id="audioPlayer"></audio>
     </div>
 
     <script>
         const canvas = document.getElementById("videoCanvas");
         const ctx = canvas.getContext("2d");
-        const audio = document.getElementById("audioSource");
+        const audio = document.getElementById("audioPlayer");
         const status = document.getElementById("status");
-        let currentText = "Waiting to start...";
+        
+        let liveLyrics = "Waiting for audio...";
 
-        // 1. Draw the initial frame
-        function drawFrame(text) {
-            // Background
+        function render() {
+            // 1. Clear Screen
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Text Settings
-            ctx.fillStyle = "#00ffcc";
-            ctx.font = "bold 50px Arial";
-            ctx.textAlign = "center";
-            
-            // Wrap text if too long
-            ctx.fillText(text, canvas.width/2, canvas.height/2);
-        }
-        drawFrame(currentText);
 
-        async function processVideo() {
+            // 2. Draw Lyrics
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00ffcc";
+            ctx.fillStyle = "#00ffcc";
+            ctx.font = "italic bold 60px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(liveLyrics, canvas.width / 2, canvas.height / 2);
+
+            // 3. --- NEW: DRAW PROGRESS BAR ---
+            if (audio.duration) {
+                const progress = audio.currentTime / audio.duration;
+                const barHeight = 15;
+                const barWidth = canvas.width * progress;
+
+                // Background track (dark grey)
+                ctx.shadowBlur = 0; // Turn off glow for the bar
+                ctx.fillStyle = "#333";
+                ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+
+                // Active progress (bright cyan)
+                ctx.fillStyle = "#00ffcc";
+                ctx.fillRect(0, canvas.height - barHeight, barWidth, barHeight);
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        render();
+
+        async function startGeneration() {
             const file = document.getElementById("audioUpload").files[0];
-            if (!file) return alert("Please upload an audio file first!");
+            if (!file) return alert("Please select a music file first!");
 
             audio.src = URL.createObjectURL(file);
-            status.innerText = "Initializing AI Voice Capture...";
-
-            // Setup Speech Recognition
+            
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const recognition = new SpeechRecognition();
+            
             recognition.continuous = true;
             recognition.interimResults = true;
+            recognition.lang = 'en-US';
 
-            // Setup Recording
-            const canvasStream = canvas.captureStream(30); // 30 FPS
-            const mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
-            let chunks = [];
-
-            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                const videoURL = URL.createObjectURL(blob);
-                
-                // Provide download link
-                const a = document.createElement("a");
-                a.href = videoURL;
-                a.download = "lyric-video.webm";
-                a.innerText = "⬇️ Download Your Video";
-                a.style.display = "block";
-                a.style.color = "#00ffcc";
-                document.body.appendChild(a);
-                status.innerText = "Video Ready!";
+            recognition.onstart = () => {
+                status.innerText = "Recording & Playing...";
+                audio.play();
             };
 
             recognition.onresult = (event) => {
-                let result = "";
+                let currentBatch = "";
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    result = event.results[i][0].transcript;
+                    currentBatch = event.results[i][0].transcript;
                 }
-                currentText = result;
+                liveLyrics = currentBatch;
             };
 
-            // Animation Loop to keep the canvas updating
-            function updateCanvas() {
-                drawFrame(currentText);
-                if (!audio.ended) requestAnimationFrame(updateCanvas);
-            }
-
-            // Start everything
             recognition.start();
-            audio.play();
-            mediaRecorder.start();
-            updateCanvas();
-            status.innerText = "Recording Video... Speak/Play Audio now!";
-
-            audio.onended = () => {
-                mediaRecorder.stop();
-                recognition.stop();
-            };
         }
     </script>
 </body>
