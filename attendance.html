@@ -22,6 +22,7 @@
         .info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
 
         #status { margin-top: 15px; font-size: 1.1rem; color: #00f7ff; min-height: 1.5em; }
+        #debugInfo { margin-top: 10px; font-size: 0.9rem; color: #ffaa00; }
         .log-container { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block; min-width: 350px; }
     </style>
 </head>
@@ -35,6 +36,7 @@
     </div>
 
     <p id="status">Initializing AI...</p>
+    <p id="debugInfo"></p>
 
     <div id="profileCard">
         <div class="info-label">Student Name</div>
@@ -67,6 +69,7 @@
         
         const video = document.getElementById("video");
         const status = document.getElementById("status");
+        const debugInfo = document.getElementById("debugInfo");
         const list = document.getElementById("attendanceList");
         const profileCard = document.getElementById("profileCard");
         const progressBar = document.getElementById("progressBar");
@@ -75,6 +78,13 @@
         let faceMatcher = null;
         let allStudentsData = [];
         let isProcessing = false;
+        
+        // --- STRICT FACE DETECTION CONFIG ---
+        const DISTANCE_THRESHOLD = 0.35; // STRICTER: lowered from 0.6 to 0.35
+        const CONFIDENCE_MIN = 0.65; // Minimum confidence level (1 - distance)
+        const CONSECUTIVE_MATCHES_REQUIRED = 2; // Require 2 consecutive matches
+        let consecutiveMatches = 0;
+        let lastMatchName = null;
 
         // --- AUDIO HELPERS ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -94,7 +104,7 @@
         function playErrorSound() {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sawtooth'; // Rougher sound for error
+            osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
@@ -129,8 +139,10 @@
             });
 
             if (labeledDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+                // STRICT THRESHOLD: 0.35 instead of 0.6
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);
                 status.innerText = "System Ready. Please face the camera.";
+                debugInfo.innerText = `Threshold: ${DISTANCE_THRESHOLD} | Min Confidence: ${CONFIDENCE_MIN}`;
                 startRecognitionLoop();
             } else {
                 status.innerText = "No approved students found.";
@@ -152,21 +164,48 @@
 
                 if (detection) {
                     const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                    const distance = bestMatch.distance;
+                    const confidence = (1 - distance).toFixed(2); // Convert to confidence percentage
                     
-                    if (bestMatch.label !== 'unknown') {
-                        const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
-                        handleMatch(studentInfo);
+                    // Display debug info
+                    debugInfo.innerText = `Distance: ${distance.toFixed(3)} | Confidence: ${confidence}`;
+                    
+                    // STRICT CHECKING: Check both distance and confidence
+                    if (bestMatch.label !== 'unknown' && distance < DISTANCE_THRESHOLD && confidence >= CONFIDENCE_MIN) {
+                        // Check if same person detected consecutively
+                        if (lastMatchName === bestMatch.label) {
+                            consecutiveMatches++;
+                        } else {
+                            consecutiveMatches = 1;
+                            lastMatchName = bestMatch.label;
+                        }
+
+                        // Only process match after required consecutive detections
+                        if (consecutiveMatches >= CONSECUTIVE_MATCHES_REQUIRED) {
+                            const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
+                            if (studentInfo) {
+                                handleMatch(studentInfo);
+                                consecutiveMatches = 0;
+                                lastMatchName = null;
+                            }
+                        }
                     } else {
-                        // Unknown face detected - redirect to face.html
-                        status.innerText = "❌ Unknown Face - Redirecting...";
-                        playErrorSound();
-                        isProcessing = true;
-                        setTimeout(() => { 
-                            window.location.href = 'face.html'; 
-                        }, 1500);
+                        // Reset consecutive counter if face doesn't match
+                        consecutiveMatches = 0;
+                        lastMatchName = null;
+
+                        // Unknown or low confidence face detected
+                        if (detection && distance >= DISTANCE_THRESHOLD) {
+                            status.innerText = `❌ Unknown Face (Distance: ${distance.toFixed(3)})`;
+                            playErrorSound();
+                            isProcessing = true;
+                            setTimeout(() => { 
+                                window.location.href = 'face.html'; 
+                            }, 2000);
+                        }
                     }
                 }
-            }, 1000); 
+            }, 800); // Increased interval to 800ms for better consecutive detection
         }
 
         async function handleMatch(info) {
@@ -203,6 +242,7 @@
             progressBar.style.width = "0%";
             profileCard.style.display = "none";
             status.innerText = "Ready for next student...";
+            debugInfo.innerText = `Threshold: ${DISTANCE_THRESHOLD} | Min Confidence: ${CONFIDENCE_MIN}`;
         }
 
         async function markAttendance(info) {
