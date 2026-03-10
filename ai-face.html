@@ -3,91 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Biometric Scanner</title>
-
+    <title>AI Biometric Analysis</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        body {
-            background: #0b1220;
-            font-family: 'Courier New', Courier, monospace; /* Changed for a more 'tech' feel */
-            color: #0ff;
-            text-align: center;
-            margin: 0;
-            overflow-x: hidden;
-        }
-
-        h1 {
-            letter-spacing: 5px;
-            text-shadow: 0 0 10px #0ff;
-        }
-
-        /* Scanner container */
+        body { background: #0b1220; font-family: 'Courier New', monospace; color: #0ff; text-align: center; margin: 0; overflow-x: hidden; }
+        h1 { letter-spacing: 5px; text-shadow: 0 0 10px #0ff; margin-top: 20px; font-size: 1.5rem; }
+        
         .scanner {
-            position: relative;
-            width: 320px;
-            height: 240px; /* Fixed height to match video aspect ratio */
-            margin: 50px auto;
-            border: 2px solid #00f7ff;
-            border-radius: 10px;
-            box-shadow: 0 0 30px #00f7ff;
-            background: #000;
-            overflow: hidden;
+            position: relative; width: 320px; height: 240px; margin: 30px auto;
+            border: 2px solid #00f7ff; border-radius: 10px; box-shadow: 0 0 30px #00f7ff;
+            background: #000; overflow: hidden;
         }
+        video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Camera */
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* scanning line - Enhanced with Glow */
         .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 4px;
-            background: #00f7ff;
-            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7);
-            z-index: 10;
-            top: 0;
-            animation: scan 3s ease-in-out infinite;
+            position: absolute; width: 100%; height: 4px; background: #00f7ff;
+            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7); z-index: 10;
+            top: 0; animation: scan 3s ease-in-out infinite;
         }
+        @keyframes scan { 0%, 100% { top: 0%; } 50% { top: 100%; } }
 
-        @keyframes scan {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
-
-        /* HUD panels */
-        .panel {
-            background: rgba(8, 18, 32, 0.8);
-            border: 1px solid #00f7ff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 247, 255, 0.3);
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .big-status {
-            font-size: 22px;
-            color: #00ff9c;
-            margin-top: 20px;
-            height: 30px; /* Prevents layout jump when text changes */
-        }
-
-        .confidence {
-            font-size: 30px;
-            color: #00f7ff;
-            font-weight: bold;
-        }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; padding: 20px; }
+        .panel { background: rgba(8, 18, 32, 0.8); border: 1px solid #00f7ff; padding: 15px; border-radius: 8px; font-size: 0.8rem; }
+        .big-status { font-size: 1.2rem; color: #00f7ff; margin-top: 10px; height: 30px; font-weight: bold; }
+        .confidence { font-size: 1.8rem; color: #00f7ff; font-weight: bold; display: block; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -95,77 +34,158 @@
     <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
 
     <div class="scanner">
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline muted></video>
         <div class="scan-line"></div>
     </div>
 
-    <div id="status-text" class="big-status">INITIALIZING SCAN...</div>
+    <div id="status-text" class="big-status">INITIALIZING AI...</div>
 
     <div class="dashboard">
-        <div class="panel">
-            Security Status<br>
-            <span id="lock-status">🔒 Locked</span>
-        </div>
-        <div class="panel">
-            Match Confidence<br>
-            <span class="confidence" id="confidence">0%</span>
-        </div>
-        <div class="panel">
-            Network Activity<br>
-            <span id="network-bars">██████░░░░</span>
-        </div>
-        <div class="panel">
-            AI Processing<br>
-            <span id="ai-bars">████████░░</span>
-        </div>
+        <div class="panel">Security Status<br><span id="lock-status">🔒 Locked</span></div>
+        <div class="panel">Match Confidence<br><span class="confidence" id="confidence">0%</span></div>
+        <div class="panel">Identified Subject<br><span id="subject-name" style="color:#00ff9c;">Scanning...</span></div>
+        <div class="panel">Firebase Link<br><span id="db-status" style="color:yellow;">Connecting...</span></div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+            authDomain: "my-school-project-6e00c.firebaseapp.com",
+            projectId: "my-school-project-6e00c",
+            storageBucket: "my-school-project-6e00c.appspot.com",
+            messagingSenderId: "14283853516",
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         const video = document.getElementById("video");
-        const confidenceEl = document.getElementById("confidence");
         const statusEl = document.getElementById("status-text");
+        const confidenceEl = document.getElementById("confidence");
         const lockEl = document.getElementById("lock-status");
+        const subjectEl = document.getElementById("subject-name");
+        const dbStatusEl = document.getElementById("db-status");
 
-        // 1. Improved Camera Access
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
+        let faceMatcher = null;
+        let allStudentsData = [];
+        let isProcessing = false;
+
+        async function init() {
+            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+            try {
+                // 1. Load AI Models
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+                
+                // 2. Load Students from Firebase
+                await loadStudents();
+
+                // 3. Start Video
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
                 video.srcObject = stream;
-                video.play();
-                startScanning();
-            })
-            .catch(err => {
-                console.error("Camera Error: ", err);
-                statusEl.innerText = "CAMERA ACCESS DENIED";
-                statusEl.style.color = "red";
+                
+                statusEl.innerText = "SYSTEM ACTIVE";
+                startRecognitionLoop();
+            } catch (err) {
+                statusEl.innerText = "SYSTEM ERROR";
+                console.error(err);
+            }
+        }
+
+        async function loadStudents() {
+            const q = query(collection(db, "students"), where("approved", "==", true));
+            const querySnapshot = await getDocs(q);
+            const labeledDescriptors = [];
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                allStudentsData.push(data);
+                const desc = new Float32Array(data.faceDescriptor);
+                labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
             });
+
+            if (labeledDescriptors.length > 0) {
+                // Setting 0.45 for strict differentiation
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+                dbStatusEl.innerText = "CONNECTED";
+                dbStatusEl.style.color = "#00ff9c";
+            } else {
+                dbStatusEl.innerText = "NO DATA";
+            }
         }
 
-        // 2. Dynamic Scanning Logic
-        function startScanning() {
-            let percent = 0;
-            statusEl.innerText = "IDENTITY SCANNING...";
+        async function startRecognitionLoop() {
+            setInterval(async () => {
+                if (!faceMatcher || isProcessing) return;
 
-            const interval = setInterval(() => {
-                // Add a little randomness to make it look "AI-like"
-                percent += Math.floor(Math.random() * 3) + 1;
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
 
-                if (percent >= 100) {
-                    percent = 100;
-                    clearInterval(interval);
-                    completeScan();
+                if (detection) {
+                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                    const confidencePercent = Math.round((1 - bestMatch.distance) * 100);
+                    confidenceEl.innerText = confidencePercent + "%";
+
+                    if (bestMatch.label !== 'unknown') {
+                        const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
+                        handleSuccess(studentInfo);
+                    } else {
+                        handleFailure();
+                    }
+                } else {
+                    confidenceEl.innerText = "0%";
+                    subjectEl.innerText = "Searching...";
                 }
-
-                confidenceEl.innerText = percent + "%";
-            }, 100);
+            }, 800);
         }
 
-        function completeScan() {
+        async function handleSuccess(info) {
+            isProcessing = true;
             statusEl.innerText = "ACCESS GRANTED";
             statusEl.style.color = "#00ff9c";
             lockEl.innerText = "🔓 Unlocked";
             lockEl.style.color = "#00ff9c";
+            subjectEl.innerText = info.name;
+
+            // Log to Firebase
+            await addDoc(collection(db, "attendance"), {
+                studentName: info.name,
+                district: info.district,
+                time: serverTimestamp()
+            });
+
+            // Cooldown for 4 seconds before next scan
+            setTimeout(() => {
+                isProcessing = false;
+                statusEl.innerText = "SYSTEM ACTIVE";
+                statusEl.style.color = "#0ff";
+                lockEl.innerText = "🔒 Locked";
+                lockEl.style.color = "#0ff";
+                subjectEl.innerText = "Scanning...";
+            }, 4000);
         }
+
+        function handleFailure() {
+            isProcessing = true;
+            statusEl.innerText = "UNKNOWN - REDIRECTING";
+            statusEl.style.color = "red";
+            subjectEl.innerText = "NOT IN SYSTEM";
+            
+            setTimeout(() => {
+                window.location.href = "face.html";
+            }, 2000);
+        }
+
+        init();
     </script>
 </body>
 </html>
