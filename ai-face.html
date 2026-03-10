@@ -3,79 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BN - Advanced Biometric Analysis</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <title>SECURE-CORE | Biometric Interface</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
-        :root { --neon: #00f7ff; --success: #00ff9c; --bg: #030810; }
-        body { background: var(--bg); font-family: 'Open Sans', Arial, sans-serif; color: #fff; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
-        
-        /* Layout */
-        .grid-hud { display: grid; grid-template-columns: 240px 1fr 240px; gap: 15px; max-width: 1200px; margin: auto; padding: 10px; }
-        .hud-panel { background: rgba(0, 247, 255, 0.03); border: 1px solid rgba(0, 247, 255, 0.2); border-radius: 8px; padding: 12px; }
-        
-        /* Central Scanner (Video & Canvas) */
-        .scanner-container { position: relative; width: 100%; max-width: 500px; aspect-ratio: 4/3; margin: auto; border: 2px solid var(--neon); border-radius: 10px; box-shadow: 0 0 40px rgba(0, 247, 255, 0.3); overflow: hidden; background: #000; }
-        video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        canvas { z-index: 5; } /* Canvas must be above video */
+        :root {
+            --glow-color: #00f7ff;
+            --bg-dark: #050a14;
+            --panel-bg: rgba(10, 25, 41, 0.7);
+        }
 
-        .scanning-line { position: absolute; width: 100%; height: 6px; background: var(--neon); box-shadow: 0 0 20px 8px rgba(0, 247, 255, 0.7); z-index: 10; top: 0; animation: scanAnim 3s ease-in-out infinite; }
-        @keyframes scanAnim { 0%, 100% { top: 0%; } 50% { top: 100%; } }
+        body { 
+            background: var(--bg-dark); 
+            font-family: 'Segoe UI', 'Courier New', monospace; 
+            color: var(--glow-color); 
+            margin: 0; 
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-image: radial-gradient(circle at center, #102a43 0%, #050a14 100%);
+        }
 
-        /* Cyber UI Texts */
-        .cyber-title { color: #888; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; text-align: left; }
-        .cyber-value { color: var(--neon); font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; text-align: left; margin-bottom: 8px; }
-        .binary-log { color: rgba(0, 247, 255, 0.5); font-family: 'Courier New', monospace; font-size: 0.7rem; text-align: left; overflow: hidden; height: 100px; line-height: 1.4; }
-        
-        /* Big Status */
-        .final-status { grid-column: 2; font-size: 1.4rem; font-weight: bold; color: var(--neon); margin: 20px 0; letter-spacing: 1px; text-shadow: 0 0 5px var(--neon); }
-        .success-text { color: var(--success) !important; text-shadow: 0 0 10px var(--success); }
+        /* Futuristic Header */
+        .header {
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--glow-color);
+            padding-left: 15px;
+            text-shadow: 0 0 15px var(--glow-color);
+        }
+
+        /* The Main Scanner Container */
+        .viewport {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            border: 1px solid rgba(0, 247, 255, 0.3);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            background: #000;
+        }
+
+        video, canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Decorative UI Corners */
+        .corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--glow-color);
+            z-index: 20;
+        }
+        .top-left { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .top-right { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .bottom-left { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .bottom-right { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+        /* Scanning Animation Line */
+        .scan-bar {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: var(--glow-color);
+            box-shadow: 0 0 20px 2px var(--glow-color);
+            z-index: 15;
+            animation: moveScan 4s linear infinite;
+            opacity: 0.5;
+        }
+
+        @keyframes moveScan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        /* Dashboard Styling */
+        .dashboard { 
+            display: grid; 
+            grid-template-columns: repeat(4, 160px); 
+            gap: 10px; 
+            margin-top: 25px; 
+        }
+
+        .panel { 
+            background: var(--panel-bg); 
+            border: 1px solid rgba(0, 247, 255, 0.2); 
+            padding: 12px; 
+            backdrop-filter: blur(10px);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .data-val {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 5px;
+            color: #fff;
+            text-shadow: 0 0 5px var(--glow-color);
+        }
+
+        #status-display {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 25;
+            font-weight: bold;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 15px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="final-status" id="hudMainStatus">// TERMINAL ACTIVE</div>
+    <div class="header">
+        <span style="opacity: 0.6;">System:</span> Biometric Analysis v2.4
+    </div>
 
-    <div class="grid-hud">
-        <div>
-            <div class="hud-panel cyber-title" style="margin-bottom: 10px;">Security Status</div>
-            <div class="hud-panel">
-                <div class="cyber-title">Subject Identified</div>
-                <div class="cyber-value" id="hudName">Searching...</div>
-                <div class="cyber-title">Terminal</div>
-                <div class="cyber-value">BIOMETRIC 01</div>
-            </div>
-            <div class="hud-panel" style="margin-top: 10px;">
-                <div class="cyber-title">Match Analysis</div>
-                <div class="cyber-value" id="hudConfidence" style="font-size: 2rem;">0.0%</div>
-            </div>
-        </div>
+    <div class="viewport">
+        <div class="corner top-left"></div>
+        <div class="corner top-right"></div>
+        <div class="corner bottom-left"></div>
+        <div class="corner bottom-right"></div>
+        <div class="scan-bar"></div>
+        
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
 
-        <div class="scanner-container">
-            <video id="video" autoplay playsinline muted></video>
-            <canvas id="overlay"></canvas> <div class="scanning-line"></div>
-        </div>
+        <div id="status-display">SYSTEM IDLE</div>
+    </div>
 
-        <div>
-            <div class="hud-panel cyber-title" style="margin-bottom: 10px;">Network Logs</div>
-            <div class="hud-panel binary-log">
-                [LOG_01] 101100101101<br>
-                [LOG_02] 101010001001<br>
-                [LOG_03] 011010011110<br>
-                [LOG_04] 101101100011<br>
-                [LOG_05] 101110010110
-            </div>
-            <div class="hud-panel" style="margin-top: 10px;">
-                <div class="cyber-title">DB Sync</div>
-                <div class="cyber-value" id="hudDbStatus" style="color: yellow;">Connecting...</div>
-            </div>
-        </div>
+    <div class="dashboard">
+        <div class="panel">Identity<br><span class="data-val" id="subject-name">---</span></div>
+        <div class="panel">Confidence<br><span class="data-val" id="confidence">0%</span></div>
+        <div class="panel">Security<br><span class="data-val" id="lock-status">LOCKED</span></div>
+        <div class="panel">Database<br><span class="data-val" id="db-status" style="color: #f1c40f;">WAITING</span></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Firebase Configuration
+        // Your Firebase Config (Keep this secure!)
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
             authDomain: "my-school-project-6e00c.firebaseapp.com",
@@ -90,10 +167,11 @@
 
         const video = document.getElementById("video");
         const canvas = document.getElementById("overlay");
-        const mainStatusEl = document.getElementById("hudMainStatus");
-        const nameEl = document.getElementById("hudName");
-        const confEl = document.getElementById("hudConfidence");
-        const dbStatusEl = document.getElementById("hudDbStatus");
+        const statusEl = document.getElementById("status-display");
+        const confidenceEl = document.getElementById("confidence");
+        const lockEl = document.getElementById("lock-status");
+        const subjectEl = document.getElementById("subject-name");
+        const dbStatusEl = document.getElementById("db-status");
 
         let faceMatcher = null;
         let allStudentsData = [];
@@ -102,145 +180,110 @@
         async function init() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
             try {
-                // 1. Load AI Models
+                statusEl.innerText = "LOADING AI MODULES...";
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
                 
-                // 2. Load Students from Firebase
                 await loadStudents();
 
-                // 3. Start Video
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
                 video.srcObject = stream;
                 
-                // --- NEW: MATCH CANVAS SIZE TO VIDEO ---
-                video.addEventListener('playing', () => {
+                // Match canvas size to video size
+                video.onloadedmetadata = () => {
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
+                    statusEl.innerText = "BIOMETRIC SCANNER READY";
                     startRecognitionLoop();
-                });
-
+                };
             } catch (err) {
-                mainStatusEl.innerText = "// CRITICAL_ERROR: SYSTEM FAILURE";
+                statusEl.innerText = "CRITICAL SYSTEM ERROR";
+                console.error(err);
             }
         }
 
         async function loadStudents() {
             const q = query(collection(db, "students"), where("approved", "==", true));
-            const snap = await getDocs(q);
-            const labeled = [];
-            snap.forEach(doc => {
-                const d = doc.data();
-                allStudentsData.push(d);
-                labeled.push(new faceapi.LabeledFaceDescriptors(d.name, [new Float32Array(d.faceDescriptor)]));
+            const querySnapshot = await getDocs(q);
+            const labeledDescriptors = [];
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                allStudentsData.push(data);
+                const desc = new Float32Array(data.faceDescriptor);
+                labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
             });
 
-            if (labeled.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeled, 0.45);
-                dbStatusEl.innerText = "ONLINE"; dbStatusEl.style.color = "#00ff9c";
-            } else { dbStatusEl.innerText = "NO DATA"; }
-        }
-
-        // --- NEW: DRAW WIREFRAME FUNCTION ---
-        function drawWireframe(landmarks, ctx, matchConfidence) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous frame
-            
-            const color = mainStatusEl.classList.contains('success-text') ? "#00ff9c" : "#00f7ff";
-            
-            ctx.strokeStyle = color;
-            ctx.fillStyle = color;
-            ctx.lineWidth = 1;
-
-            // Draw Wireframe Lines
-            const connections = faceapi.draw.drawFaceLandmarks.connections;
-            connections.forEach(([i, j]) => {
-                const start = landmarks.positions[i];
-                const end = landmarks.positions[j];
-                ctx.beginPath();
-                ctx.moveTo(start.x, start.y);
-                ctx.lineTo(end.x, end.y);
-                ctx.stroke();
-            });
-
-            // Draw Points (with subtle glow)
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = color;
-            landmarks.positions.forEach(point => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
-                ctx.fill();
-            });
-            ctx.shadowBlur = 0; // Reset shadow
-
-            // Display Confidence on Mesh
-            ctx.fillStyle = color;
-            ctx.font = '24px Courier New';
-            const noseTip = landmarks.getNose()[0];
-            if (matchConfidence > 0) {
-                ctx.fillText(`C: ${matchConfidence}%`, noseTip.x + 20, noseTip.y - 20);
+            if (labeledDescriptors.length > 0) {
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+                dbStatusEl.innerText = "SYNCED";
+                dbStatusEl.style.color = "#00ff9c";
             }
         }
 
-        async function startRecognitionLoop() {
-            const ctx = canvas.getContext("2d");
-            
+        function startRecognitionLoop() {
+            const ctx = canvas.getContext('2d');
+
             setInterval(async () => {
-                const detection = await faceapi.detectSingleFace(video, 
-                    new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.9, inputSize: 512 }))
+                if (isProcessing) return;
+
+                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
-                if (detection) {
-                    // --- NEW: MATCHING ---
-                    const match = faceMatcher.findBestMatch(detection.descriptor);
-                    const conf = Math.round((1 - match.distance) * 100);
-                    confEl.innerText = conf + ".0%";
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                    // --- NEW: DRAW WIREFRAME ---
-                    drawWireframe(detection.landmarks, ctx, conf);
+                if (detections) {
+                    // DRAW HOLOGRAPHIC MESH
+                    const drawOptions = {
+                        drawLines: true,
+                        color: 'rgba(0, 247, 255, 0.7)',
+                        lineWidth: 1
+                    };
+                    faceapi.draw.drawFaceLandmarks(canvas, detections);
 
-                    if (!isProcessing) {
-                        if (match.label !== 'unknown') {
-                            const info = allStudentsData.find(s => s.name === match.label);
-                            handleMatchSuccess(info);
-                        } else {
-                            handleMatchUnknown();
+                    // MATCHING LOGIC
+                    if (faceMatcher) {
+                        const bestMatch = faceMatcher.findBestMatch(detections.descriptor);
+                        const confidencePercent = Math.round((1 - bestMatch.distance) * 100);
+                        confidenceEl.innerText = confidencePercent + "%";
+
+                        if (bestMatch.label !== 'unknown' && confidencePercent > 55) {
+                            const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
+                            handleSuccess(studentInfo);
                         }
                     }
-                } else { 
-                    // No face, clear everything
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    confEl.innerText = "0.0%"; nameEl.innerText = "Searching..."; 
+                } else {
+                    confidenceEl.innerText = "0%";
+                    subjectEl.innerText = "---";
                 }
-            }, 500); // Check every 0.5s for smoother wireframe
+            }, 100); // Faster refresh for smoother UI mesh
         }
 
-        async function handleMatchSuccess(info) {
+        async function handleSuccess(info) {
             isProcessing = true;
-            mainStatusEl.innerText = "// IDENTITY CONFIRMED";
-            mainStatusEl.classList.add('success-text');
-            nameEl.innerText = info.name;
+            statusEl.innerText = "VERIFICATION SUCCESSFUL";
+            statusEl.style.color = "#00ff9c";
+            lockEl.innerText = "GRANTED";
+            lockEl.style.color = "#00ff9c";
+            subjectEl.innerText = info.name;
 
-            await addDoc(collection(db, "attendance"), { studentName: info.name, district: info.district, time: serverTimestamp() });
+            await addDoc(collection(db, "attendance"), {
+                studentName: info.name,
+                time: serverTimestamp()
+            });
 
-            // Cooldown for 5 seconds
             setTimeout(() => {
                 isProcessing = false;
-                mainStatusEl.innerText = "// TERMINAL ACTIVE";
-                mainStatusEl.classList.remove('success-text');
-                nameEl.innerText = "Scanning...";
-            }, 5000);
-        }
-
-        function handleMatchUnknown() {
-            isProcessing = true;
-            mainStatusEl.innerText = "// UNKNOWN SUBJECT - REGISTRATION REQUIRED";
-            mainStatusEl.style.color = "red";
-            nameEl.innerText = "NOT IN SYSTEM";
-            setTimeout(() => { window.location.href = "face.html"; }, 3000);
+                statusEl.innerText = "BIOMETRIC SCANNER READY";
+                statusEl.style.color = "var(--glow-color)";
+                lockEl.innerText = "LOCKED";
+                lockEl.style.color = "#fff";
+                subjectEl.innerText = "---";
+            }, 4000);
         }
 
         init();
