@@ -77,12 +77,8 @@
         }
 
         @keyframes scan {
-            0%, 100% {
-                top: 0%;
-            }
-            50% {
-                top: 100%;
-            }
+            0%, 100% { top: 0%; }
+            50% { top: 100%; }
         }
 
         .corner-accent {
@@ -92,35 +88,11 @@
             border: 2px solid #00f7ff;
         }
 
-        .corner-tl {
-            top: 10px;
-            left: 10px;
-            border-right: none;
-            border-bottom: none;
-        }
+        .corner-tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+        .corner-br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
 
-        .corner-tr {
-            top: 10px;
-            right: 10px;
-            border-left: none;
-            border-bottom: none;
-        }
-
-        .corner-bl {
-            bottom: 10px;
-            left: 10px;
-            border-right: none;
-            border-top: none;
-        }
-
-        .corner-br {
-            bottom: 10px;
-            right: 10px;
-            border-left: none;
-            border-top: none;
-        }
-
-        /* Status Display */
         .status-display {
             font-size: 1.3rem;
             color: #0ff;
@@ -132,62 +104,52 @@
             min-height: 30px;
         }
 
-        .status-display.success {
-            color: #00ff9c;
-            text-shadow: 0 0 10px #00ff9c;
-        }
+        .status-display.success { color: #00ff9c; text-shadow: 0 0 10px #00ff9c; }
+        .status-display.warning { color: #ffcc00; text-shadow: 0 0 10px #ffcc00; }
+        .status-display.error { color: #ff4444; text-shadow: 0 0 10px #ff4444; }
 
-        .status-display.warning {
-            color: #ffcc00;
-            text-shadow: 0 0 10px #ffcc00;
-        }
-
-        .status-display.error {
-            color: #ff4444;
-            text-shadow: 0 0 10px #ff4444;
-        }
-
-        /* Dashboard Grid */
+        /* --- REDUCED BOX SIZE STYLING --- */
         .dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            max-width: 900px;
-            margin: 30px auto;
+            grid-template-columns: repeat(2, 1fr); /* 2x2 grid for professional look */
+            gap: 12px;
+            max-width: 600px;
+            margin: 20px auto;
         }
 
         .panel {
             background: rgba(8, 18, 32, 0.9);
-            border: 2px solid #00f7ff;
-            padding: 20px;
-            border-radius: 12px;
-            font-size: 0.9rem;
+            border: 1px solid #00f7ff; /* Thinner border */
+            padding: 12px; /* Reduced padding */
+            border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 247, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 80px; /* Reduced height */
         }
 
         .panel:hover {
-            box-shadow: 0 0 25px rgba(0, 247, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 247, 255, 0.5);
             transform: translateY(-2px);
         }
 
         .panel-label {
-            font-size: 0.85rem;
+            font-size: 0.75rem; /* Smaller labels */
             color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .panel-value {
-            font-size: 1.5rem;
+            font-size: 1.1rem; /* Scaled down value text */
             color: #00ff9c;
             font-weight: bold;
         }
 
-        .panel-value.accent {
-            color: #00f7ff;
-        }
+        .panel-value.accent { color: #00f7ff; }
 
         /* Registration Form */
         .reg-container {
@@ -203,23 +165,12 @@
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .reg-container.visible {
-            display: block;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
+        .reg-container.visible { display: block; }
+        .form-group { margin-bottom: 15px; }
 
         input {
             padding: 14px;
@@ -230,17 +181,6 @@
             color: #0ff;
             font-size: 1rem;
             font-family: inherit;
-            transition: all 0.3s ease;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #00ff9c;
-            box-shadow: 0 0 15px rgba(0, 255, 156, 0.5);
-        }
-
-        input::placeholder {
-            color: #666;
         }
 
         button {
@@ -256,22 +196,6 @@
             font-size: 1rem;
             text-transform: uppercase;
             letter-spacing: 2px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 247, 255, 0.3);
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(0, 247, 255, 0.6);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .alert-box {
@@ -282,58 +206,14 @@
             display: none;
             border-radius: 8px;
             background: rgba(255, 204, 0, 0.1);
-            font-weight: 500;
         }
 
-        .alert-box.visible {
-            display: block;
-        }
+        .alert-box.visible { display: block; }
 
-        .alert-box.error {
-            border-color: #ff4444;
-            color: #ff6666;
-            background: rgba(255, 68, 68, 0.1);
-        }
-
-        .alert-box.success {
-            border-color: #00ff9c;
-            color: #00ff9c;
-            background: rgba(0, 255, 156, 0.1);
-        }
-
-        /* Loading State */
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #0ff;
-            border-radius: 50%;
-            border-top: 3px solid #00ff9c;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-
-            .scanner-box {
-                max-width: 100%;
-            }
+            h1 { font-size: 1.8rem; }
+            .dashboard { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .scanner-box { max-width: 100%; }
         }
     </style>
 </head>
@@ -404,12 +284,11 @@
             where
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // ==================== CONFIG ====================
         const FACE_API_MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
         const CONFIDENCE_THRESHOLD = 0.45;
         const DISTANCE_THRESHOLD = 0.5;
-        const RECOGNITION_INTERVAL = 1000; // ms
-        const PROCESSING_TIMEOUT = 3000; // ms - reduced for faster redirect
+        const RECOGNITION_INTERVAL = 1000;
+        const PROCESSING_TIMEOUT = 3000;
 
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -420,7 +299,6 @@
             appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
         };
 
-        // ==================== STATE ====================
         const state = {
             app: null,
             db: null,
@@ -430,7 +308,6 @@
             recognitionLoopId: null
         };
 
-        // ==================== DOM ELEMENTS ====================
         const elements = {
             video: document.getElementById("video"),
             statusEl: document.getElementById("status-text"),
@@ -448,247 +325,113 @@
             villageInput: document.getElementById("village")
         };
 
-        // ==================== UTILITIES ====================
         const utils = {
             updateStatus(text, type = 'info') {
                 elements.statusEl.textContent = text;
                 elements.statusEl.className = `status-display ${type}`;
             },
-
-            updateConfidence(percent) {
-                elements.confidenceEl.textContent = `${percent}%`;
-            },
-
-            updateSubject(name) {
-                elements.subjectEl.textContent = name;
-            },
-
+            updateConfidence(percent) { elements.confidenceEl.textContent = `${percent}%`; },
+            updateSubject(name) { elements.subjectEl.textContent = name; },
             showAlert(message, type = 'error') {
                 elements.alertMsg.textContent = message;
                 elements.alertMsg.className = `alert-box visible ${type}`;
             },
-
-            hideAlert() {
-                elements.alertMsg.classList.remove('visible');
-            },
-
-            showRegSection(show = true) {
-                elements.regSection.classList.toggle('visible', show);
-            },
-
-            async delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            },
-
-            log(message, type = 'info') {
-                console.log(`[${type.toUpperCase()}] ${message}`);
-            },
-
-            /**
-             * Redirect to attendance page with student data
-             */
+            hideAlert() { elements.alertMsg.classList.remove('visible'); },
+            showRegSection(show = true) { elements.regSection.classList.toggle('visible', show); },
+            async delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
+            log(message, type = 'info') { console.log(`[${type.toUpperCase()}] ${message}`); },
             redirectToAttendance(studentData) {
-                // Store student data in sessionStorage for the attendance page
                 sessionStorage.setItem('studentData', JSON.stringify(studentData));
-                // Redirect to attendance.html
                 window.location.href = './attendance.html';
             }
         };
 
-        // ==================== FACE API ====================
         const faceManager = {
             async loadModels() {
-                try {
-                    utils.log('Loading AI models...');
-                    await Promise.all([
-                        faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODEL_URL),
-                        faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODEL_URL),
-                        faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODEL_URL)
-                    ]);
-                    utils.log('AI models loaded successfully', 'success');
-                } catch (err) {
-                    utils.log(`Model loading failed: ${err.message}`, 'error');
-                    throw new Error('Failed to load AI models');
-                }
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODEL_URL)
+                ]);
             },
-
             async detectFace(videoElement) {
-                try {
-                    return await faceapi
-                        .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions())
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
-                } catch (err) {
-                    utils.log(`Face detection error: ${err.message}`, 'error');
-                    return null;
-                }
+                return await faceapi.detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
             },
-
-            computeConfidence(distance) {
-                return Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
-            },
-
-            euclideanDistance(a, b) {
-                return Math.sqrt(
-                    a.reduce((sum, ai, i) => sum + Math.pow(ai - b[i], 2), 0)
-                );
-            }
+            computeConfidence(distance) { return Math.max(0, Math.min(100, Math.round((1 - distance) * 100))); },
+            euclideanDistance(a, b) { return Math.sqrt(a.reduce((sum, ai, i) => sum + Math.pow(ai - b[i], 2), 0)); }
         };
 
-        // ==================== DATABASE ====================
         const database = {
             async initialize() {
-                try {
-                    state.app = initializeApp(firebaseConfig);
-                    state.db = getFirestore(state.app);
-                    utils.log('Firebase initialized', 'success');
-                } catch (err) {
-                    utils.log(`Firebase init failed: ${err.message}`, 'error');
-                    throw new Error('Database connection failed');
-                }
+                state.app = initializeApp(firebaseConfig);
+                state.db = getFirestore(state.app);
             },
-
             async loadAllStudents() {
                 try {
-                    utils.log('Loading student data...');
                     const querySnapshot = await getDocs(collection(state.db, "students"));
                     state.allStudents = [];
                     const labeledDescriptors = [];
-
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         state.allStudents.push(data);
-
                         if (data.approved && data.faceDescriptor) {
-                            const descriptor = new Float32Array(data.faceDescriptor);
-                            labeledDescriptors.push(
-                                new faceapi.LabeledFaceDescriptors(data.name, [descriptor])
-                            );
+                            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));
                         }
                     });
-
                     if (labeledDescriptors.length > 0) {
                         state.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, CONFIDENCE_THRESHOLD);
                         elements.dbStatusEl.textContent = 'CONNECTED';
                         elements.dbStatusEl.style.color = '#00ff9c';
-                        utils.log(`Loaded ${labeledDescriptors.length} approved students`, 'success');
-                    } else {
-                        elements.dbStatusEl.textContent = 'NO DATA';
-                        utils.log('No approved students found', 'warning');
                     }
                 } catch (err) {
-                    utils.log(`Student load failed: ${err.message}`, 'error');
                     elements.dbStatusEl.textContent = 'ERROR';
-                    elements.dbStatusEl.style.color = '#ff4444';
                 }
             },
-
             async recordAttendance(studentName, district) {
-                try {
-                    await addDoc(collection(state.db, "attendance"), {
-                        studentName,
-                        district,
-                        timestamp: serverTimestamp()
-                    });
-                    utils.log(`Attendance recorded for ${studentName}`, 'success');
-                } catch (err) {
-                    utils.log(`Attendance record failed: ${err.message}`, 'error');
-                }
+                await addDoc(collection(state.db, "attendance"), { studentName, district, timestamp: serverTimestamp() });
             },
-
             async registerStudent(data) {
-                try {
-                    await addDoc(collection(state.db, "students"), {
-                        ...data,
-                        approved: false,
-                        createdAt: serverTimestamp()
-                    });
-                    utils.log(`Student registered: ${data.name}`, 'success');
-                    return true;
-                } catch (err) {
-                    utils.log(`Registration failed: ${err.message}`, 'error');
-                    throw err;
-                }
+                await addDoc(collection(state.db, "students"), { ...data, approved: false, createdAt: serverTimestamp() });
             }
         };
 
-        // ==================== RECOGNITION ENGINE ====================
         const recognition = {
             async process() {
                 if (state.isProcessing) return;
-
                 const detection = await faceManager.detectFace(elements.video);
-
                 if (detection) {
                     const confidence = faceManager.computeConfidence(detection.descriptor);
                     utils.updateConfidence(Math.min(confidence, 100));
-
                     if (state.faceMatcher) {
                         const bestMatch = state.faceMatcher.findBestMatch(detection.descriptor);
-                        
                         if (bestMatch.label !== 'unknown') {
                             const student = state.allStudents.find(s => s.name === bestMatch.label);
-                            if (student) {
-                                await this.handleMatch(student);
-                            }
-                        } else {
-                            this.handleUnknownFace(detection.descriptor);
-                        }
-                    } else {
-                        this.handleUnknownFace(detection.descriptor);
-                    }
+                            if (student) await this.handleMatch(student);
+                        } else { this.handleUnknownFace(detection.descriptor); }
+                    } else { this.handleUnknownFace(detection.descriptor); }
                 } else {
                     utils.updateConfidence(0);
-                    if (!state.isProcessing) {
-                        utils.updateSubject('SCANNING...');
-                    }
+                    if (!state.isProcessing) utils.updateSubject('SCANNING...');
                 }
             },
-
             async handleMatch(student) {
                 state.isProcessing = true;
                 utils.updateStatus('ACCESS GRANTED ✓', 'success');
                 elements.lockEl.textContent = '🔓 UNLOCKED';
                 utils.updateSubject(student.name.toUpperCase());
                 utils.showRegSection(false);
-
-                try {
-                    await database.recordAttendance(student.name, student.district);
-                    utils.log(`Attendance logged for ${student.name}`, 'success');
-                } catch (err) {
-                    utils.log(`Failed to record attendance: ${err.message}`, 'error');
-                }
-
-                // Show confirmation message before redirecting
+                await database.recordAttendance(student.name, student.district);
                 await utils.delay(PROCESSING_TIMEOUT);
-                
-                // Redirect to attendance page with student info
-                utils.redirectToAttendance({
-                    name: student.name,
-                    country: student.country,
-                    district: student.district,
-                    village: student.village,
-                    timestamp: new Date().toLocaleString()
-                });
+                utils.redirectToAttendance({ name: student.name, country: student.country, district: student.district, village: student.village, timestamp: new Date().toLocaleString() });
             },
-
             handleUnknownFace(descriptor) {
-                // Check for pending students
                 let pendingStudent = null;
-
                 for (const student of state.allStudents) {
                     if (!student.approved && student.faceDescriptor) {
-                        const distance = faceManager.euclideanDistance(
-                            descriptor,
-                            new Float32Array(student.faceDescriptor)
-                        );
-                        if (distance < DISTANCE_THRESHOLD) {
-                            pendingStudent = student;
-                            break;
-                        }
+                        const distance = faceManager.euclideanDistance(descriptor, new Float32Array(student.faceDescriptor));
+                        if (distance < DISTANCE_THRESHOLD) { pendingStudent = student; break; }
                     }
                 }
-
                 if (pendingStudent) {
                     utils.updateStatus('PENDING APPROVAL', 'warning');
                     utils.updateSubject('AWAITING ADMIN');
@@ -701,138 +444,37 @@
                     utils.showRegSection(true);
                 }
             },
-
-            start() {
-                utils.log('Starting recognition loop');
-                state.recognitionLoopId = setInterval(() => this.process(), RECOGNITION_INTERVAL);
-            },
-
-            stop() {
-                if (state.recognitionLoopId) {
-                    clearInterval(state.recognitionLoopId);
-                    state.recognitionLoopId = null;
-                    utils.log('Recognition loop stopped');
-                }
-            }
+            start() { state.recognitionLoopId = setInterval(() => this.process(), RECOGNITION_INTERVAL); }
         };
 
-        // ==================== VIDEO STREAM ====================
         const videoManager = {
             async start() {
-                try {
-                    utils.log('Requesting camera access...');
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'user' }
-                    });
-                    elements.video.srcObject = stream;
-                    utils.log('Camera stream started', 'success');
-                } catch (err) {
-                    utils.log(`Camera access denied: ${err.message}`, 'error');
-                    utils.updateStatus('CAMERA ACCESS DENIED', 'error');
-                    throw new Error('Camera access required');
-                }
-            },
-
-            async waitForVideoReady() {
-                return new Promise((resolve) => {
-                    elements.video.onloadedmetadata = () => {
-                        utils.log('Video metadata loaded');
-                        resolve();
-                    };
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                elements.video.srcObject = stream;
             }
         };
 
-        // ==================== REGISTRATION ====================
         const registrationForm = {
-            validate() {
-                const fields = {
-                    name: elements.nameInput.value.trim(),
-                    country: elements.countryInput.value.trim(),
-                    district: elements.districtInput.value.trim(),
-                    village: elements.villageInput.value.trim()
-                };
-
-                if (!Object.values(fields).every(v => v.length > 0)) {
-                    utils.showAlert('Please fill all fields', 'error');
-                    return null;
-                }
-
-                return fields;
-            },
-
-            reset() {
-                elements.nameInput.value = '';
-                elements.countryInput.value = '';
-                elements.districtInput.value = '';
-                elements.villageInput.value = '';
-                utils.hideAlert();
-            },
-
             async submit() {
-                const data = this.validate();
-                if (!data) return;
-
-                elements.regBtn.disabled = true;
-                utils.updateStatus('CAPTURING FACE...', 'warning');
-
-                try {
-                    const detection = await faceManager.detectFace(elements.video);
-
-                    if (!detection) {
-                        utils.showAlert('No face detected. Please try again.', 'error');
-                        elements.regBtn.disabled = false;
-                        return;
-                    }
-
-                    await database.registerStudent({
-                        ...data,
-                        faceDescriptor: Array.from(detection.descriptor)
-                    });
-
-                    utils.showAlert('Registration submitted. Awaiting admin approval.', 'success');
-                    this.reset();
-                    await utils.delay(2000);
-                    location.reload();
-                } catch (err) {
-                    utils.showAlert(`Registration failed: ${err.message}`, 'error');
-                    utils.log(`Registration error: ${err.message}`, 'error');
-                } finally {
-                    elements.regBtn.disabled = false;
-                }
+                const data = { name: elements.nameInput.value, country: elements.countryInput.value, district: elements.districtInput.value, village: elements.villageInput.value };
+                if (!data.name) return;
+                const detection = await faceManager.detectFace(elements.video);
+                if (!detection) return;
+                await database.registerStudent({ ...data, faceDescriptor: Array.from(detection.descriptor) });
+                location.reload();
             }
         };
 
-        // ==================== INITIALIZATION ====================
         async function initialize() {
-            try {
-                utils.updateStatus('INITIALIZING SYSTEM...', 'warning');
-
-                await database.initialize();
-                await faceManager.loadModels();
-                await videoManager.start();
-                await videoManager.waitForVideoReady();
-                await database.loadAllStudents();
-
-                utils.updateStatus('SYSTEM ACTIVE', 'success');
-                recognition.start();
-            } catch (err) {
-                utils.updateStatus('SYSTEM ERROR', 'error');
-                utils.log(`Initialization failed: ${err.message}`, 'error');
-                utils.showAlert(err.message, 'error');
-            }
+            await database.initialize();
+            await faceManager.loadModels();
+            await videoManager.start();
+            await database.loadAllStudents();
+            recognition.start();
         }
 
-        // ==================== EVENT LISTENERS ====================
         elements.regBtn.addEventListener('click', () => registrationForm.submit());
-
-        // Initialize on load
         document.addEventListener('DOMContentLoaded', initialize);
-
-        // Cleanup on unload
-        window.addEventListener('beforeunload', () => {
-            recognition.stop();
-        });
     </script>
 </body>
-    </html>
+</html>
