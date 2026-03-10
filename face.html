@@ -2,293 +2,119 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Advanced AI Biometric Analysis & Registration System">
-    <title>AI Biometric Analysis & Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Biometric Gateway</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <link rel="manifest" href="manifest.json">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: linear-gradient(135deg, #0b1220 0%, #1a2d4d 100%);
+            background: #050a14;
             font-family: 'Segoe UI', 'Courier New', monospace;
             color: #0ff;
             text-align: center;
-            padding: 20px;
+            padding: 10px;
             min-height: 100vh;
         }
 
-        h1 {
-            letter-spacing: 8px;
-            text-shadow: 0 0 20px #0ff, 0 0 40px #0099ff;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        h2 {
-            color: #ffcc00;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        /* Scanner UI */
-        .scanner-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin: 30px 0;
-        }
+        h1 { font-size: 1.1rem; letter-spacing: 2px; margin: 15px 0; text-transform: uppercase; border-bottom: 1px solid #044; padding-bottom: 5px; }
 
         .scanner-box {
             position: relative;
             width: 100%;
-            max-width: 400px;
-            aspect-ratio: 4 / 3;
-            border: 3px solid #00f7ff;
-            border-radius: 15px;
-            box-shadow: 0 0 30px #00f7ff, inset 0 0 30px rgba(0, 247, 255, 0.1);
+            max-width: 280px;
+            aspect-ratio: 1 / 1;
+            border: 1px solid #0ff;
+            border-radius: 5px;
+            margin: 0 auto;
             background: #000;
             overflow: hidden;
         }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
+        video { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.1) contrast(1.1); }
+        
         .scan-line {
             position: absolute;
             width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00f7ff, transparent);
-            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.6);
+            height: 2px;
+            background: #0ff;
+            box-shadow: 0 0 10px #0ff;
             top: 0;
-            animation: scan 3s ease-in-out infinite;
+            animation: scan 2s linear infinite;
+            z-index: 2;
         }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
 
-        @keyframes scan {
-            0%, 100% { top: 0%; }
-            50% { top: 100%; }
-        }
-
-        .corner-accent {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 2px solid #00f7ff;
-        }
-
-        .corner-tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
-        .corner-tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
-        .corner-bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
-        .corner-br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
-
-        .status-display {
-            font-size: 1.3rem;
-            color: #0ff;
-            margin: 20px 0;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px #0ff;
-            min-height: 30px;
-        }
-
-        .status-display.success { color: #00ff9c; text-shadow: 0 0 10px #00ff9c; }
-        .status-display.warning { color: #ffcc00; text-shadow: 0 0 10px #ffcc00; }
-        .status-display.error { color: #ff4444; text-shadow: 0 0 10px #ff4444; }
-
-        /* --- REDUCED BOX SIZE STYLING --- */
+        .status-display { font-size: 0.8rem; margin: 15px 0; font-weight: bold; min-height: 20px; }
+        
         .dashboard {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 2x2 grid for professional look */
-            gap: 12px;
-            max-width: 600px;
-            margin: 20px auto;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            max-width: 300px;
+            margin: 10px auto;
         }
 
         .panel {
-            background: rgba(8, 18, 32, 0.9);
-            border: 1px solid #00f7ff; /* Thinner border */
-            padding: 12px; /* Reduced padding */
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(0, 247, 255, 0.2);
+            background: rgba(0, 40, 40, 0.2);
+            border: 1px solid #044;
+            padding: 8px 4px;
+            min-height: 60px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            min-height: 80px; /* Reduced height */
         }
 
-        .panel:hover {
-            box-shadow: 0 0 20px rgba(0, 247, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .panel-label {
-            font-size: 0.75rem; /* Smaller labels */
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-
-        .panel-value {
-            font-size: 1.1rem; /* Scaled down value text */
-            color: #00ff9c;
-            font-weight: bold;
-        }
-
-        .panel-value.accent { color: #00f7ff; }
-
-        /* Registration Form */
-        .reg-container {
-            display: none;
-            max-width: 500px;
-            margin: 30px auto;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #ffcc00;
-            box-shadow: 0 0 30px rgba(255, 204, 0, 0.2);
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .reg-container.visible { display: block; }
-        .form-group { margin-bottom: 15px; }
-
-        input {
-            padding: 14px;
-            width: 100%;
-            border: 2px solid #00f7ff;
-            border-radius: 8px;
-            background: #1a264d;
-            color: #0ff;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        button {
-            padding: 15px;
-            margin-top: 15px;
-            background: linear-gradient(135deg, #00f7ff 0%, #00ccff 100%);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            color: #0a0f2c;
-            width: 100%;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .alert-box {
+        .panel-label { font-size: 0.5rem; color: #088; text-transform: uppercase; margin-bottom: 2px; }
+        .panel-value { font-size: 0.8rem; color: #0ff; font-weight: bold; }
+        
+        .alert-overlay {
             color: #ffcc00;
-            border: 2px solid #ffcc00;
-            padding: 15px;
-            margin-top: 15px;
+            font-size: 0.7rem;
+            margin-top: 10px;
             display: none;
-            border-radius: 8px;
-            background: rgba(255, 204, 0, 0.1);
-        }
-
-        .alert-box.visible { display: block; }
-
-        @media (max-width: 768px) {
-            h1 { font-size: 1.8rem; }
-            .dashboard { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .scanner-box { max-width: 100%; }
+            padding: 10px;
+            border: 1px dashed #ffcc00;
         }
     </style>
 </head>
 <body>
 
-    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
+    <h1>🔍 SYSTEM_GATEWAY_v2</h1>
 
-    <div class="scanner-container">
-        <div class="scanner-box">
-            <video id="video" autoplay playsinline muted></video>
-            <div class="scan-line"></div>
-            <div class="corner-accent corner-tl"></div>
-            <div class="corner-accent corner-tr"></div>
-            <div class="corner-accent corner-bl"></div>
-            <div class="corner-accent corner-br"></div>
-        </div>
+    <div class="scanner-box">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="scan-line"></div>
     </div>
 
-    <div id="status-text" class="status-display">INITIALIZING SYSTEM...</div>
+    <div id="status-text" class="status-display">INITIALIZING...</div>
 
     <div class="dashboard">
         <div class="panel">
-            <div class="panel-label">Security Status</div>
-            <div class="panel-value" id="lock-status">🔒 LOCKED</div>
+            <div class="panel-label">Lock_State</div>
+            <div class="panel-value" id="lock-status">LOCKED</div>
         </div>
         <div class="panel">
-            <div class="panel-label">Match Confidence</div>
-            <div class="panel-value accent" id="confidence">0%</div>
+            <div class="panel-label">Match_Prob</div>
+            <div class="panel-value" id="confidence">0%</div>
         </div>
         <div class="panel">
-            <div class="panel-label">Identified Subject</div>
-            <div class="panel-value" id="subject-name">SCANNING...</div>
+            <div class="panel-label">Ident_Subject</div>
+            <div class="panel-value" id="subject-name">---</div>
         </div>
         <div class="panel">
-            <div class="panel-label">Database Status</div>
-            <div class="panel-value" id="db-status" style="color: #ffcc00;">CONNECTING...</div>
+            <div class="panel-label">Net_Status</div>
+            <div class="panel-value" id="db-status">SYNCING</div>
         </div>
     </div>
 
-    <div id="reg-section" class="reg-container">
-        <h2>🎓 STUDENT REGISTRATION</h2>
-        <div class="form-group">
-            <input type="text" id="name" placeholder="Full Name" required>
-        </div>
-        <div class="form-group">
-            <input type="text" id="country" placeholder="Country" required>
-        </div>
-        <div class="form-group">
-            <input type="text" id="district" placeholder="District" required>
-        </div>
-        <div class="form-group">
-            <input type="text" id="village" placeholder="Village" required>
-        </div>
-        <button id="regBtn">CHECK & REGISTER FACE</button>
-        <div id="pendingMsg" class="alert-box">⚠️ Your registration is pending admin approval.</div>
-        <div id="alertMsg" class="alert-box"></div>
+    <div id="pending-alert" class="alert-overlay">
+        > WARNING: SUBJECT REGISTERED<br>
+        > STATUS: PENDING_ADMIN_APPROVAL<br>
+        > ACCESS_DENIED
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import {
-            getFirestore,
-            collection,
-            addDoc,
-            getDocs,
-            serverTimestamp,
-            query,
-            where
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        const FACE_API_MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-        const CONFIDENCE_THRESHOLD = 0.45;
-        const DISTANCE_THRESHOLD = 0.5;
-        const RECOGNITION_INTERVAL = 1000;
-        const PROCESSING_TIMEOUT = 3000;
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -299,15 +125,7 @@
             appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
         };
 
-        const state = {
-            app: null,
-            db: null,
-            faceMatcher: null,
-            allStudents: [],
-            isProcessing: false,
-            recognitionLoopId: null
-        };
-
+        const state = { db: null, faceMatcher: null, allStudents: [], isProcessing: false };
         const elements = {
             video: document.getElementById("video"),
             statusEl: document.getElementById("status-text"),
@@ -315,166 +133,120 @@
             lockEl: document.getElementById("lock-status"),
             subjectEl: document.getElementById("subject-name"),
             dbStatusEl: document.getElementById("db-status"),
-            regSection: document.getElementById("reg-section"),
-            regBtn: document.getElementById("regBtn"),
-            alertMsg: document.getElementById("alertMsg"),
-            pendingMsg: document.getElementById("pendingMsg"),
-            nameInput: document.getElementById("name"),
-            countryInput: document.getElementById("country"),
-            districtInput: document.getElementById("district"),
-            villageInput: document.getElementById("village")
+            pendingAlert: document.getElementById("pending-alert")
         };
 
-        const utils = {
-            updateStatus(text, type = 'info') {
-                elements.statusEl.textContent = text;
-                elements.statusEl.className = `status-display ${type}`;
-            },
-            updateConfidence(percent) { elements.confidenceEl.textContent = `${percent}%`; },
-            updateSubject(name) { elements.subjectEl.textContent = name; },
-            showAlert(message, type = 'error') {
-                elements.alertMsg.textContent = message;
-                elements.alertMsg.className = `alert-box visible ${type}`;
-            },
-            hideAlert() { elements.alertMsg.classList.remove('visible'); },
-            showRegSection(show = true) { elements.regSection.classList.toggle('visible', show); },
-            async delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
-            log(message, type = 'info') { console.log(`[${type.toUpperCase()}] ${message}`); },
-            redirectToAttendance(studentData) {
-                sessionStorage.setItem('studentData', JSON.stringify(studentData));
-                window.location.href = './attendance.html';
-            }
-        };
-
-        const faceManager = {
-            async loadModels() {
+        async function init() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                state.db = getFirestore(app);
+                
+                const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
                 await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODEL_URL)
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
-            },
-            async detectFace(videoElement) {
-                return await faceapi.detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-            },
-            computeConfidence(distance) { return Math.max(0, Math.min(100, Math.round((1 - distance) * 100))); },
-            euclideanDistance(a, b) { return Math.sqrt(a.reduce((sum, ai, i) => sum + Math.pow(ai - b[i], 2), 0)); }
-        };
 
-        const database = {
-            async initialize() {
-                state.app = initializeApp(firebaseConfig);
-                state.db = getFirestore(state.app);
-            },
-            async loadAllStudents() {
-                try {
-                    const querySnapshot = await getDocs(collection(state.db, "students"));
-                    state.allStudents = [];
-                    const labeledDescriptors = [];
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        state.allStudents.push(data);
-                        if (data.approved && data.faceDescriptor) {
-                            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));
-                        }
-                    });
-                    if (labeledDescriptors.length > 0) {
-                        state.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, CONFIDENCE_THRESHOLD);
-                        elements.dbStatusEl.textContent = 'CONNECTED';
-                        elements.dbStatusEl.style.color = '#00ff9c';
-                    }
-                } catch (err) {
-                    elements.dbStatusEl.textContent = 'ERROR';
-                }
-            },
-            async recordAttendance(studentName, district) {
-                await addDoc(collection(state.db, "attendance"), { studentName, district, timestamp: serverTimestamp() });
-            },
-            async registerStudent(data) {
-                await addDoc(collection(state.db, "students"), { ...data, approved: false, createdAt: serverTimestamp() });
-            }
-        };
-
-        const recognition = {
-            async process() {
-                if (state.isProcessing) return;
-                const detection = await faceManager.detectFace(elements.video);
-                if (detection) {
-                    const confidence = faceManager.computeConfidence(detection.descriptor);
-                    utils.updateConfidence(Math.min(confidence, 100));
-                    if (state.faceMatcher) {
-                        const bestMatch = state.faceMatcher.findBestMatch(detection.descriptor);
-                        if (bestMatch.label !== 'unknown') {
-                            const student = state.allStudents.find(s => s.name === bestMatch.label);
-                            if (student) await this.handleMatch(student);
-                        } else { this.handleUnknownFace(detection.descriptor); }
-                    } else { this.handleUnknownFace(detection.descriptor); }
-                } else {
-                    utils.updateConfidence(0);
-                    if (!state.isProcessing) utils.updateSubject('SCANNING...');
-                }
-            },
-            async handleMatch(student) {
-                state.isProcessing = true;
-                utils.updateStatus('ACCESS GRANTED ✓', 'success');
-                elements.lockEl.textContent = '🔓 UNLOCKED';
-                utils.updateSubject(student.name.toUpperCase());
-                utils.showRegSection(false);
-                await database.recordAttendance(student.name, student.district);
-                await utils.delay(PROCESSING_TIMEOUT);
-                utils.redirectToAttendance({ name: student.name, country: student.country, district: student.district, village: student.village, timestamp: new Date().toLocaleString() });
-            },
-            handleUnknownFace(descriptor) {
-                let pendingStudent = null;
-                for (const student of state.allStudents) {
-                    if (!student.approved && student.faceDescriptor) {
-                        const distance = faceManager.euclideanDistance(descriptor, new Float32Array(student.faceDescriptor));
-                        if (distance < DISTANCE_THRESHOLD) { pendingStudent = student; break; }
-                    }
-                }
-                if (pendingStudent) {
-                    utils.updateStatus('PENDING APPROVAL', 'warning');
-                    utils.updateSubject('AWAITING ADMIN');
-                    elements.pendingMsg.classList.add('visible');
-                    utils.showRegSection(true);
-                } else {
-                    utils.updateStatus('UNKNOWN - REGISTERING', 'error');
-                    utils.updateSubject('NOT IN SYSTEM');
-                    elements.pendingMsg.classList.remove('visible');
-                    utils.showRegSection(true);
-                }
-            },
-            start() { state.recognitionLoopId = setInterval(() => this.process(), RECOGNITION_INTERVAL); }
-        };
-
-        const videoManager = {
-            async start() {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 320, height: 320, facingMode: 'user' } 
+                });
                 elements.video.srcObject = stream;
-            }
-        };
 
-        const registrationForm = {
-            async submit() {
-                const data = { name: elements.nameInput.value, country: elements.countryInput.value, district: elements.districtInput.value, village: elements.villageInput.value };
-                if (!data.name) return;
-                const detection = await faceManager.detectFace(elements.video);
-                if (!detection) return;
-                await database.registerStudent({ ...data, faceDescriptor: Array.from(detection.descriptor) });
-                location.reload();
+                await loadDatabase();
+                elements.statusEl.textContent = "READY_TO_SCAN";
+                setInterval(processFrame, 1200);
+            } catch (e) {
+                elements.statusEl.textContent = "CORE_ERROR";
             }
-        };
-
-        async function initialize() {
-            await database.initialize();
-            await faceManager.loadModels();
-            await videoManager.start();
-            await database.loadAllStudents();
-            recognition.start();
         }
 
-        elements.regBtn.addEventListener('click', () => registrationForm.submit());
-        document.addEventListener('DOMContentLoaded', initialize);
+        async function loadDatabase() {
+            const snap = await getDocs(collection(state.db, "students"));
+            state.allStudents = [];
+            const labeled = [];
+            
+            snap.forEach(doc => {
+                const data = doc.data();
+                state.allStudents.push(data);
+                if (data.approved && data.faceDescriptor) {
+                    labeled.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));
+                }
+            });
+            
+            if (labeled.length) state.faceMatcher = new faceapi.FaceMatcher(labeled, 0.5);
+            elements.dbStatusEl.textContent = "ONLINE";
+        }
+
+        async function processFrame() {
+            if (state.isProcessing) return;
+            const det = await faceapi.detectSingleFace(elements.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+            
+            if (det) {
+                const conf = Math.round((1 - det.descriptor[0]) * 100);
+                elements.confidenceEl.textContent = `${Math.min(conf, 99)}%`;
+
+                // 1. Check Approved Users
+                if (state.faceMatcher) {
+                    const match = state.faceMatcher.findBestMatch(det.descriptor);
+                    if (match.label !== 'unknown') {
+                        const student = state.allStudents.find(s => s.name === match.label);
+                        handleApproved(student);
+                        return;
+                    }
+                }
+
+                // 2. Check Pending Users (Registered but approved = false)
+                const pendingUser = checkPending(det.descriptor);
+                if (pendingUser) {
+                    elements.subjectEl.textContent = "PENDING";
+                    elements.statusEl.textContent = "AUTH_REQUIRED";
+                    elements.pendingAlert.style.display = "block";
+                    return;
+                }
+                
+                // 3. Unregistered User
+                state.isProcessing = true;
+                elements.statusEl.textContent = "UNKNOWN_SUBJECT";
+                elements.subjectEl.textContent = "NEW_USER";
+                setTimeout(() => window.location.href = './registration.html', 1500);
+
+            } else {
+                elements.confidenceEl.textContent = "0%";
+                elements.pendingAlert.style.display = "none";
+            }
+        }
+
+        function checkPending(descriptor) {
+            // Checks descriptors of unapproved students
+            for (const student of state.allStudents) {
+                if (!student.approved && student.faceDescriptor) {
+                    const distance = faceapi.euclideanDistance(descriptor, student.faceDescriptor);
+                    if (distance < 0.5) return student;
+                }
+            }
+            return null;
+        }
+
+        async function handleApproved(student) {
+            state.isProcessing = true;
+            elements.statusEl.textContent = "ACCESS_GRANTED";
+            elements.lockEl.textContent = "OPEN";
+            elements.subjectEl.textContent = student.name.substring(0, 12).toUpperCase();
+            
+            await addDoc(collection(state.db, "attendance"), {
+                studentName: student.name,
+                district: student.district,
+                timestamp: serverTimestamp()
+            });
+
+            setTimeout(() => {
+                sessionStorage.setItem('studentData', JSON.stringify(student));
+                window.location.href = './attendance.html';
+            }, 2000);
+        }
+
+        init();
     </script>
 </body>
 </html>
