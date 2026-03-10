@@ -30,13 +30,6 @@
             margin-bottom: 30px;
             font-weight: 700;
             text-transform: uppercase;
-            transition: all 0.5s ease;
-        }
-
-        h1.hide-title {
-            opacity: 0;
-            transform: translateY(-30px);
-            pointer-events: none;
         }
 
         h2 {
@@ -53,24 +46,6 @@
             align-items: center;
             gap: 15px;
             margin: 30px 0;
-            transition: all 0.5s ease;
-        }
-
-        .scanner-container.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            margin: 0;
-            gap: 0;
-            padding: 0;
-            width: 100%;
-            height: 100vh;
-            background: #000;
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
         }
 
         .scanner-box {
@@ -83,16 +58,6 @@
             box-shadow: 0 0 30px #00f7ff, inset 0 0 30px rgba(0, 247, 255, 0.1);
             background: #000;
             overflow: hidden;
-            transition: all 0.5s ease;
-        }
-
-        .scanner-container.fullscreen .scanner-box {
-            max-width: 100%;
-            aspect-ratio: auto;
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
-            border: none;
         }
 
         video {
@@ -165,13 +130,6 @@
             letter-spacing: 2px;
             text-shadow: 0 0 10px #0ff;
             min-height: 30px;
-            transition: all 0.5s ease;
-        }
-
-        .status-display.hide-status {
-            opacity: 0;
-            pointer-events: none;
-            margin: 0;
         }
 
         .status-display.success {
@@ -196,17 +154,6 @@
             gap: 15px;
             max-width: 900px;
             margin: 30px auto;
-            transition: all 0.5s ease;
-        }
-
-        .dashboard.hide-dashboard {
-            opacity: 0;
-            visibility: hidden;
-            max-height: 0;
-            overflow: hidden;
-            margin: 0;
-            gap: 0;
-            pointer-events: none;
         }
 
         .panel {
@@ -354,39 +301,6 @@
             background: rgba(0, 255, 156, 0.1);
         }
 
-        /* Exit Registration Indicator */
-        .exit-registration {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1001;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-
-        .exit-registration.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .exit-btn {
-            background: rgba(255, 68, 68, 0.2);
-            border: 2px solid #ff4444;
-            color: #ff6666;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-        }
-
-        .exit-btn:hover {
-            background: rgba(255, 68, 68, 0.4);
-            box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
-        }
-
         /* Loading State */
         .loader {
             display: inline-block;
@@ -425,9 +339,9 @@
 </head>
 <body>
 
-    <h1 id="mainTitle">🔍 AI BIOMETRIC ANALYSIS</h1>
+    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
 
-    <div class="scanner-container" id="scannerContainer">
+    <div class="scanner-container">
         <div class="scanner-box">
             <video id="video" autoplay playsinline muted></video>
             <div class="scan-line"></div>
@@ -440,7 +354,7 @@
 
     <div id="status-text" class="status-display">INITIALIZING SYSTEM...</div>
 
-    <div class="dashboard" id="dashboard">
+    <div class="dashboard">
         <div class="panel">
             <div class="panel-label">Security Status</div>
             <div class="panel-value" id="lock-status">🔒 LOCKED</div>
@@ -457,10 +371,6 @@
             <div class="panel-label">Database Status</div>
             <div class="panel-value" id="db-status" style="color: #ffcc00;">CONNECTING...</div>
         </div>
-    </div>
-
-    <div class="exit-registration" id="exitRegistration">
-        <button class="exit-btn" onclick="exitRegistrationMode()">✕ CANCEL</button>
     </div>
 
     <div id="reg-section" class="reg-container">
@@ -499,7 +409,7 @@
         const CONFIDENCE_THRESHOLD = 0.45;
         const DISTANCE_THRESHOLD = 0.5;
         const RECOGNITION_INTERVAL = 1000; // ms
-        const PROCESSING_TIMEOUT = 3000; // ms
+        const PROCESSING_TIMEOUT = 3000; // ms - reduced for faster redirect
 
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -517,8 +427,7 @@
             faceMatcher: null,
             allStudents: [],
             isProcessing: false,
-            recognitionLoopId: null,
-            registrationMode: false
+            recognitionLoopId: null
         };
 
         // ==================== DOM ELEMENTS ====================
@@ -536,12 +445,7 @@
             nameInput: document.getElementById("name"),
             countryInput: document.getElementById("country"),
             districtInput: document.getElementById("district"),
-            villageInput: document.getElementById("village"),
-            mainTitle: document.getElementById("mainTitle"),
-            dashboard: document.getElementById("dashboard"),
-            statusDisplay: document.getElementById("status-text"),
-            scannerContainer: document.getElementById("scannerContainer"),
-            exitRegistration: document.getElementById("exitRegistration")
+            villageInput: document.getElementById("village")
         };
 
         // ==================== UTILITIES ====================
@@ -572,60 +476,6 @@
                 elements.regSection.classList.toggle('visible', show);
             },
 
-            /**
-             * Enter distraction-free registration mode
-             */
-            enterRegistrationMode() {
-                state.registrationMode = true;
-                
-                // Hide all distracting elements
-                elements.mainTitle.classList.add('hide-title');
-                elements.dashboard.classList.add('hide-dashboard');
-                elements.statusDisplay.classList.add('hide-status');
-                
-                // Make scanner fullscreen
-                elements.scannerContainer.classList.add('fullscreen');
-                
-                // Show exit button
-                elements.exitRegistration.classList.add('visible');
-                
-                // Show registration form
-                this.showRegSection(true);
-                
-                utils.log('Entered registration mode - distraction-free', 'success');
-            },
-
-            /**
-             * Exit distraction-free registration mode
-             */
-            exitRegistrationMode() {
-                state.registrationMode = false;
-                
-                // Show all elements
-                elements.mainTitle.classList.remove('hide-title');
-                elements.dashboard.classList.remove('hide-dashboard');
-                elements.statusDisplay.classList.remove('hide-status');
-                
-                // Reset scanner
-                elements.scannerContainer.classList.remove('fullscreen');
-                
-                // Hide exit button
-                elements.exitRegistration.classList.remove('visible');
-                
-                // Hide registration form
-                this.showRegSection(false);
-                
-                // Reset status
-                this.updateStatus('SYSTEM ACTIVE', 'success');
-                this.updateSubject('SCANNING...');
-                this.updateConfidence(0);
-                
-                // Clear form
-                registrationForm.reset();
-                
-                utils.log('Exited registration mode', 'info');
-            },
-
             async delay(ms) {
                 return new Promise(resolve => setTimeout(resolve, ms));
             },
@@ -634,8 +484,13 @@
                 console.log(`[${type.toUpperCase()}] ${message}`);
             },
 
+            /**
+             * Redirect to attendance page with student data
+             */
             redirectToAttendance(studentData) {
+                // Store student data in sessionStorage for the attendance page
                 sessionStorage.setItem('studentData', JSON.stringify(studentData));
+                // Redirect to attendance.html
                 window.location.href = './attendance.html';
             }
         };
@@ -760,7 +615,7 @@
         // ==================== RECOGNITION ENGINE ====================
         const recognition = {
             async process() {
-                if (state.isProcessing || state.registrationMode) return;
+                if (state.isProcessing) return;
 
                 const detection = await faceManager.detectFace(elements.video);
 
@@ -804,8 +659,10 @@
                     utils.log(`Failed to record attendance: ${err.message}`, 'error');
                 }
 
+                // Show confirmation message before redirecting
                 await utils.delay(PROCESSING_TIMEOUT);
                 
+                // Redirect to attendance page with student info
                 utils.redirectToAttendance({
                     name: student.name,
                     country: student.country,
@@ -838,13 +695,10 @@
                     elements.pendingMsg.classList.add('visible');
                     utils.showRegSection(true);
                 } else {
-                    // NEW USER DETECTED - Enter registration mode
-                    utils.updateStatus('NEW USER DETECTED', 'warning');
-                    utils.updateSubject('REGISTERING...');
+                    utils.updateStatus('UNKNOWN - REGISTERING', 'error');
+                    utils.updateSubject('NOT IN SYSTEM');
                     elements.pendingMsg.classList.remove('visible');
-                    
-                    // Enter distraction-free registration mode
-                    utils.enterRegistrationMode();
+                    utils.showRegSection(true);
                 }
             },
 
@@ -939,9 +793,6 @@
                     utils.showAlert('Registration submitted. Awaiting admin approval.', 'success');
                     this.reset();
                     await utils.delay(2000);
-                    
-                    // Exit registration mode and reload
-                    utils.exitRegistrationMode();
                     location.reload();
                 } catch (err) {
                     utils.showAlert(`Registration failed: ${err.message}`, 'error');
@@ -950,11 +801,6 @@
                     elements.regBtn.disabled = false;
                 }
             }
-        };
-
-        // ==================== GLOBAL EXIT FUNCTION ====================
-        window.exitRegistrationMode = function() {
-            utils.exitRegistrationMode();
         };
 
         // ==================== INITIALIZATION ====================
@@ -989,4 +835,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
