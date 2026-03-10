@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -79,10 +79,10 @@
         let allStudentsData = [];
         let isProcessing = false;
         
-        // --- STRICT FACE DETECTION CONFIG ---
-        const DISTANCE_THRESHOLD = 0.35; // STRICTER: lowered from 0.6 to 0.35
-        const CONFIDENCE_MIN = 0.65; // Minimum confidence level (1 - distance)
-        const CONSECUTIVE_MATCHES_REQUIRED = 2; // Require 2 consecutive matches
+        // --- BALANCED FACE DETECTION CONFIG ---
+        const DISTANCE_THRESHOLD = 0.45; // BALANCED: between strict (0.35) and lenient (0.6)
+        const CONFIDENCE_MIN = 0.55; // Moderate confidence level
+        const CONSECUTIVE_MATCHES_REQUIRED = 2; // Require 2 consecutive matches for stability
         let consecutiveMatches = 0;
         let lastMatchName = null;
 
@@ -139,7 +139,6 @@
             });
 
             if (labeledDescriptors.length > 0) {
-                // STRICT THRESHOLD: 0.35 instead of 0.6
                 faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);
                 status.innerText = "System Ready. Please face the camera.";
                 debugInfo.innerText = `Threshold: ${DISTANCE_THRESHOLD} | Min Confidence: ${CONFIDENCE_MIN}`;
@@ -165,14 +164,12 @@
                 if (detection) {
                     const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
                     const distance = bestMatch.distance;
-                    const confidence = (1 - distance).toFixed(2); // Convert to confidence percentage
+                    const confidence = (1 - distance).toFixed(2);
                     
-                    // Display debug info
                     debugInfo.innerText = `Distance: ${distance.toFixed(3)} | Confidence: ${confidence}`;
                     
-                    // STRICT CHECKING: Check both distance and confidence
+                    // BALANCED CHECKING
                     if (bestMatch.label !== 'unknown' && distance < DISTANCE_THRESHOLD && confidence >= CONFIDENCE_MIN) {
-                        // Check if same person detected consecutively
                         if (lastMatchName === bestMatch.label) {
                             consecutiveMatches++;
                         } else {
@@ -180,7 +177,6 @@
                             lastMatchName = bestMatch.label;
                         }
 
-                        // Only process match after required consecutive detections
                         if (consecutiveMatches >= CONSECUTIVE_MATCHES_REQUIRED) {
                             const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
                             if (studentInfo) {
@@ -190,11 +186,9 @@
                             }
                         }
                     } else {
-                        // Reset consecutive counter if face doesn't match
                         consecutiveMatches = 0;
                         lastMatchName = null;
 
-                        // Unknown or low confidence face detected
                         if (detection && distance >= DISTANCE_THRESHOLD) {
                             status.innerText = `❌ Unknown Face (Distance: ${distance.toFixed(3)})`;
                             playErrorSound();
@@ -205,7 +199,7 @@
                         }
                     }
                 }
-            }, 800); // Increased interval to 800ms for better consecutive detection
+            }, 800);
         }
 
         async function handleMatch(info) {
@@ -263,4 +257,4 @@
         init();
     </script>
 </body>
-</html>
+    </html>
