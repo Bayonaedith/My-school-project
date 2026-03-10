@@ -1,143 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Biometric Scanner</title>
 
-<title>AI Biometric Scanner</title>
+    <style>
+        body {
+            background: #0b1220;
+            font-family: 'Courier New', Courier, monospace; /* Changed for a more 'tech' feel */
+            color: #0ff;
+            text-align: center;
+            margin: 0;
+            overflow-x: hidden;
+        }
 
-<style>
+        h1 {
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px #0ff;
+        }
 
-body{
-background:#0b1220;
-font-family:Arial;
-color:#0ff;
-text-align:center;
-margin:0;
-}
+        /* Scanner container */
+        .scanner {
+            position: relative;
+            width: 320px;
+            height: 240px; /* Fixed height to match video aspect ratio */
+            margin: 50px auto;
+            border: 2px solid #00f7ff;
+            border-radius: 10px;
+            box-shadow: 0 0 30px #00f7ff;
+            background: #000;
+            overflow: hidden;
+        }
 
-/* Scanner container */
+        /* Camera */
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-.scanner{
-position:relative;
-width:320px;
-margin:50px auto;
-border:2px solid #00f7ff;
-border-radius:10px;
-box-shadow:0 0 30px #00f7ff;
-overflow:hidden;
-}
+        /* scanning line - Enhanced with Glow */
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: #00f7ff;
+            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7);
+            z-index: 10;
+            top: 0;
+            animation: scan 3s ease-in-out infinite;
+        }
 
-/* Camera */
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
 
-video{
-width:100%;
-}
+        /* HUD panels */
+        .panel {
+            background: rgba(8, 18, 32, 0.8);
+            border: 1px solid #00f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 247, 255, 0.3);
+        }
 
-/* scanning line */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-.scan-line{
-position:absolute;
-width:100%;
-height:3px;
-background:#00f7ff;
-animation:scan 3s infinite;
-}
+        .big-status {
+            font-size: 22px;
+            color: #00ff9c;
+            margin-top: 20px;
+            height: 30px; /* Prevents layout jump when text changes */
+        }
 
-@keyframes scan{
-0%{top:0}
-50%{top:100%}
-100%{top:0}
-}
-
-/* HUD panels */
-
-.panel{
-background:#081220;
-border:1px solid #00f7ff;
-padding:10px;
-margin:10px;
-border-radius:8px;
-box-shadow:0 0 10px #00f7ff;
-}
-
-.dashboard{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-padding:20px;
-}
-
-.big-status{
-font-size:22px;
-color:#00ff9c;
-margin-top:20px;
-}
-
-.confidence{
-font-size:30px;
-color:#00f7ff;
-}
-
-</style>
+        .confidence {
+            font-size: 30px;
+            color: #00f7ff;
+            font-weight: bold;
+        }
+    </style>
 </head>
-
 <body>
 
-<h1>🔍 AI BIOMETRIC ANALYSIS</h1>
+    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
 
-<div class="scanner">
+    <div class="scanner">
+        <video id="video" autoplay playsinline></video>
+        <div class="scan-line"></div>
+    </div>
 
-<video id="video" autoplay></video>
+    <div id="status-text" class="big-status">INITIALIZING SCAN...</div>
 
-<div class="scan-line"></div>
+    <div class="dashboard">
+        <div class="panel">
+            Security Status<br>
+            <span id="lock-status">🔒 Locked</span>
+        </div>
+        <div class="panel">
+            Match Confidence<br>
+            <span class="confidence" id="confidence">0%</span>
+        </div>
+        <div class="panel">
+            Network Activity<br>
+            <span id="network-bars">██████░░░░</span>
+        </div>
+        <div class="panel">
+            AI Processing<br>
+            <span id="ai-bars">████████░░</span>
+        </div>
+    </div>
 
-</div>
+    <script>
+        const video = document.getElementById("video");
+        const confidenceEl = document.getElementById("confidence");
+        const statusEl = document.getElementById("status-text");
+        const lockEl = document.getElementById("lock-status");
 
-<div class="big-status">IDENTITY SCANNING...</div>
+        // 1. Improved Camera Access
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.play();
+                startScanning();
+            })
+            .catch(err => {
+                console.error("Camera Error: ", err);
+                statusEl.innerText = "CAMERA ACCESS DENIED";
+                statusEl.style.color = "red";
+            });
+        }
 
-<div class="dashboard">
+        // 2. Dynamic Scanning Logic
+        function startScanning() {
+            let percent = 0;
+            statusEl.innerText = "IDENTITY SCANNING...";
 
-<div class="panel">
-Security Status<br>
-🔒 Locked
-</div>
+            const interval = setInterval(() => {
+                // Add a little randomness to make it look "AI-like"
+                percent += Math.floor(Math.random() * 3) + 1;
 
-<div class="panel">
-Match Confidence<br>
-<span class="confidence" id="confidence">0%</span>
-</div>
+                if (percent >= 100) {
+                    percent = 100;
+                    clearInterval(interval);
+                    completeScan();
+                }
 
-<div class="panel">
-Network Activity<br>
-██████░░░░
-</div>
+                confidenceEl.innerText = percent + "%";
+            }, 100);
+        }
 
-<div class="panel">
-AI Processing<br>
-████████░
-</div>
-
-</div>
-
-<script>
-
-const video=document.getElementById("video")
-
-navigator.mediaDevices.getUserMedia({video:true})
-.then(stream=>{
-video.srcObject=stream
-})
-
-/* fake scanning animation */
-
-let percent=0
-setInterval(()=>{
-percent=Math.min(100,percent+1)
-document.getElementById("confidence").innerText=percent+"%"
-},80)
-
-</script>
-
+        function completeScan() {
+            statusEl.innerText = "ACCESS GRANTED";
+            statusEl.style.color = "#00ff9c";
+            lockEl.innerText = "🔓 Unlocked";
+            lockEl.style.color = "#00ff9c";
+        }
+    </script>
 </body>
 </html>
