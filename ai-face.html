@@ -3,76 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Biometric Portal</title>
+    <title>Student Face Registration</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        body { background: #0b1220; font-family: 'Courier New', monospace; color: #0ff; text-align: center; margin: 0; overflow-x: hidden; padding-bottom: 50px; }
-        h1 { letter-spacing: 5px; text-shadow: 0 0 10px #0ff; margin-top: 20px; font-size: 1.5rem; }
-        
-        .scanner-container {
-            position: relative; width: 320px; height: 240px; margin: 20px auto;
-            border: 2px solid #00f7ff; border-radius: 10px; box-shadow: 0 0 30px #00f7ff;
-            background: #000; overflow: hidden;
-        }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .scan-line {
-            position: absolute; width: 100%; height: 4px; background: #00f7ff;
-            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7); z-index: 10;
-            top: 0; animation: scan 3s ease-in-out infinite;
-        }
-        @keyframes scan { 0%, 100% { top: 0%; } 50% { top: 100%; } }
-
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; padding: 10px; }
-        .panel { background: rgba(8, 18, 32, 0.8); border: 1px solid #00f7ff; padding: 10px; border-radius: 8px; font-size: 0.75rem; }
-        .status-msg { font-size: 1.1rem; color: #00f7ff; margin: 15px 0; font-weight: bold; min-height: 1.5em; }
-        
-        /* Registration Form Styles */
-        #registration-form { 
-            display: none; max-width: 400px; margin: 20px auto; 
-            background: rgba(255, 255, 255, 0.05); padding: 20px; 
-            border-radius: 15px; border: 1px solid #ffcc00; 
-        }
-        input { padding: 10px; margin: 5px 0; width: 90%; border: 1px solid #00f7ff; border-radius: 5px; background: #1a264d; color: white; }
-        button { 
-            padding: 12px; margin-top: 10px; background: #00f7ff; border: none; 
-            border-radius: 5px; cursor: pointer; font-weight: bold; width: 95%; transition: 0.3s;
-        }
-        button:hover { background: #00c4cc; }
-        .pending-box { color: #ffcc00; border: 1px solid #ffcc00; padding: 10px; margin-top: 10px; display: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 15px; border: 1px solid #00f7ff; }
+        video { border: 3px solid #00f7ff; border-radius: 10px; width: 100%; max-width: 400px; background: #000; margin-bottom: 15px; }
+        input { padding: 12px; margin: 8px 0; width: 90%; border: none; border-radius: 5px; font-size: 16px; background: #1a264d; color: white; }
+        button { padding: 15px 30px; margin-top: 15px; background: #00f7ff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: #0a0f2c; transition: 0.3s; width: 95%; }
+        button:hover { background: #00c4cc; transform: scale(1.02); }
+        #status { margin-top: 15px; font-weight: bold; color: #00f7ff; min-height: 1.2em; }
+        .pending-box { color: #ffcc00; border: 1px solid #ffcc00; padding: 10px; margin-top: 10px; display: none; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <h1>🔍 AI BIOMETRIC SYSTEM</h1>
-
-    <div class="scanner-container">
-        <video id="video" autoplay playsinline muted></video>
-        <div id="scan-line" class="scan-line"></div>
-    </div>
-
-    <div id="status-text" class="status-msg">INITIALIZING AI...</div>
-
-    <div class="dashboard">
-        <div class="panel">System State<br><span id="lock-status" style="color:#ffcc00;">Initializing</span></div>
-        <div class="panel">Match Confidence<br><span id="confidence" style="font-size: 1.2rem;">0%</span></div>
-        <div class="panel">Identity<br><span id="subject-name" style="color:#00ff9c;">Scanning...</span></div>
-        <div class="panel">DB Status<br><span id="db-status" style="color:yellow;">Connecting...</span></div>
-    </div>
-
-    <div id="registration-form">
-        <h3 style="color: #ffcc00; margin-top: 0;">New Student Detection</h3>
-        <p style="font-size: 0.8rem;">Face not recognized. Please register details:</p>
-        <input type="text" id="reg-name" placeholder="Full Name">
-        <input type="text" id="reg-country" placeholder="Country">
-        <input type="text" id="reg-district" placeholder="District">
-        <input type="text" id="reg-village" placeholder="Village">
-        <button id="register-btn">SUBMIT FOR APPROVAL</button>
-        <div id="pendingMsg" class="pending-box">⚠️ Registration submitted! Awaiting admin approval.</div>
+    <div class="container">
+        <h2>🎓 Student Registration</h2>
+        <video id="video" autoplay muted playsinline></video>
+        
+        <input type="text" id="name" placeholder="Full Name">
+        <input type="text" id="country" placeholder="Country">
+        <input type="text" id="district" placeholder="District">
+        <input type="text" id="village" placeholder="Village">
+        
+        <button id="regBtn">Check & Register Face</button>
+        <p id="status">Loading AI Models...</p>
+        <div id="pendingMsg" class="pending-box">⚠️ Your registration is still pending admin approval.</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -87,20 +49,11 @@
         const db = getFirestore(app);
 
         const video = document.getElementById("video");
-        const statusEl = document.getElementById("status-text");
-        const confidenceEl = document.getElementById("confidence");
-        const lockEl = document.getElementById("lock-status");
-        const subjectEl = document.getElementById("subject-name");
-        const dbStatusEl = document.getElementById("db-status");
-        const regForm = document.getElementById("registration-form");
-        const scanLine = document.getElementById("scan-line");
+        const status = document.getElementById("status");
+        const regBtn = document.getElementById("regBtn");
+        const pendingMsg = document.getElementById("pendingMsg");
 
-        let faceMatcher = null;
-        let allStudentsData = [];
-        let isProcessing = false;
-        let currentDescriptor = null;
-
-        async function init() {
+        async function loadModels() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
             try {
                 await Promise.all([
@@ -108,163 +61,93 @@
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
-                
-                await loadKnownFaces();
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-                video.srcObject = stream;
-                
-                statusEl.innerText = "SYSTEM ACTIVE - SCANNING";
-                lockEl.innerText = "SCANNING";
-                startRecognitionLoop();
+                status.innerText = "AI Ready. Starting Camera...";
+                startCamera();
             } catch (err) {
-                statusEl.innerText = "HARDWARE ERROR";
-                console.error(err);
+                status.innerText = "Error loading AI models.";
             }
         }
 
-        async function loadKnownFaces() {
-            const q = query(collection(db, "students"));
-            const querySnapshot = await getDocs(q);
-            const labeledDescriptors = [];
-            allStudentsData = [];
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+                status.innerText = "System Ready";
+            } catch (err) {
+                status.innerText = "Camera access denied.";
+            }
+        }
+
+        regBtn.addEventListener('click', async () => {
+            const name = document.getElementById("name").value.trim();
+            const country = document.getElementById("country").value.trim();
+            const district = document.getElementById("district").value.trim();
+            const village = document.getElementById("village").value.trim();
+
+            status.innerText = "Analyzing face...";
+            pendingMsg.style.display = "none";
+
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!detection) {
+                status.innerText = "❌ Face not detected. Try again.";
+                return;
+            }
+
+            // --- CHECK FOR DUPLICATES ---
+            status.innerText = "Checking existing records...";
+            const querySnapshot = await getDocs(collection(db, "students"));
+            let existingStudent = null;
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                allStudentsData.push(data);
-                if(data.approved) {
-                    const desc = new Float32Array(data.faceDescriptor);
-                    labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
-                }
+                // Compare the math (descriptors)
+                const distance = faceapi.euclideanDistance(detection.descriptor, new Float32Array(data.faceDescriptor));
+                if (distance < 0.5) { existingStudent = data; }
             });
 
-            if (labeledDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5);
-                dbStatusEl.innerText = "SYNCED";
-                dbStatusEl.style.color = "#00ff9c";
-            } else {
-                dbStatusEl.innerText = "EMPTY DB";
-            }
-        }
-
-        async function startRecognitionLoop() {
-            setInterval(async () => {
-                if (isProcessing) return;
-
-                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-
-                if (detection) {
-                    currentDescriptor = detection.descriptor;
-                    
-                    if (faceMatcher) {
-                        const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-                        const confidence = Math.round((1 - bestMatch.distance) * 100);
-                        confidenceEl.innerText = confidence + "%";
-
-                        if (bestMatch.label !== 'unknown') {
-                            const student = allStudentsData.find(s => s.name === bestMatch.label);
-                            handleAttendance(student);
-                        } else {
-                            // Check if this unknown person is already in DB but pending
-                            checkPendingStatus(detection.descriptor);
-                        }
-                    } else {
-                        showRegistration();
-                    }
+            if (existingStudent) {
+                if (existingStudent.approved) {
+                    status.innerText = "✅ Recognized! Redirecting to Attendance...";
+                    setTimeout(() => window.location.href = "attendance.html", 1500);
                 } else {
-                    confidenceEl.innerText = "0%";
-                    subjectEl.innerText = "Searching...";
+                    status.innerText = "";
+                    pendingMsg.style.display = "block";
                 }
-            }, 1000);
-        }
-
-        async function handleAttendance(student) {
-            isProcessing = true;
-            statusEl.innerText = "ACCESS GRANTED";
-            statusEl.style.color = "#00ff9c";
-            lockEl.innerText = "UNLOCKED";
-            lockEl.style.color = "#00ff9c";
-            subjectEl.innerText = student.name;
-            scanLine.style.background = "#00ff9c";
-
-            await addDoc(collection(db, "attendance"), {
-                studentName: student.name,
-                district: student.district,
-                time: serverTimestamp()
-            });
-
-            setTimeout(() => {
-                isProcessing = false;
-                resetUI();
-            }, 5000);
-        }
-
-        async function checkPendingStatus(descriptor) {
-            // Check if face matches any unapproved student in our local copy
-            let isPending = false;
-            allStudentsData.forEach(s => {
-                if(!s.approved) {
-                    const dist = faceapi.euclideanDistance(descriptor, new Float32Array(s.faceDescriptor));
-                    if(dist < 0.5) isPending = true;
-                }
-            });
-
-            if(isPending) {
-                statusEl.innerText = "PENDING APPROVAL";
-                statusEl.style.color = "#ffcc00";
-            } else {
-                showRegistration();
+                return;
             }
-        }
 
-        function showRegistration() {
-            isProcessing = true;
-            regForm.style.display = "block";
-            statusEl.innerText = "UNKNOWN SUBJECT";
-            statusEl.style.color = "#ffcc00";
-            subjectEl.innerText = "NEW USER";
-        }
-
-        function resetUI() {
-            statusEl.innerText = "SYSTEM ACTIVE - SCANNING";
-            statusEl.style.color = "#0ff";
-            lockEl.innerText = "SCANNING";
-            lockEl.style.color = "#ffcc00";
-            subjectEl.innerText = "Scanning...";
-            scanLine.style.background = "#00f7ff";
-            regForm.style.display = "none";
-            document.getElementById("pendingMsg").style.display = "none";
-        }
-
-        document.getElementById("register-btn").addEventListener("click", async () => {
-            const name = document.getElementById("reg-name").value.trim();
-            const country = document.getElementById("reg-country").value.trim();
-            const district = document.getElementById("reg-district").value.trim();
-            const village = document.getElementById("reg-village").value.trim();
-
-            if (!name || !currentDescriptor) {
-                alert("Please ensure face is visible and name is entered.");
+            // --- SAVE NEW REGISTRATION ---
+            if (!name || !country || !district || !village) {
+                status.innerText = "❗ Please fill in all location details.";
                 return;
             }
 
             try {
                 await addDoc(collection(db, "students"), {
-                    name, country, district, village,
-                    faceDescriptor: Array.from(currentDescriptor),
+                    name,
+                    country,
+                    district,
+                    village,
+                    faceDescriptor: Array.from(detection.descriptor),
                     approved: false,
                     createdAt: serverTimestamp()
                 });
-                document.getElementById("pendingMsg").style.display = "block";
-                setTimeout(() => {
-                    location.reload(); // Refresh to update local list
-                }, 3000);
-            } catch (e) {
-                console.error(e);
+                status.innerText = "🎉 Success! Pending Admin Approval.";
+                // Clear inputs
+                document.getElementById("name").value = "";
+                document.getElementById("country").value = "";
+                document.getElementById("district").value = "";
+                document.getElementById("village").value = "";
+            } catch (error) {
+                status.innerText = "Database Error. Check Console.";
+                console.error(error);
             }
         });
 
-        init();
+        loadModels();
     </script>
 </body>
 </html>
