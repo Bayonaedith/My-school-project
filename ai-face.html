@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Biometric System</title>
+    <title>AI Biometric Scanner</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0b1220 0%, #1a2d4d 100%);
-            font-family: 'Segoe UI', monospace;
+            font-family: 'Segoe UI', sans-serif;
             color: #0ff;
             text-align: center;
             padding: 10px;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        h1 { font-size: 1.2rem; letter-spacing: 2px; margin: 10px 0; text-transform: uppercase; }
+        h1 { font-size: 1.2rem; letter-spacing: 2px; margin: 15px 0; text-transform: uppercase; }
 
-        /* Compact Scanner for Mobile */
-        .scanner-container { margin: 5px 0; }
+        .scanner-container { margin: 10px 0; }
         .scanner-box {
             position: relative;
             width: 100%;
@@ -47,8 +45,7 @@
         }
         @keyframes scan { 0%, 100% { top: 5%; } 50% { top: 95%; } }
 
-        /* Professional Compact Panels */
-        .status-display { font-size: 0.85rem; margin: 10px 0; font-weight: bold; letter-spacing: 1px; }
+        .status-display { font-size: 0.85rem; margin: 15px 0; font-weight: bold; letter-spacing: 1px; }
         
         .dashboard {
             display: grid;
@@ -61,7 +58,7 @@
         .panel {
             background: rgba(8, 18, 32, 0.9);
             border: 1px solid rgba(0, 247, 255, 0.4);
-            padding: 8px 4px;
+            padding: 10px 5px;
             border-radius: 8px;
             min-height: 65px;
             display: flex;
@@ -73,34 +70,23 @@
         .panel-value { font-size: 0.85rem; color: #00ff9c; font-weight: bold; }
         .panel-value.accent { color: #00f7ff; }
 
-        /* Registration UI */
-        .reg-container {
-            display: none;
-            max-width: 300px;
-            margin: 10px auto;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 10px;
+        .redirect-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: transparent;
             border: 1px solid #ffcc00;
+            color: #ffcc00;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
         }
-        .reg-container.visible { display: block; }
-        input {
-            width: 100%; padding: 10px; margin-bottom: 8px;
-            background: #1a264d; border: 1px solid #00f7ff;
-            color: #0ff; border-radius: 5px; font-size: 0.85rem;
-        }
-        button {
-            width: 100%; padding: 12px; background: #00f7ff;
-            border: none; border-radius: 5px; font-weight: bold;
-            color: #0a0f2c; text-transform: uppercase; font-size: 0.8rem;
-        }
-        .alert-box { font-size: 0.7rem; padding: 8px; margin-top: 8px; display: none; border-radius: 4px; }
-        .alert-box.visible { display: block; }
     </style>
 </head>
 <body>
 
-    <h1>🔍 BIOMETRIC AI</h1>
+    <h1>🔍 BIOMETRIC GATEWAY</h1>
 
     <div class="scanner-container">
         <div class="scanner-box">
@@ -130,15 +116,7 @@
         </div>
     </div>
 
-    <div id="reg-section" class="reg-container">
-        <h3 style="font-size:0.9rem; color:#ffcc00; margin-bottom:10px;">REGISTRATION</h3>
-        <input type="text" id="name" placeholder="Full Name">
-        <input type="text" id="country" placeholder="Country">
-        <input type="text" id="district" placeholder="District">
-        <input type="text" id="village" placeholder="Village">
-        <button id="regBtn">REGISTER FACE</button>
-        <div id="alertMsg" class="alert-box"></div>
-    </div>
+    <a href="registration.html" class="redirect-btn">Manual Registration</a>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -160,14 +138,7 @@
             confidenceEl: document.getElementById("confidence"),
             lockEl: document.getElementById("lock-status"),
             subjectEl: document.getElementById("subject-name"),
-            dbStatusEl: document.getElementById("db-status"),
-            regSection: document.getElementById("reg-section"),
-            regBtn: document.getElementById("regBtn"),
-            alertMsg: document.getElementById("alertMsg"),
-            nameInput: document.getElementById("name"),
-            countryInput: document.getElementById("country"),
-            districtInput: document.getElementById("district"),
-            villageInput: document.getElementById("village")
+            dbStatusEl: document.getElementById("db-status")
         };
 
         async function init() {
@@ -182,17 +153,16 @@
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
 
-                // Mobile-friendly resolution for speed
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { width: 320, height: 240, facingMode: 'user' } 
                 });
                 elements.video.srcObject = stream;
 
                 await loadDatabase();
-                elements.statusEl.textContent = "SYSTEM ACTIVE";
+                elements.statusEl.textContent = "SCANNING ACTIVE";
                 setInterval(processFrame, 1000);
             } catch (e) {
-                elements.statusEl.textContent = "INIT ERROR";
+                elements.statusEl.textContent = "HARDWARE ERROR";
             }
         }
 
@@ -227,8 +197,15 @@
                         return;
                     }
                 }
-                elements.subjectEl.textContent = "UNKNOWN";
-                elements.regSection.classList.add('visible');
+                
+                // NO MATCH FOUND - REDIRECT TO REGISTRATION
+                state.isProcessing = true;
+                elements.statusEl.textContent = "UNKNOWN USER - REDIRECTING...";
+                elements.statusEl.style.color = "#ffcc00";
+                setTimeout(() => {
+                    window.location.href = './registration.html';
+                }, 1500);
+
             } else {
                 elements.confidenceEl.textContent = "0%";
                 elements.subjectEl.textContent = "SCANNING";
@@ -237,7 +214,7 @@
 
         async function handleSuccess(student) {
             state.isProcessing = true;
-            elements.statusEl.textContent = "ACCESS GRANTED";
+            elements.statusEl.textContent = "IDENTITY VERIFIED";
             elements.lockEl.textContent = "🔓 OPEN";
             elements.subjectEl.textContent = student.name.toUpperCase();
             
@@ -252,27 +229,6 @@
                 window.location.href = './attendance.html';
             }, 2000);
         }
-
-        elements.regBtn.addEventListener('click', async () => {
-            const data = { 
-                name: elements.nameInput.value, 
-                country: elements.countryInput.value, 
-                district: elements.districtInput.value, 
-                village: elements.villageInput.value 
-            };
-            if (!data.name) return;
-            
-            const det = await faceapi.detectSingleFace(elements.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-            if (det) {
-                await addDoc(collection(state.db, "students"), { 
-                    ...data, 
-                    faceDescriptor: Array.from(det.descriptor), 
-                    approved: false, 
-                    createdAt: serverTimestamp() 
-                });
-                location.reload();
-            }
-        });
 
         init();
     </script>
