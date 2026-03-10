@@ -2,504 +2,147 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Advanced AI Biometric Analysis & Registration System">
-    <title>AI Biometric Analysis & Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Biometric System</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <link rel="manifest" href="manifest.json">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0b1220 0%, #1a2d4d 100%);
-            font-family: 'Segoe UI', 'Courier New', monospace;
+            font-family: 'Segoe UI', monospace;
             color: #0ff;
             text-align: center;
-            padding: 20px;
+            padding: 10px;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        h1 {
-            letter-spacing: 8px;
-            text-shadow: 0 0 20px #0ff, 0 0 40px #0099ff;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-            font-weight: 700;
-            text-transform: uppercase;
-            transition: all 0.5s ease;
-        }
+        h1 { font-size: 1.2rem; letter-spacing: 2px; margin: 10px 0; text-transform: uppercase; }
 
-        h1.hide-title {
-            opacity: 0;
-            transform: translateY(-30px);
-            pointer-events: none;
-        }
-
-        h2 {
-            color: #ffcc00;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        /* Scanner UI */
-        .scanner-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin: 30px 0;
-            transition: all 0.5s ease;
-        }
-
-        .scanner-container.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            margin: 0;
-            gap: 0;
-            padding: 0;
-            width: 100%;
-            height: 100vh;
-            background: #000;
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
+        /* Compact Scanner for Mobile */
+        .scanner-container { margin: 5px 0; }
         .scanner-box {
             position: relative;
             width: 100%;
-            max-width: 400px;
+            max-width: 300px;
             aspect-ratio: 4 / 3;
-            border: 3px solid #00f7ff;
-            border-radius: 15px;
-            box-shadow: 0 0 30px #00f7ff, inset 0 0 30px rgba(0, 247, 255, 0.1);
+            border: 2px solid #00f7ff;
+            border-radius: 12px;
+            margin: 0 auto;
             background: #000;
             overflow: hidden;
-            transition: all 0.5s ease;
+            box-shadow: 0 0 15px rgba(0, 247, 255, 0.3);
         }
-
-        .scanner-container.fullscreen .scanner-box {
-            max-width: 100%;
-            aspect-ratio: auto;
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
-            border: none;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
+        video { width: 100%; height: 100%; object-fit: cover; }
+        
         .scan-line {
             position: absolute;
             width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00f7ff, transparent);
-            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.6);
+            height: 2px;
+            background: #00f7ff;
+            box-shadow: 0 0 10px #00f7ff;
             top: 0;
-            animation: scan 3s ease-in-out infinite;
+            animation: scan 2s ease-in-out infinite;
+            z-index: 2;
         }
+        @keyframes scan { 0%, 100% { top: 5%; } 50% { top: 95%; } }
 
-        @keyframes scan {
-            0%, 100% {
-                top: 0%;
-            }
-            50% {
-                top: 100%;
-            }
-        }
-
-        .corner-accent {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 2px solid #00f7ff;
-        }
-
-        .corner-tl {
-            top: 10px;
-            left: 10px;
-            border-right: none;
-            border-bottom: none;
-        }
-
-        .corner-tr {
-            top: 10px;
-            right: 10px;
-            border-left: none;
-            border-bottom: none;
-        }
-
-        .corner-bl {
-            bottom: 10px;
-            left: 10px;
-            border-right: none;
-            border-top: none;
-        }
-
-        .corner-br {
-            bottom: 10px;
-            right: 10px;
-            border-left: none;
-            border-top: none;
-        }
-
-        /* Status Display */
-        .status-display {
-            font-size: 1.3rem;
-            color: #0ff;
-            margin: 20px 0;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px #0ff;
-            min-height: 30px;
-            transition: all 0.5s ease;
-        }
-
-        .status-display.hide-status {
-            opacity: 0;
-            pointer-events: none;
-            margin: 0;
-        }
-
-        .status-display.success {
-            color: #00ff9c;
-            text-shadow: 0 0 10px #00ff9c;
-        }
-
-        .status-display.warning {
-            color: #ffcc00;
-            text-shadow: 0 0 10px #ffcc00;
-        }
-
-        .status-display.error {
-            color: #ff4444;
-            text-shadow: 0 0 10px #ff4444;
-        }
-
-        /* Dashboard Grid */
+        /* Professional Compact Panels */
+        .status-display { font-size: 0.85rem; margin: 10px 0; font-weight: bold; letter-spacing: 1px; }
+        
         .dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            max-width: 900px;
-            margin: 30px auto;
-            transition: all 0.5s ease;
-        }
-
-        .dashboard.hide-dashboard {
-            opacity: 0;
-            visibility: hidden;
-            max-height: 0;
-            overflow: hidden;
-            margin: 0;
-            gap: 0;
-            pointer-events: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            max-width: 320px;
+            margin: 10px auto;
         }
 
         .panel {
             background: rgba(8, 18, 32, 0.9);
-            border: 2px solid #00f7ff;
-            padding: 20px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+            border: 1px solid rgba(0, 247, 255, 0.4);
+            padding: 8px 4px;
+            border-radius: 8px;
+            min-height: 65px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .panel:hover {
-            box-shadow: 0 0 25px rgba(0, 247, 255, 0.5);
-            transform: translateY(-2px);
-        }
+        .panel-label { font-size: 0.55rem; color: #888; text-transform: uppercase; margin-bottom: 3px; }
+        .panel-value { font-size: 0.85rem; color: #00ff9c; font-weight: bold; }
+        .panel-value.accent { color: #00f7ff; }
 
-        .panel-label {
-            font-size: 0.85rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .panel-value {
-            font-size: 1.5rem;
-            color: #00ff9c;
-            font-weight: bold;
-        }
-
-        .panel-value.accent {
-            color: #00f7ff;
-        }
-
-        /* Registration Form */
+        /* Registration UI */
         .reg-container {
             display: none;
-            max-width: 500px;
-            margin: 30px auto;
+            max-width: 300px;
+            margin: 10px auto;
             background: rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #ffcc00;
-            box-shadow: 0 0 30px rgba(255, 204, 0, 0.2);
-            animation: slideIn 0.3s ease;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ffcc00;
         }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .reg-container.visible {
-            display: block;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
+        .reg-container.visible { display: block; }
         input {
-            padding: 14px;
-            width: 100%;
-            border: 2px solid #00f7ff;
-            border-radius: 8px;
-            background: #1a264d;
-            color: #0ff;
-            font-size: 1rem;
-            font-family: inherit;
-            transition: all 0.3s ease;
+            width: 100%; padding: 10px; margin-bottom: 8px;
+            background: #1a264d; border: 1px solid #00f7ff;
+            color: #0ff; border-radius: 5px; font-size: 0.85rem;
         }
-
-        input:focus {
-            outline: none;
-            border-color: #00ff9c;
-            box-shadow: 0 0 15px rgba(0, 255, 156, 0.5);
-        }
-
-        input::placeholder {
-            color: #666;
-        }
-
         button {
-            padding: 15px;
-            margin-top: 15px;
-            background: linear-gradient(135deg, #00f7ff 0%, #00ccff 100%);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            color: #0a0f2c;
-            width: 100%;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 247, 255, 0.3);
+            width: 100%; padding: 12px; background: #00f7ff;
+            border: none; border-radius: 5px; font-weight: bold;
+            color: #0a0f2c; text-transform: uppercase; font-size: 0.8rem;
         }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(0, 247, 255, 0.6);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .alert-box {
-            color: #ffcc00;
-            border: 2px solid #ffcc00;
-            padding: 15px;
-            margin-top: 15px;
-            display: none;
-            border-radius: 8px;
-            background: rgba(255, 204, 0, 0.1);
-            font-weight: 500;
-        }
-
-        .alert-box.visible {
-            display: block;
-        }
-
-        .alert-box.error {
-            border-color: #ff4444;
-            color: #ff6666;
-            background: rgba(255, 68, 68, 0.1);
-        }
-
-        .alert-box.success {
-            border-color: #00ff9c;
-            color: #00ff9c;
-            background: rgba(0, 255, 156, 0.1);
-        }
-
-        /* Exit Registration Indicator */
-        .exit-registration {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1001;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-
-        .exit-registration.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .exit-btn {
-            background: rgba(255, 68, 68, 0.2);
-            border: 2px solid #ff4444;
-            color: #ff6666;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-        }
-
-        .exit-btn:hover {
-            background: rgba(255, 68, 68, 0.4);
-            box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
-        }
-
-        /* Loading State */
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #0ff;
-            border-radius: 50%;
-            border-top: 3px solid #00ff9c;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-
-            .scanner-box {
-                max-width: 100%;
-            }
-        }
+        .alert-box { font-size: 0.7rem; padding: 8px; margin-top: 8px; display: none; border-radius: 4px; }
+        .alert-box.visible { display: block; }
     </style>
 </head>
 <body>
 
-    <h1 id="mainTitle">🔍 AI BIOMETRIC ANALYSIS</h1>
+    <h1>🔍 BIOMETRIC AI</h1>
 
-    <div class="scanner-container" id="scannerContainer">
+    <div class="scanner-container">
         <div class="scanner-box">
             <video id="video" autoplay playsinline muted></video>
             <div class="scan-line"></div>
-            <div class="corner-accent corner-tl"></div>
-            <div class="corner-accent corner-tr"></div>
-            <div class="corner-accent corner-bl"></div>
-            <div class="corner-accent corner-br"></div>
         </div>
     </div>
 
-    <div id="status-text" class="status-display">INITIALIZING SYSTEM...</div>
+    <div id="status-text" class="status-display">INITIALIZING...</div>
 
-    <div class="dashboard" id="dashboard">
+    <div class="dashboard">
         <div class="panel">
-            <div class="panel-label">Security Status</div>
+            <div class="panel-label">Security</div>
             <div class="panel-value" id="lock-status">🔒 LOCKED</div>
         </div>
         <div class="panel">
-            <div class="panel-label">Match Confidence</div>
+            <div class="panel-label">Confidence</div>
             <div class="panel-value accent" id="confidence">0%</div>
         </div>
         <div class="panel">
-            <div class="panel-label">Identified Subject</div>
-            <div class="panel-value" id="subject-name">SCANNING...</div>
+            <div class="panel-label">Subject</div>
+            <div class="panel-value" id="subject-name">SCANNING</div>
         </div>
         <div class="panel">
-            <div class="panel-label">Database Status</div>
-            <div class="panel-value" id="db-status" style="color: #ffcc00;">CONNECTING...</div>
+            <div class="panel-label">Database</div>
+            <div class="panel-value" id="db-status" style="color: #ffcc00;">SYNCING</div>
         </div>
-    </div>
-
-    <div class="exit-registration" id="exitRegistration">
-        <button class="exit-btn" onclick="exitRegistrationMode()">✕ CANCEL</button>
     </div>
 
     <div id="reg-section" class="reg-container">
-        <h2>🎓 STUDENT REGISTRATION</h2>
-        <div class="form-group">
-            <input type="text" id="name" placeholder="Full Name" required>
-        </div>
-        <div class="form-group">
-            <input type="text" id="country" placeholder="Country" required>
-        </div>
-        <div class="form-group">
-            <input type="text" id="district" placeholder="District" required>
-        </div>
-        <div class="form-group">
-            <input type="text" id="village" placeholder="Village" required>
-        </div>
-        <button id="regBtn">CHECK & REGISTER FACE</button>
-        <div id="pendingMsg" class="alert-box">⚠️ Your registration is pending admin approval.</div>
+        <h3 style="font-size:0.9rem; color:#ffcc00; margin-bottom:10px;">REGISTRATION</h3>
+        <input type="text" id="name" placeholder="Full Name">
+        <input type="text" id="country" placeholder="Country">
+        <input type="text" id="district" placeholder="District">
+        <input type="text" id="village" placeholder="Village">
+        <button id="regBtn">REGISTER FACE</button>
         <div id="alertMsg" class="alert-box"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import {
-            getFirestore,
-            collection,
-            addDoc,
-            getDocs,
-            serverTimestamp,
-            query,
-            where
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        // ==================== CONFIG ====================
-        const FACE_API_MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-        const CONFIDENCE_THRESHOLD = 0.45;
-        const DISTANCE_THRESHOLD = 0.5;
-        const RECOGNITION_INTERVAL = 1000; // ms
-        const PROCESSING_TIMEOUT = 3000; // ms
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -510,18 +153,7 @@
             appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
         };
 
-        // ==================== STATE ====================
-        const state = {
-            app: null,
-            db: null,
-            faceMatcher: null,
-            allStudents: [],
-            isProcessing: false,
-            recognitionLoopId: null,
-            registrationMode: false
-        };
-
-        // ==================== DOM ELEMENTS ====================
+        const state = { db: null, faceMatcher: null, allStudents: [], isProcessing: false };
         const elements = {
             video: document.getElementById("video"),
             statusEl: document.getElementById("status-text"),
@@ -532,461 +164,117 @@
             regSection: document.getElementById("reg-section"),
             regBtn: document.getElementById("regBtn"),
             alertMsg: document.getElementById("alertMsg"),
-            pendingMsg: document.getElementById("pendingMsg"),
             nameInput: document.getElementById("name"),
             countryInput: document.getElementById("country"),
             districtInput: document.getElementById("district"),
-            villageInput: document.getElementById("village"),
-            mainTitle: document.getElementById("mainTitle"),
-            dashboard: document.getElementById("dashboard"),
-            statusDisplay: document.getElementById("status-text"),
-            scannerContainer: document.getElementById("scannerContainer"),
-            exitRegistration: document.getElementById("exitRegistration")
+            villageInput: document.getElementById("village")
         };
 
-        // ==================== UTILITIES ====================
-        const utils = {
-            updateStatus(text, type = 'info') {
-                elements.statusEl.textContent = text;
-                elements.statusEl.className = `status-display ${type}`;
-            },
-
-            updateConfidence(percent) {
-                elements.confidenceEl.textContent = `${percent}%`;
-            },
-
-            updateSubject(name) {
-                elements.subjectEl.textContent = name;
-            },
-
-            showAlert(message, type = 'error') {
-                elements.alertMsg.textContent = message;
-                elements.alertMsg.className = `alert-box visible ${type}`;
-            },
-
-            hideAlert() {
-                elements.alertMsg.classList.remove('visible');
-            },
-
-            showRegSection(show = true) {
-                elements.regSection.classList.toggle('visible', show);
-            },
-
-            /**
-             * Enter distraction-free registration mode
-             */
-            enterRegistrationMode() {
-                state.registrationMode = true;
-                
-                // Hide all distracting elements
-                elements.mainTitle.classList.add('hide-title');
-                elements.dashboard.classList.add('hide-dashboard');
-                elements.statusDisplay.classList.add('hide-status');
-                
-                // Make scanner fullscreen
-                elements.scannerContainer.classList.add('fullscreen');
-                
-                // Show exit button
-                elements.exitRegistration.classList.add('visible');
-                
-                // Show registration form
-                this.showRegSection(true);
-                
-                utils.log('Entered registration mode - distraction-free', 'success');
-            },
-
-            /**
-             * Exit distraction-free registration mode
-             */
-            exitRegistrationMode() {
-                state.registrationMode = false;
-                
-                // Show all elements
-                elements.mainTitle.classList.remove('hide-title');
-                elements.dashboard.classList.remove('hide-dashboard');
-                elements.statusDisplay.classList.remove('hide-status');
-                
-                // Reset scanner
-                elements.scannerContainer.classList.remove('fullscreen');
-                
-                // Hide exit button
-                elements.exitRegistration.classList.remove('visible');
-                
-                // Hide registration form
-                this.showRegSection(false);
-                
-                // Reset status
-                this.updateStatus('SYSTEM ACTIVE', 'success');
-                this.updateSubject('SCANNING...');
-                this.updateConfidence(0);
-                
-                // Clear form
-                registrationForm.reset();
-                
-                utils.log('Exited registration mode', 'info');
-            },
-
-            async delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            },
-
-            log(message, type = 'info') {
-                console.log(`[${type.toUpperCase()}] ${message}`);
-            },
-
-            redirectToAttendance(studentData) {
-                sessionStorage.setItem('studentData', JSON.stringify(studentData));
-                window.location.href = './attendance.html';
-            }
-        };
-
-        // ==================== FACE API ====================
-        const faceManager = {
-            async loadModels() {
-                try {
-                    utils.log('Loading AI models...');
-                    await Promise.all([
-                        faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODEL_URL),
-                        faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODEL_URL),
-                        faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODEL_URL)
-                    ]);
-                    utils.log('AI models loaded successfully', 'success');
-                } catch (err) {
-                    utils.log(`Model loading failed: ${err.message}`, 'error');
-                    throw new Error('Failed to load AI models');
-                }
-            },
-
-            async detectFace(videoElement) {
-                try {
-                    return await faceapi
-                        .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions())
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
-                } catch (err) {
-                    utils.log(`Face detection error: ${err.message}`, 'error');
-                    return null;
-                }
-            },
-
-            computeConfidence(distance) {
-                return Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
-            },
-
-            euclideanDistance(a, b) {
-                return Math.sqrt(
-                    a.reduce((sum, ai, i) => sum + Math.pow(ai - b[i], 2), 0)
-                );
-            }
-        };
-
-        // ==================== DATABASE ====================
-        const database = {
-            async initialize() {
-                try {
-                    state.app = initializeApp(firebaseConfig);
-                    state.db = getFirestore(state.app);
-                    utils.log('Firebase initialized', 'success');
-                } catch (err) {
-                    utils.log(`Firebase init failed: ${err.message}`, 'error');
-                    throw new Error('Database connection failed');
-                }
-            },
-
-            async loadAllStudents() {
-                try {
-                    utils.log('Loading student data...');
-                    const querySnapshot = await getDocs(collection(state.db, "students"));
-                    state.allStudents = [];
-                    const labeledDescriptors = [];
-
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        state.allStudents.push(data);
-
-                        if (data.approved && data.faceDescriptor) {
-                            const descriptor = new Float32Array(data.faceDescriptor);
-                            labeledDescriptors.push(
-                                new faceapi.LabeledFaceDescriptors(data.name, [descriptor])
-                            );
-                        }
-                    });
-
-                    if (labeledDescriptors.length > 0) {
-                        state.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, CONFIDENCE_THRESHOLD);
-                        elements.dbStatusEl.textContent = 'CONNECTED';
-                        elements.dbStatusEl.style.color = '#00ff9c';
-                        utils.log(`Loaded ${labeledDescriptors.length} approved students`, 'success');
-                    } else {
-                        elements.dbStatusEl.textContent = 'NO DATA';
-                        utils.log('No approved students found', 'warning');
-                    }
-                } catch (err) {
-                    utils.log(`Student load failed: ${err.message}`, 'error');
-                    elements.dbStatusEl.textContent = 'ERROR';
-                    elements.dbStatusEl.style.color = '#ff4444';
-                }
-            },
-
-            async recordAttendance(studentName, district) {
-                try {
-                    await addDoc(collection(state.db, "attendance"), {
-                        studentName,
-                        district,
-                        timestamp: serverTimestamp()
-                    });
-                    utils.log(`Attendance recorded for ${studentName}`, 'success');
-                } catch (err) {
-                    utils.log(`Attendance record failed: ${err.message}`, 'error');
-                }
-            },
-
-            async registerStudent(data) {
-                try {
-                    await addDoc(collection(state.db, "students"), {
-                        ...data,
-                        approved: false,
-                        createdAt: serverTimestamp()
-                    });
-                    utils.log(`Student registered: ${data.name}`, 'success');
-                    return true;
-                } catch (err) {
-                    utils.log(`Registration failed: ${err.message}`, 'error');
-                    throw err;
-                }
-            }
-        };
-
-        // ==================== RECOGNITION ENGINE ====================
-        const recognition = {
-            async process() {
-                if (state.isProcessing || state.registrationMode) return;
-
-                const detection = await faceManager.detectFace(elements.video);
-
-                if (detection) {
-                    const confidence = faceManager.computeConfidence(detection.descriptor);
-                    utils.updateConfidence(Math.min(confidence, 100));
-
-                    if (state.faceMatcher) {
-                        const bestMatch = state.faceMatcher.findBestMatch(detection.descriptor);
-                        
-                        if (bestMatch.label !== 'unknown') {
-                            const student = state.allStudents.find(s => s.name === bestMatch.label);
-                            if (student) {
-                                await this.handleMatch(student);
-                            }
-                        } else {
-                            this.handleUnknownFace(detection.descriptor);
-                        }
-                    } else {
-                        this.handleUnknownFace(detection.descriptor);
-                    }
-                } else {
-                    utils.updateConfidence(0);
-                    if (!state.isProcessing) {
-                        utils.updateSubject('SCANNING...');
-                    }
-                }
-            },
-
-            async handleMatch(student) {
-                state.isProcessing = true;
-                utils.updateStatus('ACCESS GRANTED ✓', 'success');
-                elements.lockEl.textContent = '🔓 UNLOCKED';
-                utils.updateSubject(student.name.toUpperCase());
-                utils.showRegSection(false);
-
-                try {
-                    await database.recordAttendance(student.name, student.district);
-                    utils.log(`Attendance logged for ${student.name}`, 'success');
-                } catch (err) {
-                    utils.log(`Failed to record attendance: ${err.message}`, 'error');
-                }
-
-                await utils.delay(PROCESSING_TIMEOUT);
-                
-                utils.redirectToAttendance({
-                    name: student.name,
-                    country: student.country,
-                    district: student.district,
-                    village: student.village,
-                    timestamp: new Date().toLocaleString()
-                });
-            },
-
-            handleUnknownFace(descriptor) {
-                // Check for pending students
-                let pendingStudent = null;
-
-                for (const student of state.allStudents) {
-                    if (!student.approved && student.faceDescriptor) {
-                        const distance = faceManager.euclideanDistance(
-                            descriptor,
-                            new Float32Array(student.faceDescriptor)
-                        );
-                        if (distance < DISTANCE_THRESHOLD) {
-                            pendingStudent = student;
-                            break;
-                        }
-                    }
-                }
-
-                if (pendingStudent) {
-                    utils.updateStatus('PENDING APPROVAL', 'warning');
-                    utils.updateSubject('AWAITING ADMIN');
-                    elements.pendingMsg.classList.add('visible');
-                    utils.showRegSection(true);
-                } else {
-                    // NEW USER DETECTED - Enter registration mode
-                    utils.updateStatus('NEW USER DETECTED', 'warning');
-                    utils.updateSubject('REGISTERING...');
-                    elements.pendingMsg.classList.remove('visible');
-                    
-                    // Enter distraction-free registration mode
-                    utils.enterRegistrationMode();
-                }
-            },
-
-            start() {
-                utils.log('Starting recognition loop');
-                state.recognitionLoopId = setInterval(() => this.process(), RECOGNITION_INTERVAL);
-            },
-
-            stop() {
-                if (state.recognitionLoopId) {
-                    clearInterval(state.recognitionLoopId);
-                    state.recognitionLoopId = null;
-                    utils.log('Recognition loop stopped');
-                }
-            }
-        };
-
-        // ==================== VIDEO STREAM ====================
-        const videoManager = {
-            async start() {
-                try {
-                    utils.log('Requesting camera access...');
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'user' }
-                    });
-                    elements.video.srcObject = stream;
-                    utils.log('Camera stream started', 'success');
-                } catch (err) {
-                    utils.log(`Camera access denied: ${err.message}`, 'error');
-                    utils.updateStatus('CAMERA ACCESS DENIED', 'error');
-                    throw new Error('Camera access required');
-                }
-            },
-
-            async waitForVideoReady() {
-                return new Promise((resolve) => {
-                    elements.video.onloadedmetadata = () => {
-                        utils.log('Video metadata loaded');
-                        resolve();
-                    };
-                });
-            }
-        };
-
-        // ==================== REGISTRATION ====================
-        const registrationForm = {
-            validate() {
-                const fields = {
-                    name: elements.nameInput.value.trim(),
-                    country: elements.countryInput.value.trim(),
-                    district: elements.districtInput.value.trim(),
-                    village: elements.villageInput.value.trim()
-                };
-
-                if (!Object.values(fields).every(v => v.length > 0)) {
-                    utils.showAlert('Please fill all fields', 'error');
-                    return null;
-                }
-
-                return fields;
-            },
-
-            reset() {
-                elements.nameInput.value = '';
-                elements.countryInput.value = '';
-                elements.districtInput.value = '';
-                elements.villageInput.value = '';
-                utils.hideAlert();
-            },
-
-            async submit() {
-                const data = this.validate();
-                if (!data) return;
-
-                elements.regBtn.disabled = true;
-                utils.updateStatus('CAPTURING FACE...', 'warning');
-
-                try {
-                    const detection = await faceManager.detectFace(elements.video);
-
-                    if (!detection) {
-                        utils.showAlert('No face detected. Please try again.', 'error');
-                        elements.regBtn.disabled = false;
-                        return;
-                    }
-
-                    await database.registerStudent({
-                        ...data,
-                        faceDescriptor: Array.from(detection.descriptor)
-                    });
-
-                    utils.showAlert('Registration submitted. Awaiting admin approval.', 'success');
-                    this.reset();
-                    await utils.delay(2000);
-                    
-                    // Exit registration mode and reload
-                    utils.exitRegistrationMode();
-                    location.reload();
-                } catch (err) {
-                    utils.showAlert(`Registration failed: ${err.message}`, 'error');
-                    utils.log(`Registration error: ${err.message}`, 'error');
-                } finally {
-                    elements.regBtn.disabled = false;
-                }
-            }
-        };
-
-        // ==================== GLOBAL EXIT FUNCTION ====================
-        window.exitRegistrationMode = function() {
-            utils.exitRegistrationMode();
-        };
-
-        // ==================== INITIALIZATION ====================
-        async function initialize() {
+        async function init() {
             try {
-                utils.updateStatus('INITIALIZING SYSTEM...', 'warning');
+                const app = initializeApp(firebaseConfig);
+                state.db = getFirestore(app);
+                
+                const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
 
-                await database.initialize();
-                await faceManager.loadModels();
-                await videoManager.start();
-                await videoManager.waitForVideoReady();
-                await database.loadAllStudents();
+                // Mobile-friendly resolution for speed
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 320, height: 240, facingMode: 'user' } 
+                });
+                elements.video.srcObject = stream;
 
-                utils.updateStatus('SYSTEM ACTIVE', 'success');
-                recognition.start();
-            } catch (err) {
-                utils.updateStatus('SYSTEM ERROR', 'error');
-                utils.log(`Initialization failed: ${err.message}`, 'error');
-                utils.showAlert(err.message, 'error');
+                await loadDatabase();
+                elements.statusEl.textContent = "SYSTEM ACTIVE";
+                setInterval(processFrame, 1000);
+            } catch (e) {
+                elements.statusEl.textContent = "INIT ERROR";
             }
         }
 
-        // ==================== EVENT LISTENERS ====================
-        elements.regBtn.addEventListener('click', () => registrationForm.submit());
+        async function loadDatabase() {
+            const snap = await getDocs(collection(state.db, "students"));
+            const labeled = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                state.allStudents.push(data);
+                if (data.approved && data.faceDescriptor) {
+                    labeled.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));
+                }
+            });
+            if (labeled.length) state.faceMatcher = new faceapi.FaceMatcher(labeled, 0.45);
+            elements.dbStatusEl.textContent = "ONLINE";
+            elements.dbStatusEl.style.color = "#00ff9c";
+        }
 
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', initialize);
+        async function processFrame() {
+            if (state.isProcessing) return;
+            const det = await faceapi.detectSingleFace(elements.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+            
+            if (det) {
+                const conf = Math.round((1 - det.descriptor[0]) * 100);
+                elements.confidenceEl.textContent = `${Math.min(conf, 99)}%`;
 
-        // Cleanup on unload
-        window.addEventListener('beforeunload', () => {
-            recognition.stop();
+                if (state.faceMatcher) {
+                    const match = state.faceMatcher.findBestMatch(det.descriptor);
+                    if (match.label !== 'unknown') {
+                        const student = state.allStudents.find(s => s.name === match.label);
+                        handleSuccess(student);
+                        return;
+                    }
+                }
+                elements.subjectEl.textContent = "UNKNOWN";
+                elements.regSection.classList.add('visible');
+            } else {
+                elements.confidenceEl.textContent = "0%";
+                elements.subjectEl.textContent = "SCANNING";
+            }
+        }
+
+        async function handleSuccess(student) {
+            state.isProcessing = true;
+            elements.statusEl.textContent = "ACCESS GRANTED";
+            elements.lockEl.textContent = "🔓 OPEN";
+            elements.subjectEl.textContent = student.name.toUpperCase();
+            
+            await addDoc(collection(state.db, "attendance"), {
+                studentName: student.name,
+                district: student.district,
+                timestamp: serverTimestamp()
+            });
+
+            setTimeout(() => {
+                sessionStorage.setItem('studentData', JSON.stringify(student));
+                window.location.href = './attendance.html';
+            }, 2000);
+        }
+
+        elements.regBtn.addEventListener('click', async () => {
+            const data = { 
+                name: elements.nameInput.value, 
+                country: elements.countryInput.value, 
+                district: elements.districtInput.value, 
+                village: elements.villageInput.value 
+            };
+            if (!data.name) return;
+            
+            const det = await faceapi.detectSingleFace(elements.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+            if (det) {
+                await addDoc(collection(state.db, "students"), { 
+                    ...data, 
+                    faceDescriptor: Array.from(det.descriptor), 
+                    approved: false, 
+                    createdAt: serverTimestamp() 
+                });
+                location.reload();
+            }
         });
+
+        init();
     </script>
 </body>
 </html>
