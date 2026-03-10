@@ -3,156 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SECURE-CORE | Biometric Interface</title>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <title>AI Biometric Analysis</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        :root {
-            --glow-color: #00f7ff;
-            --bg-dark: #050a14;
-            --panel-bg: rgba(10, 25, 41, 0.7);
+        body { background: #0b1220; font-family: 'Courier New', monospace; color: #0ff; text-align: center; margin: 0; overflow-x: hidden; }
+        h1 { letter-spacing: 5px; text-shadow: 0 0 10px #0ff; margin-top: 20px; font-size: 1.5rem; }
+        
+        .scanner {
+            position: relative; width: 320px; height: 240px; margin: 30px auto;
+            border: 2px solid #00f7ff; border-radius: 10px; box-shadow: 0 0 30px #00f7ff;
+            background: #000; overflow: hidden;
         }
+        video { width: 100%; height: 100%; object-fit: cover; }
 
-        body { 
-            background: var(--bg-dark); 
-            font-family: 'Segoe UI', 'Courier New', monospace; 
-            color: var(--glow-color); 
-            margin: 0; 
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-image: radial-gradient(circle at center, #102a43 0%, #050a14 100%);
+        .scan-line {
+            position: absolute; width: 100%; height: 4px; background: #00f7ff;
+            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7); z-index: 10;
+            top: 0; animation: scan 3s ease-in-out infinite;
         }
+        @keyframes scan { 0%, 100% { top: 0%; } 50% { top: 100%; } }
 
-        /* Futuristic Header */
-        .header {
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 20px;
-            border-left: 4px solid var(--glow-color);
-            padding-left: 15px;
-            text-shadow: 0 0 15px var(--glow-color);
-        }
-
-        /* The Main Scanner Container */
-        .viewport {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            border: 1px solid rgba(0, 247, 255, 0.3);
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
-            background: #000;
-        }
-
-        video, canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Decorative UI Corners */
-        .corner {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 3px solid var(--glow-color);
-            z-index: 20;
-        }
-        .top-left { top: -2px; left: -2px; border-right: none; border-bottom: none; }
-        .top-right { top: -2px; right: -2px; border-left: none; border-bottom: none; }
-        .bottom-left { bottom: -2px; left: -2px; border-right: none; border-top: none; }
-        .bottom-right { bottom: -2px; right: -2px; border-left: none; border-top: none; }
-
-        /* Scanning Animation Line */
-        .scan-bar {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: var(--glow-color);
-            box-shadow: 0 0 20px 2px var(--glow-color);
-            z-index: 15;
-            animation: moveScan 4s linear infinite;
-            opacity: 0.5;
-        }
-
-        @keyframes moveScan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
-        /* Dashboard Styling */
-        .dashboard { 
-            display: grid; 
-            grid-template-columns: repeat(4, 160px); 
-            gap: 10px; 
-            margin-top: 25px; 
-        }
-
-        .panel { 
-            background: var(--panel-bg); 
-            border: 1px solid rgba(0, 247, 255, 0.2); 
-            padding: 12px; 
-            backdrop-filter: blur(10px);
-            border-radius: 4px;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-        }
-
-        .data-val {
-            display: block;
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-top: 5px;
-            color: #fff;
-            text-shadow: 0 0 5px var(--glow-color);
-        }
-
-        #status-display {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 25;
-            font-weight: bold;
-            background: rgba(0,0,0,0.6);
-            padding: 5px 15px;
-        }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; padding: 20px; }
+        .panel { background: rgba(8, 18, 32, 0.8); border: 1px solid #00f7ff; padding: 15px; border-radius: 8px; font-size: 0.8rem; }
+        .big-status { font-size: 1.2rem; color: #00f7ff; margin-top: 10px; height: 30px; font-weight: bold; }
+        .confidence { font-size: 1.8rem; color: #00f7ff; font-weight: bold; display: block; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <span style="opacity: 0.6;">System:</span> Biometric Analysis v2.4
-    </div>
+    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
 
-    <div class="viewport">
-        <div class="corner top-left"></div>
-        <div class="corner top-right"></div>
-        <div class="corner bottom-left"></div>
-        <div class="corner bottom-right"></div>
-        <div class="scan-bar"></div>
-        
+    <div class="scanner">
         <video id="video" autoplay playsinline muted></video>
-        <canvas id="overlay"></canvas>
-
-        <div id="status-display">SYSTEM IDLE</div>
+        <div class="scan-line"></div>
     </div>
+
+    <div id="status-text" class="big-status">INITIALIZING AI...</div>
 
     <div class="dashboard">
-        <div class="panel">Identity<br><span class="data-val" id="subject-name">---</span></div>
-        <div class="panel">Confidence<br><span class="data-val" id="confidence">0%</span></div>
-        <div class="panel">Security<br><span class="data-val" id="lock-status">LOCKED</span></div>
-        <div class="panel">Database<br><span class="data-val" id="db-status" style="color: #f1c40f;">WAITING</span></div>
+        <div class="panel">Security Status<br><span id="lock-status">🔒 Locked</span></div>
+        <div class="panel">Match Confidence<br><span class="confidence" id="confidence">0%</span></div>
+        <div class="panel">Identified Subject<br><span id="subject-name" style="color:#00ff9c;">Scanning...</span></div>
+        <div class="panel">Firebase Link<br><span id="db-status" style="color:yellow;">Connecting...</span></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Your Firebase Config (Keep this secure!)
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
             authDomain: "my-school-project-6e00c.firebaseapp.com",
@@ -166,8 +65,7 @@
         const db = getFirestore(app);
 
         const video = document.getElementById("video");
-        const canvas = document.getElementById("overlay");
-        const statusEl = document.getElementById("status-display");
+        const statusEl = document.getElementById("status-text");
         const confidenceEl = document.getElementById("confidence");
         const lockEl = document.getElementById("lock-status");
         const subjectEl = document.getElementById("subject-name");
@@ -180,27 +78,24 @@
         async function init() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
             try {
-                statusEl.innerText = "LOADING AI MODULES...";
+                // 1. Load AI Models
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
                 
+                // 2. Load Students from Firebase
                 await loadStudents();
 
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                // 3. Start Video
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
                 video.srcObject = stream;
                 
-                // Match canvas size to video size
-                video.onloadedmetadata = () => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    statusEl.innerText = "BIOMETRIC SCANNER READY";
-                    startRecognitionLoop();
-                };
+                statusEl.innerText = "SYSTEM ACTIVE";
+                startRecognitionLoop();
             } catch (err) {
-                statusEl.innerText = "CRITICAL SYSTEM ERROR";
+                statusEl.innerText = "SYSTEM ERROR";
                 console.error(err);
             }
         }
@@ -218,72 +113,76 @@
             });
 
             if (labeledDescriptors.length > 0) {
+                // Setting 0.45 for strict differentiation
                 faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
-                dbStatusEl.innerText = "SYNCED";
+                dbStatusEl.innerText = "CONNECTED";
                 dbStatusEl.style.color = "#00ff9c";
+            } else {
+                dbStatusEl.innerText = "NO DATA";
             }
         }
 
-        function startRecognitionLoop() {
-            const ctx = canvas.getContext('2d');
-
+        async function startRecognitionLoop() {
             setInterval(async () => {
-                if (isProcessing) return;
+                if (!faceMatcher || isProcessing) return;
 
-                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (detection) {
+                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                    const confidencePercent = Math.round((1 - bestMatch.distance) * 100);
+                    confidenceEl.innerText = confidencePercent + "%";
 
-                if (detections) {
-                    // DRAW HOLOGRAPHIC MESH
-                    const drawOptions = {
-                        drawLines: true,
-                        color: 'rgba(0, 247, 255, 0.7)',
-                        lineWidth: 1
-                    };
-                    faceapi.draw.drawFaceLandmarks(canvas, detections);
-
-                    // MATCHING LOGIC
-                    if (faceMatcher) {
-                        const bestMatch = faceMatcher.findBestMatch(detections.descriptor);
-                        const confidencePercent = Math.round((1 - bestMatch.distance) * 100);
-                        confidenceEl.innerText = confidencePercent + "%";
-
-                        if (bestMatch.label !== 'unknown' && confidencePercent > 55) {
-                            const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
-                            handleSuccess(studentInfo);
-                        }
+                    if (bestMatch.label !== 'unknown') {
+                        const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
+                        handleSuccess(studentInfo);
+                    } else {
+                        handleFailure();
                     }
                 } else {
                     confidenceEl.innerText = "0%";
-                    subjectEl.innerText = "---";
+                    subjectEl.innerText = "Searching...";
                 }
-            }, 100); // Faster refresh for smoother UI mesh
+            }, 800);
         }
 
         async function handleSuccess(info) {
             isProcessing = true;
-            statusEl.innerText = "VERIFICATION SUCCESSFUL";
+            statusEl.innerText = "ACCESS GRANTED";
             statusEl.style.color = "#00ff9c";
-            lockEl.innerText = "GRANTED";
+            lockEl.innerText = "🔓 Unlocked";
             lockEl.style.color = "#00ff9c";
             subjectEl.innerText = info.name;
 
+            // Log to Firebase
             await addDoc(collection(db, "attendance"), {
                 studentName: info.name,
+                district: info.district,
                 time: serverTimestamp()
             });
 
+            // Cooldown for 4 seconds before next scan
             setTimeout(() => {
                 isProcessing = false;
-                statusEl.innerText = "BIOMETRIC SCANNER READY";
-                statusEl.style.color = "var(--glow-color)";
-                lockEl.innerText = "LOCKED";
-                lockEl.style.color = "#fff";
-                subjectEl.innerText = "---";
+                statusEl.innerText = "SYSTEM ACTIVE";
+                statusEl.style.color = "#0ff";
+                lockEl.innerText = "🔒 Locked";
+                lockEl.style.color = "#0ff";
+                subjectEl.innerText = "Scanning...";
             }, 4000);
+        }
+
+        function handleFailure() {
+            isProcessing = true;
+            statusEl.innerText = "UNKNOWN - REDIRECTING";
+            statusEl.style.color = "red";
+            subjectEl.innerText = "NOT IN SYSTEM";
+            
+            setTimeout(() => {
+                window.location.href = "face.html";
+            }, 2000);
         }
 
         init();
