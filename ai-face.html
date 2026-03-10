@@ -3,69 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Biometric Analysis & Registration</title>
+    <title>AI Biometric Portal</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        body { background: #0b1220; font-family: 'Courier New', monospace; color: #0ff; text-align: center; margin: 0; padding: 20px; }
-        h1 { letter-spacing: 5px; text-shadow: 0 0 10px #0ff; font-size: 1.5rem; }
+        body { background: #0b1220; font-family: 'Courier New', monospace; color: #0ff; text-align: center; margin: 0; overflow-x: hidden; padding-bottom: 50px; }
+        h1 { letter-spacing: 5px; text-shadow: 0 0 10px #0ff; margin-top: 20px; font-size: 1.5rem; }
         
-        /* Scanner UI */
-        .scanner-box {
+        .scanner-container {
             position: relative; width: 320px; height: 240px; margin: 20px auto;
-            border: 2px solid #00f7ff; border-radius: 10px; box-shadow: 0 0 20px #00f7ff;
+            border: 2px solid #00f7ff; border-radius: 10px; box-shadow: 0 0 30px #00f7ff;
             background: #000; overflow: hidden;
         }
         video { width: 100%; height: 100%; object-fit: cover; }
         .scan-line {
             position: absolute; width: 100%; height: 4px; background: #00f7ff;
-            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7); top: 0; 
-            animation: scan 3s ease-in-out infinite;
+            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7); z-index: 10;
+            top: 0; animation: scan 3s ease-in-out infinite;
         }
         @keyframes scan { 0%, 100% { top: 0%; } 50% { top: 100%; } }
 
-        /* Dashboard */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 500px; margin: 0 auto; }
-        .panel { background: rgba(8, 18, 32, 0.8); border: 1px solid #00f7ff; padding: 12px; border-radius: 8px; font-size: 0.8rem; }
-        .big-status { font-size: 1.2rem; color: #0ff; margin: 15px 0; font-weight: bold; text-transform: uppercase; }
-        .confidence { font-size: 1.5rem; color: #0ff; font-weight: bold; }
-
-        /* Registration Form */
-        .reg-container { 
-            display: none; max-width: 450px; margin: 20px auto; 
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; padding: 10px; }
+        .panel { background: rgba(8, 18, 32, 0.8); border: 1px solid #00f7ff; padding: 10px; border-radius: 8px; font-size: 0.75rem; }
+        .status-msg { font-size: 1.1rem; color: #00f7ff; margin: 15px 0; font-weight: bold; min-height: 1.5em; }
+        
+        /* Registration Form Styles */
+        #registration-form { 
+            display: none; max-width: 400px; margin: 20px auto; 
             background: rgba(255, 255, 255, 0.05); padding: 20px; 
             border-radius: 15px; border: 1px solid #ffcc00; 
         }
-        input { padding: 12px; margin: 8px 0; width: 85%; border: none; border-radius: 5px; background: #1a264d; color: white; border: 1px solid #00f7ff; }
-        button { padding: 15px; margin-top: 15px; background: #00f7ff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: #0a0f2c; width: 90%; }
-        .pending-box { color: #ffcc00; border: 1px solid #ffcc00; padding: 10px; margin-top: 10px; display: none; border-radius: 5px; }
+        input { padding: 10px; margin: 5px 0; width: 90%; border: 1px solid #00f7ff; border-radius: 5px; background: #1a264d; color: white; }
+        button { 
+            padding: 12px; margin-top: 10px; background: #00f7ff; border: none; 
+            border-radius: 5px; cursor: pointer; font-weight: bold; width: 95%; transition: 0.3s;
+        }
+        button:hover { background: #00c4cc; }
+        .pending-box { color: #ffcc00; border: 1px solid #ffcc00; padding: 10px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
+    <h1>🔍 AI BIOMETRIC SYSTEM</h1>
 
-    <div class="scanner-box">
+    <div class="scanner-container">
         <video id="video" autoplay playsinline muted></video>
-        <div class="scan-line"></div>
+        <div id="scan-line" class="scan-line"></div>
     </div>
 
-    <div id="status-text" class="big-status">INITIALIZING AI...</div>
+    <div id="status-text" class="status-msg">INITIALIZING AI...</div>
 
     <div class="dashboard">
-        <div class="panel">Security Status<br><span id="lock-status">🔒 Locked</span></div>
-        <div class="panel">Match Confidence<br><span class="confidence" id="confidence">0%</span></div>
-        <div class="panel">Identified Subject<br><span id="subject-name" style="color:#00ff9c;">Scanning...</span></div>
-        <div class="panel">Firebase Link<br><span id="db-status" style="color:yellow;">Connecting...</span></div>
+        <div class="panel">System State<br><span id="lock-status" style="color:#ffcc00;">Initializing</span></div>
+        <div class="panel">Match Confidence<br><span id="confidence" style="font-size: 1.2rem;">0%</span></div>
+        <div class="panel">Identity<br><span id="subject-name" style="color:#00ff9c;">Scanning...</span></div>
+        <div class="panel">DB Status<br><span id="db-status" style="color:yellow;">Connecting...</span></div>
     </div>
 
-    <div id="reg-section" class="reg-container">
-        <h2 style="color: #ffcc00; margin-top: 0;">🎓 Student Registration</h2>
-        <input type="text" id="name" placeholder="Full Name">
-        <input type="text" id="country" placeholder="Country">
-        <input type="text" id="district" placeholder="District">
-        <input type="text" id="village" placeholder="Village">
-        <button id="regBtn">Check & Register Face</button>
-        <div id="pendingMsg" class="pending-box">⚠️ Your registration is still pending admin approval.</div>
+    <div id="registration-form">
+        <h3 style="color: #ffcc00; margin-top: 0;">New Student Detection</h3>
+        <p style="font-size: 0.8rem;">Face not recognized. Please register details:</p>
+        <input type="text" id="reg-name" placeholder="Full Name">
+        <input type="text" id="reg-country" placeholder="Country">
+        <input type="text" id="reg-district" placeholder="District">
+        <input type="text" id="reg-village" placeholder="Village">
+        <button id="register-btn">SUBMIT FOR APPROVAL</button>
+        <div id="pendingMsg" class="pending-box">⚠️ Registration submitted! Awaiting admin approval.</div>
     </div>
 
     <script type="module">
@@ -90,11 +92,13 @@
         const lockEl = document.getElementById("lock-status");
         const subjectEl = document.getElementById("subject-name");
         const dbStatusEl = document.getElementById("db-status");
-        const regSection = document.getElementById("reg-section");
+        const regForm = document.getElementById("registration-form");
+        const scanLine = document.getElementById("scan-line");
 
         let faceMatcher = null;
         let allStudentsData = [];
         let isProcessing = false;
+        let currentDescriptor = null;
 
         async function init() {
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
@@ -105,36 +109,40 @@
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
                 
-                await loadStudents();
+                await loadKnownFaces();
                 const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
                 video.srcObject = stream;
-                statusEl.innerText = "SYSTEM ACTIVE";
+                
+                statusEl.innerText = "SYSTEM ACTIVE - SCANNING";
+                lockEl.innerText = "SCANNING";
                 startRecognitionLoop();
             } catch (err) {
-                statusEl.innerText = "SYSTEM ERROR";
+                statusEl.innerText = "HARDWARE ERROR";
+                console.error(err);
             }
         }
 
-        async function loadStudents() {
-            const querySnapshot = await getDocs(collection(db, "students"));
+        async function loadKnownFaces() {
+            const q = query(collection(db, "students"));
+            const querySnapshot = await getDocs(q);
             const labeledDescriptors = [];
             allStudentsData = [];
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 allStudentsData.push(data);
-                if (data.approved) {
+                if(data.approved) {
                     const desc = new Float32Array(data.faceDescriptor);
                     labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
                 }
             });
 
             if (labeledDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
-                dbStatusEl.innerText = "CONNECTED";
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5);
+                dbStatusEl.innerText = "SYNCED";
                 dbStatusEl.style.color = "#00ff9c";
             } else {
-                dbStatusEl.innerText = "NO DATA";
+                dbStatusEl.innerText = "EMPTY DB";
             }
         }
 
@@ -147,50 +155,53 @@
                     .withFaceDescriptor();
 
                 if (detection) {
+                    currentDescriptor = detection.descriptor;
+                    
                     if (faceMatcher) {
                         const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-                        const confidencePercent = Math.round((1 - bestMatch.distance) * 100);
-                        confidenceEl.innerText = confidencePercent + "%";
+                        const confidence = Math.round((1 - bestMatch.distance) * 100);
+                        confidenceEl.innerText = confidence + "%";
 
                         if (bestMatch.label !== 'unknown') {
-                            const info = allStudentsData.find(s => s.name === bestMatch.label);
-                            handleAttendanceSuccess(info);
+                            const student = allStudentsData.find(s => s.name === bestMatch.label);
+                            handleAttendance(student);
                         } else {
-                            handleUnknownFace(detection.descriptor);
+                            // Check if this unknown person is already in DB but pending
+                            checkPendingStatus(detection.descriptor);
                         }
                     } else {
-                        handleUnknownFace(detection.descriptor);
+                        showRegistration();
                     }
                 } else {
                     confidenceEl.innerText = "0%";
-                    subjectEl.innerText = "Scanning...";
+                    subjectEl.innerText = "Searching...";
                 }
             }, 1000);
         }
 
-        async function handleAttendanceSuccess(info) {
+        async function handleAttendance(student) {
             isProcessing = true;
             statusEl.innerText = "ACCESS GRANTED";
-            lockEl.innerText = "🔓 Unlocked";
-            subjectEl.innerText = info.name;
-            regSection.style.display = "none";
+            statusEl.style.color = "#00ff9c";
+            lockEl.innerText = "UNLOCKED";
+            lockEl.style.color = "#00ff9c";
+            subjectEl.innerText = student.name;
+            scanLine.style.background = "#00ff9c";
 
             await addDoc(collection(db, "attendance"), {
-                studentName: info.name,
-                district: info.district,
+                studentName: student.name,
+                district: student.district,
                 time: serverTimestamp()
             });
 
             setTimeout(() => {
                 isProcessing = false;
-                statusEl.innerText = "SYSTEM ACTIVE";
-                lockEl.innerText = "🔒 Locked";
-                subjectEl.innerText = "Scanning...";
+                resetUI();
             }, 5000);
         }
 
-        function handleUnknownFace(descriptor) {
-            // Check if this unknown face is actually a "Pending" student
+        async function checkPendingStatus(descriptor) {
+            // Check if face matches any unapproved student in our local copy
             let isPending = false;
             allStudentsData.forEach(s => {
                 if(!s.approved) {
@@ -199,41 +210,57 @@
                 }
             });
 
-            if (isPending) {
+            if(isPending) {
                 statusEl.innerText = "PENDING APPROVAL";
-                subjectEl.innerText = "AWAITING ADMIN";
-                document.getElementById("pendingMsg").style.display = "block";
-                regSection.style.display = "block"; // Keep visible but show pending message
+                statusEl.style.color = "#ffcc00";
             } else {
-                statusEl.innerText = "UNKNOWN - REGISTERING";
-                subjectEl.innerText = "NOT IN SYSTEM";
-                regSection.style.display = "block";
-                document.getElementById("pendingMsg").style.display = "none";
+                showRegistration();
             }
         }
 
-        document.getElementById("regBtn").addEventListener('click', async () => {
-            const name = document.getElementById("name").value.trim();
-            const country = document.getElementById("country").value.trim();
-            const district = document.getElementById("district").value.trim();
-            const village = document.getElementById("village").value.trim();
+        function showRegistration() {
+            isProcessing = true;
+            regForm.style.display = "block";
+            statusEl.innerText = "UNKNOWN SUBJECT";
+            statusEl.style.color = "#ffcc00";
+            subjectEl.innerText = "NEW USER";
+        }
 
-            if (!name || !country || !district || !village) {
-                statusEl.innerText = "FILL ALL DETAILS";
+        function resetUI() {
+            statusEl.innerText = "SYSTEM ACTIVE - SCANNING";
+            statusEl.style.color = "#0ff";
+            lockEl.innerText = "SCANNING";
+            lockEl.style.color = "#ffcc00";
+            subjectEl.innerText = "Scanning...";
+            scanLine.style.background = "#00f7ff";
+            regForm.style.display = "none";
+            document.getElementById("pendingMsg").style.display = "none";
+        }
+
+        document.getElementById("register-btn").addEventListener("click", async () => {
+            const name = document.getElementById("reg-name").value.trim();
+            const country = document.getElementById("reg-country").value.trim();
+            const district = document.getElementById("reg-district").value.trim();
+            const village = document.getElementById("reg-village").value.trim();
+
+            if (!name || !currentDescriptor) {
+                alert("Please ensure face is visible and name is entered.");
                 return;
             }
 
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceDescriptor();
-            
-            if (detection) {
+            try {
                 await addDoc(collection(db, "students"), {
                     name, country, district, village,
-                    faceDescriptor: Array.from(detection.descriptor),
+                    faceDescriptor: Array.from(currentDescriptor),
                     approved: false,
                     createdAt: serverTimestamp()
                 });
-                statusEl.innerText = "REGISTRATION SAVED";
-                location.reload();
+                document.getElementById("pendingMsg").style.display = "block";
+                setTimeout(() => {
+                    location.reload(); // Refresh to update local list
+                }, 3000);
+            } catch (e) {
+                console.error(e);
             }
         });
 
