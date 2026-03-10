@@ -3,48 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Biometric Analysis</title>
+    <title>BN - Advanced Biometric Analysis</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        body { background: #0b1220; font-family: 'Courier New', monospace; color: #0ff; text-align: center; margin: 0; overflow-x: hidden; }
-        h1 { letter-spacing: 5px; text-shadow: 0 0 10px #0ff; margin-top: 20px; font-size: 1.5rem; }
+        :root { --neon: #00f7ff; --success: #00ff9c; --bg: #030810; }
+        body { background: var(--bg); font-family: 'Open Sans', Arial, sans-serif; color: #fff; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
         
-        .scanner {
-            position: relative; width: 320px; height: 240px; margin: 30px auto;
-            border: 2px solid #00f7ff; border-radius: 10px; box-shadow: 0 0 30px #00f7ff;
-            background: #000; overflow: hidden;
-        }
-        video { width: 100%; height: 100%; object-fit: cover; }
+        /* Layout */
+        .grid-hud { display: grid; grid-template-columns: 240px 1fr 240px; gap: 15px; max-width: 1200px; margin: auto; padding: 10px; }
+        .hud-panel { background: rgba(0, 247, 255, 0.03); border: 1px solid rgba(0, 247, 255, 0.2); border-radius: 8px; padding: 12px; }
+        
+        /* Central Scanner (Video & Canvas) */
+        .scanner-container { position: relative; width: 100%; max-width: 500px; aspect-ratio: 4/3; margin: auto; border: 2px solid var(--neon); border-radius: 10px; box-shadow: 0 0 40px rgba(0, 247, 255, 0.3); overflow: hidden; background: #000; }
+        video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        canvas { z-index: 5; } /* Canvas must be above video */
 
-        .scan-line {
-            position: absolute; width: 100%; height: 4px; background: #00f7ff;
-            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.7); z-index: 10;
-            top: 0; animation: scan 3s ease-in-out infinite;
-        }
-        @keyframes scan { 0%, 100% { top: 0%; } 50% { top: 100%; } }
+        .scanning-line { position: absolute; width: 100%; height: 6px; background: var(--neon); box-shadow: 0 0 20px 8px rgba(0, 247, 255, 0.7); z-index: 10; top: 0; animation: scanAnim 3s ease-in-out infinite; }
+        @keyframes scanAnim { 0%, 100% { top: 0%; } 50% { top: 100%; } }
 
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; padding: 20px; }
-        .panel { background: rgba(8, 18, 32, 0.8); border: 1px solid #00f7ff; padding: 15px; border-radius: 8px; font-size: 0.8rem; }
-        .big-status { font-size: 1.2rem; color: #00f7ff; margin-top: 10px; height: 30px; font-weight: bold; }
-        .confidence { font-size: 1.8rem; color: #00f7ff; font-weight: bold; display: block; margin-top: 5px; }
+        /* Cyber UI Texts */
+        .cyber-title { color: #888; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; text-align: left; }
+        .cyber-value { color: var(--neon); font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; text-align: left; margin-bottom: 8px; }
+        .binary-log { color: rgba(0, 247, 255, 0.5); font-family: 'Courier New', monospace; font-size: 0.7rem; text-align: left; overflow: hidden; height: 100px; line-height: 1.4; }
+        
+        /* Big Status */
+        .final-status { grid-column: 2; font-size: 1.4rem; font-weight: bold; color: var(--neon); margin: 20px 0; letter-spacing: 1px; text-shadow: 0 0 5px var(--neon); }
+        .success-text { color: var(--success) !important; text-shadow: 0 0 10px var(--success); }
     </style>
 </head>
 <body>
 
-    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
+    <div class="final-status" id="hudMainStatus">// TERMINAL ACTIVE</div>
 
-    <div class="scanner">
-        <video id="video" autoplay playsinline muted></video>
-        <div class="scan-line"></div>
-    </div>
+    <div class="grid-hud">
+        <div>
+            <div class="hud-panel cyber-title" style="margin-bottom: 10px;">Security Status</div>
+            <div class="hud-panel">
+                <div class="cyber-title">Subject Identified</div>
+                <div class="cyber-value" id="hudName">Searching...</div>
+                <div class="cyber-title">Terminal</div>
+                <div class="cyber-value">BIOMETRIC 01</div>
+            </div>
+            <div class="hud-panel" style="margin-top: 10px;">
+                <div class="cyber-title">Match Analysis</div>
+                <div class="cyber-value" id="hudConfidence" style="font-size: 2rem;">0.0%</div>
+            </div>
+        </div>
 
-    <div id="status-text" class="big-status">INITIALIZING AI...</div>
+        <div class="scanner-container">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="overlay"></canvas> <div class="scanning-line"></div>
+        </div>
 
-    <div class="dashboard">
-        <div class="panel">Security Status<br><span id="lock-status">🔒 Locked</span></div>
-        <div class="panel">Match Confidence<br><span class="confidence" id="confidence">0%</span></div>
-        <div class="panel">Identified Subject<br><span id="subject-name" style="color:#00ff9c;">Scanning...</span></div>
-        <div class="panel">Firebase Link<br><span id="db-status" style="color:yellow;">Connecting...</span></div>
+        <div>
+            <div class="hud-panel cyber-title" style="margin-bottom: 10px;">Network Logs</div>
+            <div class="hud-panel binary-log">
+                [LOG_01] 101100101101<br>
+                [LOG_02] 101010001001<br>
+                [LOG_03] 011010011110<br>
+                [LOG_04] 101101100011<br>
+                [LOG_05] 101110010110
+            </div>
+            <div class="hud-panel" style="margin-top: 10px;">
+                <div class="cyber-title">DB Sync</div>
+                <div class="cyber-value" id="hudDbStatus" style="color: yellow;">Connecting...</div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -65,11 +89,11 @@
         const db = getFirestore(app);
 
         const video = document.getElementById("video");
-        const statusEl = document.getElementById("status-text");
-        const confidenceEl = document.getElementById("confidence");
-        const lockEl = document.getElementById("lock-status");
-        const subjectEl = document.getElementById("subject-name");
-        const dbStatusEl = document.getElementById("db-status");
+        const canvas = document.getElementById("overlay");
+        const mainStatusEl = document.getElementById("hudMainStatus");
+        const nameEl = document.getElementById("hudName");
+        const confEl = document.getElementById("hudConfidence");
+        const dbStatusEl = document.getElementById("hudDbStatus");
 
         let faceMatcher = null;
         let allStudentsData = [];
@@ -92,97 +116,131 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
                 video.srcObject = stream;
                 
-                statusEl.innerText = "SYSTEM ACTIVE";
-                startRecognitionLoop();
+                // --- NEW: MATCH CANVAS SIZE TO VIDEO ---
+                video.addEventListener('playing', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    startRecognitionLoop();
+                });
+
             } catch (err) {
-                statusEl.innerText = "SYSTEM ERROR";
-                console.error(err);
+                mainStatusEl.innerText = "// CRITICAL_ERROR: SYSTEM FAILURE";
             }
         }
 
         async function loadStudents() {
             const q = query(collection(db, "students"), where("approved", "==", true));
-            const querySnapshot = await getDocs(q);
-            const labeledDescriptors = [];
-
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                allStudentsData.push(data);
-                const desc = new Float32Array(data.faceDescriptor);
-                labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
+            const snap = await getDocs(q);
+            const labeled = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                allStudentsData.push(d);
+                labeled.push(new faceapi.LabeledFaceDescriptors(d.name, [new Float32Array(d.faceDescriptor)]));
             });
 
-            if (labeledDescriptors.length > 0) {
-                // Setting 0.45 for strict differentiation
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
-                dbStatusEl.innerText = "CONNECTED";
-                dbStatusEl.style.color = "#00ff9c";
-            } else {
-                dbStatusEl.innerText = "NO DATA";
+            if (labeled.length > 0) {
+                faceMatcher = new faceapi.FaceMatcher(labeled, 0.45);
+                dbStatusEl.innerText = "ONLINE"; dbStatusEl.style.color = "#00ff9c";
+            } else { dbStatusEl.innerText = "NO DATA"; }
+        }
+
+        // --- NEW: DRAW WIREFRAME FUNCTION ---
+        function drawWireframe(landmarks, ctx, matchConfidence) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous frame
+            
+            const color = mainStatusEl.classList.contains('success-text') ? "#00ff9c" : "#00f7ff";
+            
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 1;
+
+            // Draw Wireframe Lines
+            const connections = faceapi.draw.drawFaceLandmarks.connections;
+            connections.forEach(([i, j]) => {
+                const start = landmarks.positions[i];
+                const end = landmarks.positions[j];
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.stroke();
+            });
+
+            // Draw Points (with subtle glow)
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = color;
+            landmarks.positions.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            ctx.shadowBlur = 0; // Reset shadow
+
+            // Display Confidence on Mesh
+            ctx.fillStyle = color;
+            ctx.font = '24px Courier New';
+            const noseTip = landmarks.getNose()[0];
+            if (matchConfidence > 0) {
+                ctx.fillText(`C: ${matchConfidence}%`, noseTip.x + 20, noseTip.y - 20);
             }
         }
 
         async function startRecognitionLoop() {
+            const ctx = canvas.getContext("2d");
+            
             setInterval(async () => {
-                if (!faceMatcher || isProcessing) return;
-
-                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                const detection = await faceapi.detectSingleFace(video, 
+                    new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.9, inputSize: 512 }))
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
                 if (detection) {
-                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-                    const confidencePercent = Math.round((1 - bestMatch.distance) * 100);
-                    confidenceEl.innerText = confidencePercent + "%";
+                    // --- NEW: MATCHING ---
+                    const match = faceMatcher.findBestMatch(detection.descriptor);
+                    const conf = Math.round((1 - match.distance) * 100);
+                    confEl.innerText = conf + ".0%";
 
-                    if (bestMatch.label !== 'unknown') {
-                        const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
-                        handleSuccess(studentInfo);
-                    } else {
-                        handleFailure();
+                    // --- NEW: DRAW WIREFRAME ---
+                    drawWireframe(detection.landmarks, ctx, conf);
+
+                    if (!isProcessing) {
+                        if (match.label !== 'unknown') {
+                            const info = allStudentsData.find(s => s.name === match.label);
+                            handleMatchSuccess(info);
+                        } else {
+                            handleMatchUnknown();
+                        }
                     }
-                } else {
-                    confidenceEl.innerText = "0%";
-                    subjectEl.innerText = "Searching...";
+                } else { 
+                    // No face, clear everything
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    confEl.innerText = "0.0%"; nameEl.innerText = "Searching..."; 
                 }
-            }, 800);
+            }, 500); // Check every 0.5s for smoother wireframe
         }
 
-        async function handleSuccess(info) {
+        async function handleMatchSuccess(info) {
             isProcessing = true;
-            statusEl.innerText = "ACCESS GRANTED";
-            statusEl.style.color = "#00ff9c";
-            lockEl.innerText = "🔓 Unlocked";
-            lockEl.style.color = "#00ff9c";
-            subjectEl.innerText = info.name;
+            mainStatusEl.innerText = "// IDENTITY CONFIRMED";
+            mainStatusEl.classList.add('success-text');
+            nameEl.innerText = info.name;
 
-            // Log to Firebase
-            await addDoc(collection(db, "attendance"), {
-                studentName: info.name,
-                district: info.district,
-                time: serverTimestamp()
-            });
+            await addDoc(collection(db, "attendance"), { studentName: info.name, district: info.district, time: serverTimestamp() });
 
-            // Cooldown for 4 seconds before next scan
+            // Cooldown for 5 seconds
             setTimeout(() => {
                 isProcessing = false;
-                statusEl.innerText = "SYSTEM ACTIVE";
-                statusEl.style.color = "#0ff";
-                lockEl.innerText = "🔒 Locked";
-                lockEl.style.color = "#0ff";
-                subjectEl.innerText = "Scanning...";
-            }, 4000);
+                mainStatusEl.innerText = "// TERMINAL ACTIVE";
+                mainStatusEl.classList.remove('success-text');
+                nameEl.innerText = "Scanning...";
+            }, 5000);
         }
 
-        function handleFailure() {
+        function handleMatchUnknown() {
             isProcessing = true;
-            statusEl.innerText = "UNKNOWN - REDIRECTING";
-            statusEl.style.color = "red";
-            subjectEl.innerText = "NOT IN SYSTEM";
-            
-            setTimeout(() => {
-                window.location.href = "face.html";
-            }, 2000);
+            mainStatusEl.innerText = "// UNKNOWN SUBJECT - REGISTRATION REQUIRED";
+            mainStatusEl.style.color = "red";
+            nameEl.innerText = "NOT IN SYSTEM";
+            setTimeout(() => { window.location.href = "face.html"; }, 3000);
         }
 
         init();
