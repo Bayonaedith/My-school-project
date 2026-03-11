@@ -1,252 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NK Upgrade Biometric System</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #050a14;
-            font-family: 'Segoe UI', 'Courier New', monospace;
-            color: #0ff;
-            text-align: center;
-            padding: 10px;
-            min-height: 100vh;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NK Upgrade Biometric System</title>
 
-        h1 { font-size: 1.1rem; letter-spacing: 2px; margin: 15px 0; text-transform: uppercase; border-bottom: 1px solid #044; padding-bottom: 5px; }
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
-        .scanner-box {
-            position: relative;
-            width: 100%;
-            max-width: 280px;
-            aspect-ratio: 1 / 1;
-            border: 1px solid #0ff;
-            border-radius: 5px;
-            margin: 0 auto;
-            background: #000;
-            overflow: hidden;
-        }
-        video { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.1) contrast(1.1); }
-        
-        .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: #0ff;
-            box-shadow: 0 0 10px #0ff;
-            top: 0;
-            animation: scan 2s linear infinite;
-            z-index: 2;
-        }
-        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+<style>
 
-        .status-display { font-size: 0.8rem; margin: 15px 0; font-weight: bold; min-height: 20px; }
-        
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 6px;
-            max-width: 300px;
-            margin: 10px auto;
-        }
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
 
-        .panel {
-            background: rgba(0, 40, 40, 0.2);
-            border: 1px solid #044;
-            padding: 8px 4px;
-            min-height: 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+body{
+background:#050a14;
+font-family:'Segoe UI','Courier New',monospace;
+color:#0ff;
+text-align:center;
+padding:10px;
+min-height:100vh;
+}
 
-        .panel-label { font-size: 0.5rem; color: #088; text-transform: uppercase; margin-bottom: 2px; }
-        .panel-value { font-size: 0.8rem; color: #0ff; font-weight: bold; }
-        
-        .alert-overlay {
-            color: #ffcc00;
-            font-size: 0.7rem;
-            margin-top: 10px;
-            display: none;
-            padding: 10px;
-            border: 1px dashed #ffcc00;
-        }
-    </style>
+/* BIG SHINY TITLE */
+h1{
+font-size:1.8rem;
+letter-spacing:3px;
+margin:18px 0;
+text-transform:uppercase;
+border-bottom:1px solid #0ff;
+padding-bottom:8px;
+text-shadow:
+0 0 5px #0ff,
+0 0 10px #0ff,
+0 0 20px #00ffff;
+}
+
+/* CAMERA BOX */
+
+.scanner-box{
+position:relative;
+width:100%;
+max-width:320px;
+aspect-ratio:1/1;
+border:2px solid #0ff;
+border-radius:8px;
+margin:0 auto;
+background:#000;
+overflow:hidden;
+box-shadow:
+0 0 10px #0ff,
+0 0 30px rgba(0,255,255,0.3);
+}
+
+video{
+width:100%;
+height:100%;
+object-fit:cover;
+filter:brightness(1.1) contrast(1.1);
+}
+
+/* SCANNING LINE */
+
+.scan-line{
+position:absolute;
+width:100%;
+height:2px;
+background:#0ff;
+box-shadow:0 0 15px #0ff;
+top:0;
+animation:scan 2s linear infinite;
+z-index:2;
+}
+
+@keyframes scan{
+0%{top:0%;}
+100%{top:100%;}
+}
+
+/* STATUS TEXT */
+
+.status-display{
+font-size:1.2rem;
+margin:18px 0;
+font-weight:bold;
+min-height:25px;
+
+text-shadow:
+0 0 5px #0ff,
+0 0 10px #0ff;
+}
+
+/* DASHBOARD */
+
+.dashboard{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:10px;
+max-width:340px;
+margin:10px auto;
+}
+
+/* PANEL */
+
+.panel{
+background:rgba(0,40,40,0.3);
+border:1px solid #0ff;
+padding:12px 6px;
+min-height:75px;
+
+display:flex;
+flex-direction:column;
+justify-content:center;
+
+border-radius:6px;
+
+box-shadow:
+0 0 6px rgba(0,255,255,0.4);
+}
+
+/* LABEL */
+
+.panel-label{
+font-size:0.75rem;
+color:#7ff;
+text-transform:uppercase;
+margin-bottom:4px;
+letter-spacing:1px;
+}
+
+/* VALUE */
+
+.panel-value{
+font-size:1.2rem;
+color:#0ff;
+font-weight:bold;
+
+text-shadow:
+0 0 5px #0ff,
+0 0 12px #00ffff;
+}
+
+/* ALERT */
+
+.alert-overlay{
+color:#ffcc00;
+font-size:1rem;
+margin-top:12px;
+display:none;
+padding:12px;
+
+border:1px dashed #ffcc00;
+
+text-shadow:
+0 0 6px #ffcc00;
+}
+
+</style>
 </head>
+
 <body>
 
-    <h1>🔍 Nk_Upgrade-Biometric-SYSTEM</h1>
+<h1>🔍 Nk_Upgrade-Biometric-SYSTEM</h1>
 
-    <div class="scanner-box">
-        <video id="video" autoplay playsinline muted></video>
-        <div class="scan-line"></div>
-    </div>
+<div class="scanner-box">
+<video id="video" autoplay playsinline muted></video>
+<div class="scan-line"></div>
+</div>
 
-    <div id="status-text" class="status-display">INITIALIZING...</div>
+<div id="status-text" class="status-display">INITIALIZING...</div>
 
-    <div class="dashboard">
-        <div class="panel">
-            <div class="panel-label">Lock_State</div>
-            <div class="panel-value" id="lock-status">LOCKED</div>
-        </div>
-        <div class="panel">
-            <div class="panel-label">Match_Prob</div>
-            <div class="panel-value" id="confidence">0%</div>
-        </div>
-        <div class="panel">
-            <div class="panel-label">Ident_Subject</div>
-            <div class="panel-value" id="subject-name">---</div>
-        </div>
-        <div class="panel">
-            <div class="panel-label">Net_Status</div>
-            <div class="panel-value" id="db-status">SYNCING</div>
-        </div>
-    </div>
+<div class="dashboard">
 
-    <div id="pending-alert" class="alert-overlay">
-        > WARNING: SUBJECT REGISTERED<br>
-        > STATUS: PENDING_ADMIN_APPROVAL<br>
-        > ACCESS_DENIED
-    </div>
+<div class="panel">
+<div class="panel-label">Lock_State</div>
+<div class="panel-value" id="lock-status">LOCKED</div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<div class="panel">
+<div class="panel-label">Match_Prob</div>
+<div class="panel-value" id="confidence">0%</div>
+</div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-            authDomain: "my-school-project-6e00c.firebaseapp.com",
-            projectId: "my-school-project-6e00c",
-            storageBucket: "my-school-project-6e00c.appspot.com",
-            messagingSenderId: "14283853516",
-            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-        };
+<div class="panel">
+<div class="panel-label">Ident_Subject</div>
+<div class="panel-value" id="subject-name">---</div>
+</div>
 
-        const state = { db: null, faceMatcher: null, allStudents: [], isProcessing: false };
-        const elements = {
-            video: document.getElementById("video"),
-            statusEl: document.getElementById("status-text"),
-            confidenceEl: document.getElementById("confidence"),
-            lockEl: document.getElementById("lock-status"),
-            subjectEl: document.getElementById("subject-name"),
-            dbStatusEl: document.getElementById("db-status"),
-            pendingAlert: document.getElementById("pending-alert")
-        };
+<div class="panel">
+<div class="panel-label">Net_Status</div>
+<div class="panel-value" id="db-status">SYNCING</div>
+</div>
 
-        async function init() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                state.db = getFirestore(app);
-                
-                const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-                ]);
+</div>
 
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 320, height: 320, facingMode: 'user' } 
-                });
-                elements.video.srcObject = stream;
+<div id="pending-alert" class="alert-overlay">
 
-                await loadDatabase();
-                elements.statusEl.textContent = "READY_TO_SCAN";
-                setInterval(processFrame, 1200);
-            } catch (e) {
-                elements.statusEl.textContent = "CORE_ERROR";
-            }
-        }
+> WARNING: SUBJECT REGISTERED<br>
+> STATUS: PENDING_ADMIN_APPROVAL<br>
+> ACCESS_DENIED
 
-        async function loadDatabase() {
-            const snap = await getDocs(collection(state.db, "students"));
-            state.allStudents = [];
-            const labeled = [];
-            
-            snap.forEach(doc => {
-                const data = doc.data();
-                state.allStudents.push(data);
-                if (data.approved && data.faceDescriptor) {
-                    labeled.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));
-                }
-            });
-            
-            if (labeled.length) state.faceMatcher = new faceapi.FaceMatcher(labeled, 0.5);
-            elements.dbStatusEl.textContent = "ONLINE";
-        }
+</div>
 
-        async function processFrame() {
-            if (state.isProcessing) return;
-            const det = await faceapi.detectSingleFace(elements.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-            
-            if (det) {
-                const conf = Math.round((1 - det.descriptor[0]) * 100);
-                elements.confidenceEl.textContent = `${Math.min(conf, 99)}%`;
+<script type="module">
 
-                // 1. Check Approved Users
-                if (state.faceMatcher) {
-                    const match = state.faceMatcher.findBestMatch(det.descriptor);
-                    if (match.label !== 'unknown') {
-                        const student = state.allStudents.find(s => s.name === match.label);
-                        handleApproved(student);
-                        return;
-                    }
-                }
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-                // 2. Check Pending Users (Registered but approved = false)
-                const pendingUser = checkPending(det.descriptor);
-                if (pendingUser) {
-                    elements.subjectEl.textContent = "PENDING";
-                    elements.statusEl.textContent = "AUTH_REQUIRED";
-                    elements.pendingAlert.style.display = "block";
-                    return;
-                }
-                
-                // 3. Unregistered User
-                state.isProcessing = true;
-                elements.statusEl.textContent = "UNKNOWN_SUBJECT";
-                elements.subjectEl.textContent = "NEW_USER";
-                setTimeout(() => window.location.href = './registration.html', 1500);
+const firebaseConfig={
+apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+authDomain:"my-school-project-6e00c.firebaseapp.com",
+projectId:"my-school-project-6e00c",
+storageBucket:"my-school-project-6e00c.appspot.com",
+messagingSenderId:"14283853516",
+appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
+};
 
-            } else {
-                elements.confidenceEl.textContent = "0%";
-                elements.pendingAlert.style.display = "none";
-            }
-        }
+const state={db:null,faceMatcher:null,allStudents:[],isProcessing:false};
 
-        function checkPending(descriptor) {
-            // Checks descriptors of unapproved students
-            for (const student of state.allStudents) {
-                if (!student.approved && student.faceDescriptor) {
-                    const distance = faceapi.euclideanDistance(descriptor, student.faceDescriptor);
-                    if (distance < 0.5) return student;
-                }
-            }
-            return null;
-        }
+const elements={
+video:document.getElementById("video"),
+statusEl:document.getElementById("status-text"),
+confidenceEl:document.getElementById("confidence"),
+lockEl:document.getElementById("lock-status"),
+subjectEl:document.getElementById("subject-name"),
+dbStatusEl:document.getElementById("db-status"),
+pendingAlert:document.getElementById("pending-alert")
+};
 
-        async function handleApproved(student) {
-            state.isProcessing = true;
-            elements.statusEl.textContent = "ACCESS_GRANTED";
-            elements.lockEl.textContent = "OPEN";
-            elements.subjectEl.textContent = student.name.substring(0, 12).toUpperCase();
-            
-            await addDoc(collection(state.db, "attendance"), {
-                studentName: student.name,
-                district: student.district,
-                timestamp: serverTimestamp()
-            });
+async function init(){
 
-            setTimeout(() => {
-                sessionStorage.setItem('studentData', JSON.stringify(student));
-                window.location.href = './attendance.html';
-            }, 2000);
-        }
+try{
 
-        init();
-    </script>
+const app=initializeApp(firebaseConfig);
+state.db=getFirestore(app);
+
+const MODEL_URL='https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+await Promise.all([
+faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+]);
+
+const stream=await navigator.mediaDevices.getUserMedia({
+video:{width:320,height:320,facingMode:'user'}
+});
+
+elements.video.srcObject=stream;
+
+await loadDatabase();
+
+elements.statusEl.textContent="READY_TO_SCAN";
+
+setInterval(processFrame,1200);
+
+}
+catch(e){
+
+elements.statusEl.textContent="CORE_ERROR";
+
+}
+
+}
+
+async function loadDatabase(){
+
+const snap=await getDocs(collection(state.db,"students"));
+
+state.allStudents=[];
+const labeled=[];
+
+snap.forEach(doc=>{
+
+const data=doc.data();
+state.allStudents.push(data);
+
+if(data.approved && data.faceDescriptor){
+
+labeled.push(
+new faceapi.LabeledFaceDescriptors(
+data.name,
+[new Float32Array(data.faceDescriptor)]
+)
+);
+
+}
+
+});
+
+if(labeled.length)
+state.faceMatcher=new faceapi.FaceMatcher(labeled,0.5);
+
+elements.dbStatusEl.textContent="ONLINE";
+
+}
+
+async function processFrame(){
+
+if(state.isProcessing) return;
+
+const det=await faceapi
+.detectSingleFace(elements.video,new faceapi.TinyFaceDetectorOptions())
+.withFaceLandmarks()
+.withFaceDescriptor();
+
+if(det){
+
+const conf=Math.round((1-det.descriptor[0])*100);
+
+elements.confidenceEl.textContent=`${Math.min(conf,99)}%`;
+
+if(state.faceMatcher){
+
+const match=state.faceMatcher.findBestMatch(det.descriptor);
+
+if(match.label!=='unknown'){
+
+const student=state.allStudents.find(s=>s.name===match.label);
+
+handleApproved(student);
+
+return;
+
+}
+
+}
+
+const pendingUser=checkPending(det.descriptor);
+
+if(pendingUser){
+
+elements.subjectEl.textContent="PENDING";
+elements.statusEl.textContent="AUTH_REQUIRED";
+
+elements.pendingAlert.style.display="block";
+
+return;
+
+}
+
+state.isProcessing=true;
+
+elements.statusEl.textContent="UNKNOWN_SUBJECT";
+elements.subjectEl.textContent="NEW_USER";
+
+setTimeout(()=>{
+window.location.href='./registration.html'
+},1500);
+
+}
+else{
+
+elements.confidenceEl.textContent="0%";
+elements.pendingAlert.style.display="none";
+
+}
+
+}
+
+function checkPending(descriptor){
+
+for(const student of state.allStudents){
+
+if(!student.approved && student.faceDescriptor){
+
+const distance=faceapi.euclideanDistance(descriptor,student.faceDescriptor);
+
+if(distance<0.5)
+return student;
+
+}
+
+}
+
+return null;
+
+}
+
+async function handleApproved(student){
+
+state.isProcessing=true;
+
+elements.statusEl.textContent="ACCESS_GRANTED";
+elements.lockEl.textContent="OPEN";
+
+elements.subjectEl.textContent=student.name.substring(0,12).toUpperCase();
+
+await addDoc(collection(state.db,"attendance"),{
+
+studentName:student.name,
+district:student.district,
+timestamp:serverTimestamp()
+
+});
+
+setTimeout(()=>{
+
+sessionStorage.setItem('studentData',JSON.stringify(student));
+
+window.location.href='./attendance.html';
+
+},2000);
+
+}
+
+init();
+
+</script>
+
 </body>
-</html>
+    </html>
