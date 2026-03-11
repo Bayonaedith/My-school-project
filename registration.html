@@ -146,19 +146,19 @@ button:disabled{
 
 <div id="registration-fields">
 <div class="input-group">
-<label>> ID_NAME</label>
+<label>ID_NAME</label>
 <input type="text" id="name" placeholder="Enter Name">
 </div>
 <div class="input-group">
-<label>> GEO_COUNTRY</label>
+<label>GEO_COUNTRY</label>
 <input type="text" id="country" placeholder="Country">
 </div>
 <div class="input-group">
-<label>> SEC_DISTRICT</label>
+<label>SEC_DISTRICT</label>
 <input type="text" id="district" placeholder="District">
 </div>
 <div class="input-group">
-<label>> LOC_VILLAGE</label>
+<label>LOC_VILLAGE</label>
 <input type="text" id="village" placeholder="Village">
 </div>
 <button id="regBtn">Check & Register</button>
@@ -193,8 +193,8 @@ const elements={
 };
 
 function updateTerminal(msg){
-    elements.terminal.innerHTML+=`<br>> ${msg}`;
-    elements.terminal.scrollTop=elements.terminal.scrollHeight;
+    elements.terminal.innerHTML += `\n> ${msg}`;
+    elements.terminal.scrollTop = elements.terminal.scrollHeight;
 }
 
 async function init(){
@@ -203,7 +203,6 @@ async function init(){
         state.db = getFirestore(app);
 
         updateTerminal("LOADING AI MODELS...");
-        // Load models locally from /models folder
         await Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
             faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
@@ -235,19 +234,18 @@ async function refreshFaceMatcher(){
             labeled.push(new faceapi.LabeledFaceDescriptors(docu.id,[new Float32Array(data.faceDescriptor)]));
         }
     });
-    if(labeled.length>0) state.faceMatcher=new faceapi.FaceMatcher(labeled,DISTANCE_THRESHOLD);
+    state.faceMatcher = labeled.length>0 ? new faceapi.FaceMatcher(labeled,DISTANCE_THRESHOLD) : null;
 }
 
 elements.regBtn.addEventListener("click", async ()=>{
     const name=document.getElementById("name").value.trim();
-    if(!name){alert("Please enter ID_NAME");return;}
+    if(!name){alert("Please enter ID_NAME"); return;}
 
     elements.regBtn.disabled=true;
     elements.fields.style.display='none';
     elements.pending.style.display='block';
     updateTerminal("SCANNING BIOMETRICS...");
 
-    // Wait a moment for video to load frames
     await new Promise(resolve=>setTimeout(resolve,500));
 
     const detection = await faceapi.detectSingleFace(
@@ -259,6 +257,7 @@ elements.regBtn.addEventListener("click", async ()=>{
         updateTerminal("ERROR: NO FACE DETECTED");
         elements.regBtn.disabled=false;
         elements.fields.style.display='block';
+        elements.pending.style.display='none';
         return;
     }
 
@@ -275,23 +274,28 @@ elements.regBtn.addEventListener("click", async ()=>{
 });
 
 async function handleMatchFound(student){
-    updateTerminal(`MATCH FOUND: ${student.name}`);
+    updateTerminal(`MATCH FOUND: ${student.name || 'UNKNOWN'}`);
     if(student.approved){
         updateTerminal("ACCESS GRANTED");
         setTimeout(()=>{
             sessionStorage.setItem('studentData',JSON.stringify(student));
             window.location.href='attendance.html';
         },1500);
-    } else updateTerminal("STATUS: PENDING ADMIN APPROVAL");
+    } else {
+        updateTerminal("STATUS: PENDING ADMIN APPROVAL");
+        elements.regBtn.disabled=false;
+        elements.fields.style.display='block';
+        elements.pending.style.display='none';
+    }
 }
 
 async function registerUser(descriptor){
     updateTerminal("NO MATCH FOUND. REGISTERING...");
     const newUser={
         name:document.getElementById("name").value.trim(),
-        country:document.getElementById("country").value.trim(),
-        district:document.getElementById("district").value.trim(),
-        village:document.getElementById("village").value.trim(),
+        country:document.getElementById("country").value.trim() || "N/A",
+        district:document.getElementById("district").value.trim() || "N/A",
+        village:document.getElementById("village").value.trim() || "N/A",
         faceDescriptor:Array.from(descriptor),
         approved:false,
         createdAt:serverTimestamp()
@@ -309,8 +313,10 @@ async function registerUser(descriptor){
             }
         });
     }catch(err){
-        updateTerminal("UPLOAD FAILED.");
+        updateTerminal("UPLOAD FAILED: "+err.message);
         elements.regBtn.disabled=false;
+        elements.fields.style.display='block';
+        elements.pending.style.display='none';
     }
 }
 
