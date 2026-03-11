@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
 <meta charset="UTF-8">
@@ -20,7 +19,7 @@ text-align:center;
 padding:20px;
 }
 
-/* CYBER GRID BACKGROUND */
+/* cyber grid background */
 
 body::before{
 content:"";
@@ -29,14 +28,16 @@ top:0;
 left:0;
 width:100%;
 height:100%;
+
 background-image:
 linear-gradient(rgba(0,255,255,0.08) 1px,transparent 1px),
 linear-gradient(90deg,rgba(0,255,255,0.08) 1px,transparent 1px);
+
 background-size:40px 40px;
 z-index:-1;
 }
 
-/* CAMERA */
+/* camera */
 
 .camera-box{
 position:relative;
@@ -51,21 +52,19 @@ background:#000;
 box-shadow:0 0 20px rgba(0,247,255,0.3);
 }
 
-/* FACE TRACK BOX */
+/* scanning square */
 
 #scanBox{
 position:absolute;
 border:3px solid #00f7ff;
-width:120px;
-height:120px;
+width:130px;
+height:130px;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
 pointer-events:none;
 box-shadow:0 0 15px #00f7ff;
 }
-
-/* SCAN LINE */
 
 .scan-line{
 position:absolute;
@@ -80,7 +79,7 @@ animation:scan 2s linear infinite;
 100%{top:100%}
 }
 
-/* PROGRESS */
+/* progress */
 
 .progress-container{
 width:420px;
@@ -96,10 +95,9 @@ display:none;
 width:0%;
 height:100%;
 background:#00f7ff;
-transition:width 0.1s linear;
 }
 
-/* PROFILE CARD */
+/* profile */
 
 #profileCard{
 max-width:420px;
@@ -121,7 +119,6 @@ margin-top:10px;
 .info-value{
 font-size:1.2rem;
 font-weight:bold;
-margin-bottom:5px;
 }
 
 #status{
@@ -130,8 +127,6 @@ font-size:1.1rem;
 color:#00f7ff;
 min-height:1.5em;
 }
-
-/* LOG */
 
 .log-container{
 margin-top:20px;
@@ -143,6 +138,7 @@ min-width:350px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -168,21 +164,18 @@ min-width:350px;
 <div id="profileCard">
 
 <div class="info-label">Student Name</div>
-<div id="resName" class="info-value">-</div>
+<div id="resName" class="info-value"></div>
 
 <div class="info-label">Location</div>
-<div id="resLocation" class="info-value">-</div>
+<div id="resLocation" class="info-value"></div>
 
-<div id="resStatus" style="color:#00ff88;margin-top:10px;font-weight:bold;">
-✅ Attendance Marked
-</div>
+<div id="resStatus" style="margin-top:10px;font-weight:bold;"></div>
 
 </div>
 
 <div class="log-container">
 
 <h3>Recent Logs</h3>
-
 <ul id="attendanceList" style="list-style:none;padding:0;text-align:left;"></ul>
 
 </div>
@@ -190,9 +183,7 @@ min-width:350px;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore,collection,getDocs,addDoc,serverTimestamp,query,where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-/* FIREBASE */
+import { getFirestore,collection,getDocs,addDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -210,27 +201,15 @@ const video=document.getElementById("video");
 const status=document.getElementById("status");
 const list=document.getElementById("attendanceList");
 
-const progressBar=document.getElementById("progressBar");
-const progressWrap=document.getElementById("progressWrap");
-
 const profileCard=document.getElementById("profileCard");
 
 let faceMatcher=null;
 let students=[];
 
-/* VOICE SYSTEM */
-
-function speak(msg){
-
-const speech=new SpeechSynthesisUtterance(msg);
-speech.rate=1;
-speech.pitch=1;
-
+function speak(text){
+const speech=new SpeechSynthesisUtterance(text);
 speechSynthesis.speak(speech);
-
 }
-
-/* INIT */
 
 async function init(){
 
@@ -244,11 +223,9 @@ faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
 
 await loadStudents();
 startCamera();
-startScanner();
+scanLoop();
 
 }
-
-/* CAMERA */
 
 async function startCamera(){
 
@@ -257,18 +234,16 @@ video.srcObject=stream;
 
 }
 
-/* LOAD STUDENTS */
-
 async function loadStudents(){
 
-const q=query(collection(db,"students"),where("approved","==",true));
-const snap=await getDocs(q);
+const snap=await getDocs(collection(db,"students"));
 
 const labeled=[];
 
 snap.forEach(doc=>{
 
 const data=doc.data();
+
 students.push(data);
 
 labeled.push(
@@ -282,66 +257,57 @@ data.name,
 
 faceMatcher=new faceapi.FaceMatcher(labeled,0.45);
 
-status.innerText="System Ready. Look at the camera.";
+status.innerText="System Ready";
 
 }
 
-/* SCANNER LOOP */
-
-async function startScanner(){
+async function scanLoop(){
 
 setInterval(async()=>{
 
-if(!faceMatcher) return;
-
-const det=await faceapi
+const detection=await faceapi
 .detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
 .withFaceLandmarks()
 .withFaceDescriptor();
 
-if(det){
+if(!detection) return;
 
-const match=faceMatcher.findBestMatch(det.descriptor);
+const match=faceMatcher.findBestMatch(detection.descriptor);
 
-if(match.label!=="unknown"){
-
-const student=students.find(s=>s.name===match.label);
-
-if(student){
-
-handleMatch(student);
-
-}
-
-}else{
+if(match.label==="unknown"){
 
 status.innerText="❌ Unknown Face";
 
 speak("Access Denied");
 
 setTimeout(()=>{
-window.location.href='registration.html';
+window.location.href="registration.html";
 },2000);
 
-}
+return;
 
 }
 
-},800);
+const student=students.find(s=>s.name===match.label);
 
-}
+if(!student) return;
 
-/* HANDLE MATCH */
-
-async function handleMatch(student){
-
-speak("Access Granted");
+profileCard.style.display="block";
 
 document.getElementById("resName").innerText=student.name;
 document.getElementById("resLocation").innerText=
 `${student.country} / ${student.district} / ${student.village}`;
 
-profileCard.style.display="block";
+/* CHECK APPROVAL */
+
+if(student.approved){
+
+document.getElementById("resStatus").innerText="✅ Attendance Marked";
+document.getElementById("resStatus").style.color="#00ff88";
+
+status.innerText="Access Granted";
+
+speak("Access Granted");
 
 await addDoc(collection(db,"attendance"),{
 
@@ -353,37 +319,24 @@ time:serverTimestamp()
 
 const li=document.createElement("li");
 
-li.innerHTML=`✅ <strong>${student.name}</strong> - ${new Date().toLocaleTimeString()}`;
+li.innerHTML=`✅ ${student.name} - ${new Date().toLocaleTimeString()}`;
 
 list.prepend(li);
 
-progressWrap.style.display="block";
+}else{
 
-let progress=0;
+document.getElementById("resStatus").innerText="⏳ Pending Approval";
+document.getElementById("resStatus").style.color="#ffaa00";
 
-const timer=setInterval(()=>{
+status.innerText="Student Not Approved";
 
-progress+=5;
-
-progressBar.style.width=progress+"%";
-
-if(progress>=100){
-
-clearInterval(timer);
-
-progressWrap.style.display="none";
-progressBar.style.width="0%";
-profileCard.style.display="none";
-
-status.innerText="Ready for next student";
+speak("Account Pending Approval");
 
 }
 
-},200);
+},900);
 
 }
-
-/* START */
 
 init();
 
