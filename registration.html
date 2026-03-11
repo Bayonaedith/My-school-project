@@ -63,10 +63,7 @@ video{
 width:100%;
 height:100%;
 object-fit:cover;
-
-/* clear natural camera */
 filter:none;
-
 }
 
 .scan-line{
@@ -120,6 +117,11 @@ font-weight:bold;
 text-transform:uppercase;
 cursor:pointer;
 margin-top:12px;
+}
+
+button:disabled{
+opacity:0.5;
+cursor:not-allowed;
 }
 
 #pending-ui{
@@ -215,8 +217,17 @@ text-shadow:0 0 6px #ffcc00;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, onSnapshot, serverTimestamp }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+doc,
+onSnapshot,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 
 const firebaseConfig={
 apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -224,12 +235,12 @@ authDomain:"my-school-project-6e00c.firebaseapp.com",
 projectId:"my-school-project-6e00c"
 };
 
-const DISTANCE_THRESHOLD = 0.45;
-const CONFIDENCE_MIN = 0.55;
-const CONSECUTIVE_MATCHES_REQUIRED = 2;
+const DISTANCE_THRESHOLD=0.45;
+const CONFIDENCE_MIN=0.55;
+const CONSECUTIVE_MATCHES_REQUIRED=2;
 
-let consecutiveMatches = 0;
-let lastMatchName = null;
+let consecutiveMatches=0;
+let lastMatchName=null;
 
 const state={
 db:null,
@@ -245,10 +256,11 @@ pending:document.getElementById("pending-ui"),
 terminal:document.getElementById("terminal")
 };
 
+
 async function init(){
 
-const app = initializeApp(firebaseConfig);
-state.db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+state.db=getFirestore(app);
 
 const MODEL_URL='https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
@@ -258,13 +270,13 @@ faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
 ]);
 
-const stream = await navigator.mediaDevices.getUserMedia({
+const stream=await navigator.mediaDevices.getUserMedia({
 video:{width:200,height:200,facingMode:'user'}
 });
 
-elements.video.srcObject = stream;
+elements.video.srcObject=stream;
 
-const snap = await getDocs(collection(state.db,"students"));
+const snap=await getDocs(collection(state.db,"students"));
 
 const labeled=[];
 
@@ -293,9 +305,19 @@ state.faceMatcher=new faceapi.FaceMatcher(labeled,0.5);
 
 }
 
-elements.regBtn.addEventListener('click', async () => {
 
-const det = await faceapi
+elements.regBtn.addEventListener("click",async()=>{
+
+if(elements.regBtn.disabled) return;
+
+elements.regBtn.disabled=true;
+elements.regBtn.innerText="SCANNING FACE...";
+
+elements.terminal.innerHTML="> INITIALIZING SCAN...";
+
+setTimeout(async()=>{
+
+const det=await faceapi
 .detectSingleFace(
 elements.video,
 new faceapi.TinyFaceDetectorOptions({inputSize:160,scoreThreshold:0.5})
@@ -303,14 +325,25 @@ new faceapi.TinyFaceDetectorOptions({inputSize:160,scoreThreshold:0.5})
 .withFaceLandmarks()
 .withFaceDescriptor();
 
-if(!det) return;
+if(!det){
+
+elements.terminal.innerHTML="> FACE NOT DETECTED<br>> LOOK AT CAMERA";
+
+elements.regBtn.disabled=false;
+elements.regBtn.innerText="Check & Register";
+
+return;
+
+}
+
+elements.terminal.innerHTML="> FACE DETECTED<br>> ANALYZING...";
 
 if(state.faceMatcher){
 
-const match = state.faceMatcher.findBestMatch(det.descriptor);
+const match=state.faceMatcher.findBestMatch(det.descriptor);
 
-const distance = match.distance;
-const confidence = 1-distance;
+const distance=match.distance;
+const confidence=1-distance;
 
 if(match.label!=="unknown" && distance < DISTANCE_THRESHOLD && confidence > CONFIDENCE_MIN){
 
@@ -323,7 +356,7 @@ lastMatchName=match.label;
 
 if(consecutiveMatches>=CONSECUTIVE_MATCHES_REQUIRED){
 
-const student = state.allStudents.find(s=>s.id===match.label);
+const student=state.allStudents.find(s=>s.id===match.label);
 
 elements.fields.style.display='none';
 elements.pending.style.display='block';
@@ -334,7 +367,7 @@ elements.terminal.innerHTML=
 "> USER RECOGNIZED<br>> ACCESS GRANTED<br>> REDIRECTING...";
 
 setTimeout(()=>{
-sessionStorage.setItem('studentData', JSON.stringify(student));
+sessionStorage.setItem('studentData',JSON.stringify(student));
 window.location.href='attendance.html';
 },1500);
 
@@ -343,7 +376,7 @@ window.location.href='attendance.html';
 elements.terminal.innerHTML=
 "> USER ALREADY REGISTERED<br>" +
 "> STATUS: PENDING ADMIN APPROVAL<br>" +
-"<span class='pulse'>> PLEASE WAIT FOR AUTHORIZATION</span>";
+"<span class='pulse'>> WAIT FOR AUTHORIZATION</span>";
 
 }
 
@@ -361,20 +394,26 @@ lastMatchName=null;
 }
 
 const data={
-name:document.getElementById('name').value.trim(),
-country:document.getElementById('country').value.trim(),
-district:document.getElementById('district').value.trim(),
-village:document.getElementById('village').value.trim()
+name:document.getElementById("name").value.trim(),
+country:document.getElementById("country").value.trim(),
+district:document.getElementById("district").value.trim(),
+village:document.getElementById("village").value.trim()
 };
 
 if(!data.name||!data.country||!data.district||!data.village){
 
 elements.terminal.innerHTML="> PLEASE FILL ALL FIELDS";
+
+elements.regBtn.disabled=false;
+elements.regBtn.innerText="Check & Register";
+
 return;
 
 }
 
-const docRef = await addDoc(collection(state.db,"students"),{
+elements.terminal.innerHTML="> REGISTERING NEW USER...";
+
+const docRef=await addDoc(collection(state.db,"students"),{
 ...data,
 faceDescriptor:Array.from(det.descriptor),
 approved:false,
@@ -394,13 +433,15 @@ if(docu.data()?.approved===true){
 elements.terminal.innerHTML+="<br>> AUTH GRANTED<br>> REDIRECTING...";
 
 setTimeout(()=>{
-sessionStorage.setItem('studentData', JSON.stringify(docu.data()));
+sessionStorage.setItem('studentData',JSON.stringify(docu.data()));
 window.location.href='attendance.html';
 },1500);
 
 }
 
 });
+
+},80);
 
 });
 
