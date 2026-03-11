@@ -193,7 +193,7 @@ const elements={
 };
 
 function updateTerminal(msg){
-    elements.terminal.innerHTML += `\n> ${msg}`;
+    elements.terminal.innerHTML += `<br>> ${msg}`;
     elements.terminal.scrollTop = elements.terminal.scrollHeight;
 }
 
@@ -203,6 +203,7 @@ async function init(){
         state.db = getFirestore(app);
 
         updateTerminal("LOADING AI MODELS...");
+        // Ensure models are in your /models folder
         await Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
             faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
@@ -210,8 +211,18 @@ async function init(){
         ]);
 
         updateTerminal("ACCESSING CAMERA...");
-        const stream = await navigator.mediaDevices.getUserMedia({video:{width:480,height:480,facingMode:'user'}});
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 480, height: 480, facingMode: 'user' }
+        });
         elements.video.srcObject = stream;
+
+        // Ensure video is ready before allowing scans
+        await new Promise((resolve) => {
+            elements.video.onloadedmetadata = () => {
+                elements.video.play();
+                resolve();
+            };
+        });
 
         updateTerminal("SYNCING DATABASE...");
         await refreshFaceMatcher();
@@ -224,17 +235,22 @@ async function init(){
 }
 
 async function refreshFaceMatcher(){
-    const snap = await getDocs(collection(state.db,"students"));
-    const labeled=[];
-    state.allStudents=[];
-    snap.forEach(docu=>{
-        const data=docu.data();
-        state.allStudents.push({...data,id:docu.id});
-        if(data.faceDescriptor){
-            labeled.push(new faceapi.LabeledFaceDescriptors(docu.id,[new Float32Array(data.faceDescriptor)]));
-        }
-    });
-    state.faceMatcher = labeled.length>0 ? new faceapi.FaceMatcher(labeled,DISTANCE_THRESHOLD) : null;
+    try {
+        const snap = await getDocs(collection(state.db,"students"));
+        const labeled=[];
+        state.allStudents=[];
+        snap.forEach(docu=>{
+            const data=docu.data();
+            state.allStudents.push({...data,id:docu.id});
+            if(data.faceDescriptor){
+                // Correctly cast descriptor back to Float32Array
+                labeled.push(new faceapi.LabeledFaceDescriptors(docu.id,[new Float32Array(data.faceDescriptor)]));
+            }
+        });
+        state.faceMatcher = labeled.length>0 ? new faceapi.FaceMatcher(labeled,DISTANCE_THRESHOLD) : null;
+    } catch(e) {
+        updateTerminal("SYNC ERROR");
+    }
 }
 
 elements.regBtn.addEventListener("click", async ()=>{
@@ -246,8 +262,7 @@ elements.regBtn.addEventListener("click", async ()=>{
     elements.pending.style.display='block';
     updateTerminal("SCANNING BIOMETRICS...");
 
-    await new Promise(resolve=>setTimeout(resolve,500));
-
+    // Detection using active video element
     const detection = await faceapi.detectSingleFace(
         elements.video,
         new faceapi.TinyFaceDetectorOptions({inputSize:224, scoreThreshold:0.5})
@@ -255,9 +270,7 @@ elements.regBtn.addEventListener("click", async ()=>{
 
     if(!detection){
         updateTerminal("ERROR: NO FACE DETECTED");
-        elements.regBtn.disabled=false;
-        elements.fields.style.display='block';
-        elements.pending.style.display='none';
+        resetUI();
         return;
     }
 
@@ -273,6 +286,12 @@ elements.regBtn.addEventListener("click", async ()=>{
     registerUser(detection.descriptor);
 });
 
+function resetUI() {
+    elements.regBtn.disabled=false;
+    elements.fields.style.display='block';
+    elements.pending.style.display='none';
+}
+
 async function handleMatchFound(student){
     updateTerminal(`MATCH FOUND: ${student.name || 'UNKNOWN'}`);
     if(student.approved){
@@ -283,9 +302,7 @@ async function handleMatchFound(student){
         },1500);
     } else {
         updateTerminal("STATUS: PENDING ADMIN APPROVAL");
-        elements.regBtn.disabled=false;
-        elements.fields.style.display='block';
-        elements.pending.style.display='none';
+        setTimeout(resetUI, 2000);
     }
 }
 
@@ -296,7 +313,7 @@ async function registerUser(descriptor){
         country:document.getElementById("country").value.trim() || "N/A",
         district:document.getElementById("district").value.trim() || "N/A",
         village:document.getElementById("village").value.trim() || "N/A",
-        faceDescriptor:Array.from(descriptor),
+        faceDescriptor:Array.from(descriptor), // Store as array for Firestore
         approved:false,
         createdAt:serverTimestamp()
     };
@@ -314,9 +331,7 @@ async function registerUser(descriptor){
         });
     }catch(err){
         updateTerminal("UPLOAD FAILED: "+err.message);
-        elements.regBtn.disabled=false;
-        elements.fields.style.display='block';
-        elements.pending.style.display='none';
+        resetUI();
     }
 }
 
