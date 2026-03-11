@@ -18,7 +18,6 @@ box-sizing:border-box;
 }
 
 body{
-
 background:#050a14;
 font-family:'Segoe UI','Courier New',monospace;
 color:#0ff;
@@ -26,18 +25,14 @@ text-align:center;
 padding:10px;
 min-height:100vh;
 
-/* CYBER GRID */
-
 background-image:
 linear-gradient(rgba(0,255,255,0.07) 1px, transparent 1px),
 linear-gradient(90deg, rgba(0,255,255,0.07) 1px, transparent 1px);
 
 background-size:40px 40px;
-
 }
 
 h1{
-
 font-size:1.8rem;
 letter-spacing:3px;
 margin:18px 0;
@@ -49,11 +44,9 @@ text-shadow:
 0 0 5px #0ff,
 0 0 10px #0ff,
 0 0 20px #00ffff;
-
 }
 
 .scanner-box{
-
 position:relative;
 width:100%;
 max-width:320px;
@@ -67,35 +60,25 @@ overflow:hidden;
 box-shadow:
 0 0 10px #0ff,
 0 0 30px rgba(0,255,255,0.3);
-
 }
 
 video{
-
 width:100%;
 height:100%;
 object-fit:cover;
 filter:brightness(1.1) contrast(1.1);
-
 }
 
-/* CANVAS */
-
 #overlay{
-
 position:absolute;
 top:0;
 left:0;
 width:100%;
 height:100%;
 z-index:3;
-
 }
 
-/* SCAN LINE */
-
 .scan-line{
-
 position:absolute;
 width:100%;
 height:2px;
@@ -104,120 +87,88 @@ box-shadow:0 0 15px #0ff;
 top:0;
 animation:scan 2s linear infinite;
 z-index:2;
-
 }
 
 @keyframes scan{
-
 0%{top:0%;}
 100%{top:100%;}
-
 }
 
-/* MATRIX SCAN */
-
 .scanner-box::after{
-
 content:"";
 position:absolute;
 top:0;
 left:0;
 width:100%;
 height:100%;
-
 background:linear-gradient(
 transparent,
 rgba(0,255,255,0.12),
 transparent
 );
-
 animation:matrixScan 3s linear infinite;
-
 }
 
 @keyframes matrixScan{
-
 0%{transform:translateY(-100%)}
 100%{transform:translateY(100%)}
-
 }
 
 .status-display{
-
 font-size:1.2rem;
 margin:18px 0;
 font-weight:bold;
 min-height:25px;
-
 text-shadow:
 0 0 5px #0ff,
 0 0 10px #0ff;
-
 }
 
 .dashboard{
-
 display:grid;
 grid-template-columns:repeat(2,1fr);
 gap:10px;
 max-width:340px;
 margin:10px auto;
-
 }
 
 .panel{
-
 background:rgba(0,40,40,0.3);
 border:1px solid #0ff;
 padding:12px 6px;
 min-height:75px;
-
 display:flex;
 flex-direction:column;
 justify-content:center;
-
 border-radius:6px;
-
-box-shadow:
-0 0 6px rgba(0,255,255,0.4);
-
+box-shadow:0 0 6px rgba(0,255,255,0.4);
 }
 
 .panel-label{
-
 font-size:0.75rem;
 color:#7ff;
 text-transform:uppercase;
 margin-bottom:4px;
 letter-spacing:1px;
-
 }
 
 .panel-value{
-
 font-size:1.2rem;
 color:#0ff;
 font-weight:bold;
-
 text-shadow:
 0 0 5px #0ff,
 0 0 12px #00ffff;
-
 }
 
 .alert-overlay{
-
 color:#ffcc00;
 font-size:1rem;
 margin-top:12px;
 display:none;
 padding:12px;
-
 border:1px dashed #ffcc00;
-
-text-shadow:
-0 0 6px #ffcc00;
-
+text-shadow:0 0 6px #ffcc00;
 }
 
 </style>
@@ -230,9 +181,7 @@ text-shadow:
 <div class="scanner-box">
 
 <video id="video" autoplay playsinline muted></video>
-
 <canvas id="overlay"></canvas>
-
 <div class="scan-line"></div>
 
 </div>
@@ -276,24 +225,27 @@ text-shadow:
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import { getFirestore, collection, addDoc, getDocs, serverTimestamp }
-
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={
-
 apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
 authDomain:"my-school-project-6e00c.firebaseapp.com",
 projectId:"my-school-project-6e00c",
 storageBucket:"my-school-project-6e00c.appspot.com",
 messagingSenderId:"14283853516",
 appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
-
 };
 
 const state={db:null,faceMatcher:null,allStudents:[],isProcessing:false};
 
-const elements={
+const DISTANCE_THRESHOLD = 0.45;
+const CONFIDENCE_MIN = 0.55;
+const CONSECUTIVE_MATCHES_REQUIRED = 2;
 
+let consecutiveMatches = 0;
+let lastMatchName = null;
+
+const elements={
 video:document.getElementById("video"),
 statusEl:document.getElementById("status-text"),
 confidenceEl:document.getElementById("confidence"),
@@ -301,26 +253,19 @@ lockEl:document.getElementById("lock-status"),
 subjectEl:document.getElementById("subject-name"),
 dbStatusEl:document.getElementById("db-status"),
 pendingAlert:document.getElementById("pending-alert")
-
 };
 
 const canvas=document.getElementById("overlay");
 const ctx=canvas.getContext("2d");
 
 function speak(text){
-
 const msg=new SpeechSynthesisUtterance(text);
-
 msg.rate=1;
 msg.pitch=1.2;
-
 speechSynthesis.speak(msg);
-
 }
 
 async function init(){
-
-try{
 
 const app=initializeApp(firebaseConfig);
 state.db=getFirestore(app);
@@ -328,17 +273,13 @@ state.db=getFirestore(app);
 const MODEL_URL='https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
 await Promise.all([
-
 faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
 faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-
 ]);
 
 const stream=await navigator.mediaDevices.getUserMedia({
-
 video:{width:320,height:320,facingMode:'user'}
-
 });
 
 elements.video.srcObject=stream;
@@ -351,13 +292,6 @@ await loadDatabase();
 elements.statusEl.textContent="READY_TO_SCAN";
 
 setInterval(processFrame,1200);
-
-}catch(e){
-
-elements.statusEl.textContent="CORE_ERROR";
-
-}
-
 }
 
 async function loadDatabase(){
@@ -370,18 +304,15 @@ const labeled=[];
 snap.forEach(doc=>{
 
 const data=doc.data();
-
 state.allStudents.push(data);
 
 if(data.approved && data.faceDescriptor){
 
 labeled.push(
-
 new faceapi.LabeledFaceDescriptors(
 data.name,
 [new Float32Array(data.faceDescriptor)]
 )
-
 );
 
 }
@@ -392,7 +323,6 @@ if(labeled.length)
 state.faceMatcher=new faceapi.FaceMatcher(labeled,0.5);
 
 elements.dbStatusEl.textContent="ONLINE";
-
 }
 
 async function processFrame(){
@@ -410,58 +340,45 @@ if(det){
 
 const box=det.detection.box;
 
-/* DRAW FACE BOX */
-
 ctx.strokeStyle="#00ffff";
 ctx.lineWidth=2;
 
-ctx.strokeRect(
-box.x,
-box.y,
-box.width,
-box.height
-);
+ctx.strokeRect(box.x,box.y,box.width,box.height);
 
-/* CORNERS */
-
-const c=20;
-
-ctx.beginPath();
-
-ctx.moveTo(box.x,box.y+c);
-ctx.lineTo(box.x,box.y);
-ctx.lineTo(box.x+c,box.y);
-
-ctx.moveTo(box.x+box.width-c,box.y);
-ctx.lineTo(box.x+box.width,box.y);
-ctx.lineTo(box.x+box.width,box.y+c);
-
-ctx.moveTo(box.x,box.y+box.height-c);
-ctx.lineTo(box.x,box.y+box.height);
-ctx.lineTo(box.x+c,box.y+box.height);
-
-ctx.moveTo(box.x+box.width-c,box.y+box.height);
-ctx.lineTo(box.x+box.width,box.y+box.height);
-ctx.lineTo(box.x+box.width,box.y+box.height-c);
-
-ctx.stroke();
-
-const conf=Math.round((1-det.descriptor[0])*100);
-
-elements.confidenceEl.textContent=`${Math.min(conf,99)}%`;
+const confidence = Math.round((1 - det.descriptor[0]) * 100);
+elements.confidenceEl.textContent=`${Math.min(confidence,99)}%`;
 
 if(state.faceMatcher){
 
-const match=state.faceMatcher.findBestMatch(det.descriptor);
+const match = state.faceMatcher.findBestMatch(det.descriptor);
 
-if(match.label!=='unknown'){
+const distance = match.distance;
+const conf = 1 - distance;
 
-const student=state.allStudents.find(s=>s.name===match.label);
+if(match.label !== "unknown" && distance < DISTANCE_THRESHOLD && conf > CONFIDENCE_MIN){
+
+if(lastMatchName === match.label){
+consecutiveMatches++;
+}else{
+consecutiveMatches = 1;
+lastMatchName = match.label;
+}
+
+if(consecutiveMatches >= CONSECUTIVE_MATCHES_REQUIRED){
+
+const student = state.allStudents.find(s => s.name === match.label);
 
 handleApproved(student);
 
-return;
+consecutiveMatches = 0;
+lastMatchName = null;
 
+return;
+}
+
+}else{
+consecutiveMatches = 0;
+lastMatchName = null;
 }
 
 }
@@ -472,13 +389,11 @@ if(pendingUser){
 
 elements.subjectEl.textContent="PENDING";
 elements.statusEl.textContent="AUTH_REQUIRED";
-
 elements.pendingAlert.style.display="block";
 
 speak("Access Denied");
 
 return;
-
 }
 
 state.isProcessing=true;
@@ -489,9 +404,7 @@ elements.subjectEl.textContent="NEW_USER";
 speak("Unknown Subject");
 
 setTimeout(()=>{
-
 window.location.href='./registration.html';
-
 },1500);
 
 }else{
@@ -519,7 +432,6 @@ return student;
 }
 
 return null;
-
 }
 
 async function handleApproved(student){
@@ -534,19 +446,14 @@ speak("Access Granted");
 elements.subjectEl.textContent=student.name.substring(0,12).toUpperCase();
 
 await addDoc(collection(state.db,"attendance"),{
-
 studentName:student.name,
 district:student.district,
 timestamp:serverTimestamp()
-
 });
 
 setTimeout(()=>{
-
 sessionStorage.setItem('studentData',JSON.stringify(student));
-
 window.location.href='./attendance.html';
-
 },2000);
 
 }
@@ -556,4 +463,4 @@ init();
 </script>
 
 </body>
-    </html>
+</html>
