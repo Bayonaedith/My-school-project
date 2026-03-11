@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
@@ -19,7 +20,7 @@ text-align:center;
 padding:20px;
 }
 
-/* cyber grid background */
+/* cyber grid */
 
 body::before{
 content:"";
@@ -37,12 +38,14 @@ background-size:40px 40px;
 z-index:-1;
 }
 
-/* camera */
+/* camera container */
 
 .camera-box{
 position:relative;
 display:inline-block;
 }
+
+/* camera */
 
 video{
 border:3px solid #00f7ff;
@@ -52,19 +55,21 @@ background:#000;
 box-shadow:0 0 20px rgba(0,247,255,0.3);
 }
 
-/* scanning square */
+/* SINGLE SCANNER BOX */
 
-#scanBox{
+.scanner{
 position:absolute;
+width:160px;
+height:160px;
 border:3px solid #00f7ff;
-width:130px;
-height:130px;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
 pointer-events:none;
 box-shadow:0 0 15px #00f7ff;
 }
+
+/* scan line */
 
 .scan-line{
 position:absolute;
@@ -79,25 +84,7 @@ animation:scan 2s linear infinite;
 100%{top:100%}
 }
 
-/* progress */
-
-.progress-container{
-width:420px;
-height:10px;
-background:#1a264d;
-margin:10px auto;
-border-radius:5px;
-overflow:hidden;
-display:none;
-}
-
-#progressBar{
-width:0%;
-height:100%;
-background:#00f7ff;
-}
-
-/* profile */
+/* profile card */
 
 #profileCard{
 max-width:420px;
@@ -128,6 +115,8 @@ color:#00f7ff;
 min-height:1.5em;
 }
 
+/* attendance logs */
+
 .log-container{
 margin-top:20px;
 background:rgba(255,255,255,0.05);
@@ -149,14 +138,10 @@ min-width:350px;
 
 <video id="video" autoplay muted playsinline></video>
 
-<div id="scanBox">
+<div class="scanner">
 <div class="scan-line"></div>
 </div>
 
-</div>
-
-<div class="progress-container" id="progressWrap">
-<div id="progressBar"></div>
 </div>
 
 <p id="status">Initializing AI Scanner...</p>
@@ -185,6 +170,8 @@ min-width:350px;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore,collection,getDocs,addDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* FIREBASE */
+
 const firebaseConfig={
 apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
 authDomain:"my-school-project-6e00c.firebaseapp.com",
@@ -197,19 +184,31 @@ appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
+/* elements */
+
 const video=document.getElementById("video");
 const status=document.getElementById("status");
 const list=document.getElementById("attendanceList");
-
 const profileCard=document.getElementById("profileCard");
+
+/* variables */
 
 let faceMatcher=null;
 let students=[];
 
+/* voice */
+
 function speak(text){
+
 const speech=new SpeechSynthesisUtterance(text);
+speech.rate=1;
+speech.pitch=1;
+
 speechSynthesis.speak(speech);
+
 }
+
+/* init */
 
 async function init(){
 
@@ -227,12 +226,16 @@ scanLoop();
 
 }
 
+/* camera */
+
 async function startCamera(){
 
 const stream=await navigator.mediaDevices.getUserMedia({video:true});
 video.srcObject=stream;
 
 }
+
+/* load database */
 
 async function loadStudents(){
 
@@ -257,9 +260,11 @@ data.name,
 
 faceMatcher=new faceapi.FaceMatcher(labeled,0.45);
 
-status.innerText="System Ready";
+status.innerText="System Ready. Look at the camera.";
 
 }
+
+/* scanning */
 
 async function scanLoop(){
 
@@ -273,6 +278,8 @@ const detection=await faceapi
 if(!detection) return;
 
 const match=faceMatcher.findBestMatch(detection.descriptor);
+
+/* unknown face */
 
 if(match.label==="unknown"){
 
@@ -295,10 +302,11 @@ if(!student) return;
 profileCard.style.display="block";
 
 document.getElementById("resName").innerText=student.name;
+
 document.getElementById("resLocation").innerText=
 `${student.country} / ${student.district} / ${student.village}`;
 
-/* CHECK APPROVAL */
+/* approved check */
 
 if(student.approved){
 
@@ -323,7 +331,11 @@ li.innerHTML=`✅ ${student.name} - ${new Date().toLocaleTimeString()}`;
 
 list.prepend(li);
 
-}else{
+}
+
+/* pending */
+
+else{
 
 document.getElementById("resStatus").innerText="⏳ Pending Approval";
 document.getElementById("resStatus").style.color="#ffaa00";
@@ -343,4 +355,4 @@ init();
 </script>
 
 </body>
-</html>
+  </html>
