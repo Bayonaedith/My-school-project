@@ -203,14 +203,15 @@ async function init(){
         state.db = getFirestore(app);
 
         updateTerminal("LOADING AI MODELS...");
+        // Load models locally from /models folder
         await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
-            faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
-            faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+            faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         ]);
 
         updateTerminal("ACCESSING CAMERA...");
-        const stream = await navigator.mediaDevices.getUserMedia({video:{width:320,height:320,facingMode:'user'}});
+        const stream = await navigator.mediaDevices.getUserMedia({video:{width:480,height:480,facingMode:'user'}});
         elements.video.srcObject = stream;
 
         updateTerminal("SYNCING DATABASE...");
@@ -246,8 +247,13 @@ elements.regBtn.addEventListener("click", async ()=>{
     elements.pending.style.display='block';
     updateTerminal("SCANNING BIOMETRICS...");
 
-    const detection = await faceapi.detectSingleFace(elements.video,new faceapi.TinyFaceDetectorOptions())
-    .withFaceLandmarks().withFaceDescriptor();
+    // Wait a moment for video to load frames
+    await new Promise(resolve=>setTimeout(resolve,500));
+
+    const detection = await faceapi.detectSingleFace(
+        elements.video,
+        new faceapi.TinyFaceDetectorOptions({inputSize:224, scoreThreshold:0.5})
+    ).withFaceLandmarks().withFaceDescriptor();
 
     if(!detection){
         updateTerminal("ERROR: NO FACE DETECTED");
