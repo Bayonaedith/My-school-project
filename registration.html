@@ -22,7 +22,6 @@ padding:15px;
 background-image:
 linear-gradient(rgba(0,255,255,0.07) 1px, transparent 1px),
 linear-gradient(90deg, rgba(0,255,255,0.07) 1px, transparent 1px);
-
 background-size:40px 40px;
 }
 
@@ -102,11 +101,6 @@ margin-top:4px;
 outline:none;
 }
 
-input:focus{
-border:1px solid #0ff;
-box-shadow:0 0 5px #0ff;
-}
-
 button{
 width:100%;
 padding:13px;
@@ -121,7 +115,6 @@ margin-top:12px;
 
 button:disabled{
 opacity:0.5;
-cursor:not-allowed;
 }
 
 #pending-ui{
@@ -149,13 +142,6 @@ animation:pulse 2s infinite;
 0%{opacity:1}
 50%{opacity:0.3}
 100%{opacity:1}
-}
-
-.status{
-margin-top:18px;
-font-size:1rem;
-color:#ffcc00;
-text-shadow:0 0 6px #ffcc00;
 }
 
 </style>
@@ -206,10 +192,6 @@ text-shadow:0 0 6px #ffcc00;
 > SYSTEM READY...
 </div>
 
-<div class="status pulse">
-● PROCESSING
-</div>
-
 </div>
 
 </div>
@@ -228,7 +210,6 @@ onSnapshot,
 serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-
 const firebaseConfig={
 apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
 authDomain:"my-school-project-6e00c.firebaseapp.com",
@@ -237,10 +218,6 @@ projectId:"my-school-project-6e00c"
 
 const DISTANCE_THRESHOLD=0.45;
 const CONFIDENCE_MIN=0.55;
-const CONSECUTIVE_MATCHES_REQUIRED=2;
-
-let consecutiveMatches=0;
-let lastMatchName=null;
 
 const state={
 db:null,
@@ -255,7 +232,6 @@ fields:document.getElementById("registration-fields"),
 pending:document.getElementById("pending-ui"),
 terminal:document.getElementById("terminal")
 };
-
 
 async function init(){
 
@@ -305,7 +281,6 @@ state.faceMatcher=new faceapi.FaceMatcher(labeled,0.5);
 
 }
 
-
 elements.regBtn.addEventListener("click",async()=>{
 
 if(elements.regBtn.disabled) return;
@@ -313,30 +288,28 @@ if(elements.regBtn.disabled) return;
 elements.regBtn.disabled=true;
 elements.regBtn.innerText="SCANNING FACE...";
 
-elements.terminal.innerHTML="> INITIALIZING SCAN...";
-
-setTimeout(async()=>{
+elements.terminal.innerHTML="> SCANNING FACE...";
 
 const det=await faceapi
 .detectSingleFace(
 elements.video,
-new faceapi.TinyFaceDetectorOptions({inputSize:160,scoreThreshold:0.5})
+new faceapi.TinyFaceDetectorOptions({inputSize:160})
 )
 .withFaceLandmarks()
 .withFaceDescriptor();
 
 if(!det){
 
-elements.terminal.innerHTML="> FACE NOT DETECTED<br>> LOOK AT CAMERA";
-
+elements.terminal.innerHTML="> FACE NOT DETECTED";
 elements.regBtn.disabled=false;
 elements.regBtn.innerText="Check & Register";
-
 return;
 
 }
 
-elements.terminal.innerHTML="> FACE DETECTED<br>> ANALYZING...";
+elements.terminal.innerHTML="> FACE DETECTED<br>> ANALYZING DATABASE...";
+
+let matchFound=false;
 
 if(state.faceMatcher){
 
@@ -347,14 +320,7 @@ const confidence=1-distance;
 
 if(match.label!=="unknown" && distance < DISTANCE_THRESHOLD && confidence > CONFIDENCE_MIN){
 
-if(lastMatchName===match.label){
-consecutiveMatches++;
-}else{
-consecutiveMatches=1;
-lastMatchName=match.label;
-}
-
-if(consecutiveMatches>=CONSECUTIVE_MATCHES_REQUIRED){
+matchFound=true;
 
 const student=state.allStudents.find(s=>s.id===match.label);
 
@@ -364,7 +330,7 @@ elements.pending.style.display='block';
 if(student.approved){
 
 elements.terminal.innerHTML=
-"> USER RECOGNIZED<br>> ACCESS GRANTED<br>> REDIRECTING...";
+"> FACE MATCH FOUND<br>> USER IDENTIFIED<br>> ACCESS GRANTED";
 
 setTimeout(()=>{
 sessionStorage.setItem('studentData',JSON.stringify(student));
@@ -374,9 +340,7 @@ window.location.href='attendance.html';
 }else{
 
 elements.terminal.innerHTML=
-"> USER ALREADY REGISTERED<br>" +
-"> STATUS: PENDING ADMIN APPROVAL<br>" +
-"<span class='pulse'>> WAIT FOR AUTHORIZATION</span>";
+"> USER FOUND IN DATABASE<br>> STATUS: PENDING APPROVAL";
 
 }
 
@@ -384,14 +348,12 @@ return;
 
 }
 
-}else{
-
-consecutiveMatches=0;
-lastMatchName=null;
-
 }
 
-}
+if(!matchFound){
+
+elements.terminal.innerHTML=
+"> NO MATCH FOUND IN DATABASE<br>> REGISTERING NEW USER...";
 
 const data={
 name:document.getElementById("name").value.trim(),
@@ -403,15 +365,11 @@ village:document.getElementById("village").value.trim()
 if(!data.name||!data.country||!data.district||!data.village){
 
 elements.terminal.innerHTML="> PLEASE FILL ALL FIELDS";
-
 elements.regBtn.disabled=false;
 elements.regBtn.innerText="Check & Register";
-
 return;
 
 }
-
-elements.terminal.innerHTML="> REGISTERING NEW USER...";
 
 const docRef=await addDoc(collection(state.db,"students"),{
 ...data,
@@ -424,13 +382,13 @@ elements.fields.style.display='none';
 elements.pending.style.display='block';
 
 elements.terminal.innerHTML=
-"> NEW USER REGISTERED<br>> WAITING FOR ADMIN APPROVAL...";
+"> NEW USER REGISTERED<br>> WAITING FOR ADMIN APPROVAL";
 
 onSnapshot(doc(state.db,"students",docRef.id),(docu)=>{
 
 if(docu.data()?.approved===true){
 
-elements.terminal.innerHTML+="<br>> AUTH GRANTED<br>> REDIRECTING...";
+elements.terminal.innerHTML+="<br>> ACCESS GRANTED";
 
 setTimeout(()=>{
 sessionStorage.setItem('studentData',JSON.stringify(docu.data()));
@@ -441,7 +399,7 @@ window.location.href='attendance.html';
 
 });
 
-},80);
+}
 
 });
 
