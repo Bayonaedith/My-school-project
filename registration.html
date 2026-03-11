@@ -1,220 +1,502 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NK Upgrade Biometric System</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #050a14;
-            font-family: 'Courier New', monospace; /* Tech/Machine font */
-            color: #0ff;
-            text-align: center;
-            padding: 10px;
-            min-height: 100vh;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-        /* Tech Machine Header */
-        .header { border-bottom: 1px solid #0ff; margin-bottom: 15px; padding-bottom: 5px; }
-        .header h1 { font-size: 1rem; letter-spacing: 3px; }
+<title>NK Upgrade Biometric System</title>
 
-        /* Scanning UI */
-        .scanner-box {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            border: 1px solid #0ff;
-            margin: 0 auto 15px;
-            background: #000;
-            overflow: hidden;
-        }
-        video { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) brightness(1.2) sepia(100%) hue-rotate(150deg); }
-        
-        .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 1px;
-            background: #0ff;
-            top: 0;
-            animation: scan 1.5s linear infinite;
-        }
-        @keyframes scan { from { top: 0%; } to { top: 100%; } }
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
-        /* Form & Terminal UI */
-        .machine-container {
-            max-width: 300px;
-            margin: 0 auto;
-            border: 1px solid #0ff;
-            padding: 15px;
-            background: rgba(0, 255, 255, 0.02);
-            position: relative;
-        }
+<style>
 
-        .input-group { margin-bottom: 10px; text-align: left; }
-        .input-group label { font-size: 0.6rem; letter-spacing: 1px; }
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
 
-        input {
-            width: 100%;
-            padding: 8px;
-            background: #000;
-            border: 1px solid #044;
-            color: #0ff;
-            font-size: 0.8rem;
-            outline: none;
-            margin-top: 2px;
-        }
+body{
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #0ff;
-            border: none;
-            color: #000;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            cursor: pointer;
-            margin-top: 10px;
-        }
+background:#050a14;
+font-family:'Courier New',monospace;
+color:#0ff;
+text-align:center;
+padding:15px;
+min-height:100vh;
 
-        /* Pending Terminal State */
-        #pending-ui { display: none; }
-        .terminal-text {
-            font-size: 0.7rem;
-            text-align: left;
-            height: 100px;
-            overflow: hidden;
-            color: #0f0;
-            line-height: 1.4;
-        }
-        .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-    </style>
+/* cyber grid */
+
+background-image:
+linear-gradient(rgba(0,255,255,0.07) 1px, transparent 1px),
+linear-gradient(90deg, rgba(0,255,255,0.07) 1px, transparent 1px);
+
+background-size:40px 40px;
+
+}
+
+/* HEADER */
+
+.header{
+
+border-bottom:1px solid #0ff;
+margin-bottom:20px;
+padding-bottom:10px;
+
+text-shadow:
+0 0 5px #0ff,
+0 0 12px #0ff;
+
+}
+
+.header h1{
+
+font-size:1.4rem;
+letter-spacing:4px;
+
+}
+
+/* TERMINAL BOX */
+
+.machine-container{
+
+max-width:320px;
+margin:0 auto;
+
+border:1px solid #0ff;
+
+padding:18px;
+
+background:rgba(0,255,255,0.03);
+
+border-radius:6px;
+
+box-shadow:
+0 0 10px rgba(0,255,255,0.3);
+
+position:relative;
+
+}
+
+/* SCANNER */
+
+.scanner-box{
+
+position:relative;
+
+width:160px;
+height:160px;
+
+border:2px solid #0ff;
+
+margin:0 auto 18px;
+
+background:#000;
+
+overflow:hidden;
+
+box-shadow:
+0 0 10px #0ff;
+
+}
+
+video{
+
+width:100%;
+height:100%;
+object-fit:cover;
+
+filter:grayscale(100%)
+brightness(1.2)
+sepia(100%)
+hue-rotate(150deg);
+
+}
+
+/* SCAN LINE */
+
+.scan-line{
+
+position:absolute;
+
+width:100%;
+height:2px;
+
+background:#0ff;
+
+top:0;
+
+animation:scan 1.5s linear infinite;
+
+box-shadow:0 0 10px #0ff;
+
+}
+
+@keyframes scan{
+
+0%{top:0%;}
+100%{top:100%;}
+
+}
+
+/* MATRIX OVERLAY */
+
+.scanner-box::after{
+
+content:"";
+
+position:absolute;
+top:0;
+left:0;
+
+width:100%;
+height:100%;
+
+background:linear-gradient(
+transparent,
+rgba(0,255,255,0.15),
+transparent
+);
+
+animation:matrixScan 3s linear infinite;
+
+}
+
+@keyframes matrixScan{
+
+0%{transform:translateY(-100%)}
+100%{transform:translateY(100%)}
+
+}
+
+/* FORM */
+
+.input-group{
+
+margin-bottom:12px;
+text-align:left;
+
+}
+
+.input-group label{
+
+font-size:0.7rem;
+letter-spacing:1px;
+color:#7ff;
+
+}
+
+input{
+
+width:100%;
+padding:9px;
+
+background:#000;
+
+border:1px solid #044;
+
+color:#0ff;
+
+font-size:0.9rem;
+
+margin-top:4px;
+
+outline:none;
+
+}
+
+input:focus{
+
+border:1px solid #0ff;
+box-shadow:0 0 5px #0ff;
+
+}
+
+/* BUTTON */
+
+button{
+
+width:100%;
+
+padding:13px;
+
+background:#0ff;
+
+border:none;
+
+color:#000;
+
+font-weight:bold;
+
+text-transform:uppercase;
+
+font-size:0.9rem;
+
+cursor:pointer;
+
+margin-top:12px;
+
+transition:0.2s;
+
+}
+
+button:hover{
+
+background:#7ff;
+
+}
+
+/* TERMINAL */
+
+#pending-ui{
+
+display:none;
+
+}
+
+.terminal-text{
+
+font-size:0.8rem;
+
+text-align:left;
+
+height:120px;
+
+overflow:hidden;
+
+color:#0f0;
+
+line-height:1.5;
+
+background:#000;
+
+border:1px solid #033;
+
+padding:10px;
+
+margin-top:10px;
+
+}
+
+.pulse{
+
+animation:pulse 2s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{opacity:1}
+50%{opacity:0.3}
+100%{opacity:1}
+
+}
+
+.status{
+
+margin-top:18px;
+
+font-size:1rem;
+
+color:#ffcc00;
+
+text-shadow:0 0 6px #ffcc00;
+
+}
+
+.small-note{
+
+font-size:0.65rem;
+
+color:#888;
+
+margin-top:10px;
+
+}
+
+</style>
 </head>
+
 <body>
 
-    <div class="header">
-        <h1>NK Upgrade Biometric System</h1>
-    </div>
+<div class="header">
 
-    <div class="machine-container" id="main-container">
-        <div class="scanner-box">
-            <video id="video" autoplay playsinline muted></video>
-            <div class="scan-line"></div>
-        </div>
+<h1>NK Upgrade Biometric System</h1>
 
-        <div id="registration-fields">
-            <div class="input-group">
-                <label>> ID_NAME</label>
-                <input type="text" id="name" placeholder="...">
-            </div>
-            <div class="input-group">
-                <label>> GEO_COUNTRY</label>
-                <input type="text" id="country" placeholder="...">
-            </div>
-            <div class="input-group">
-                <label>> SEC_DISTRICT</label>
-                <input type="text" id="district" placeholder="...">
-            </div>
-            <div class="input-group">
-                <label>> LOC_VILLAGE</label>
-                <input type="text" id="village" placeholder="...">
-            </div>
-            <button id="regBtn">Check & Register</button>
-        </div>
+</div>
 
-        <div id="pending-ui">
-            <div class="terminal-text" id="terminal">
-                > INITIALIZING UPLOAD...<br>
-                > ENCRYPTING DESCRIPTOR...<br>
-                > DATA SENT TO CLOUD.<br>
-                <span class="pulse">> AWAITING ADMIN AUTH...</span>
-            </div>
-            <div style="margin-top:20px;">
-                <div class="pulse" style="font-size: 0.9rem; color: #ffcc00;">● STATUS: PENDING</div>
-                <p style="font-size: 0.6rem; color: #888; margin-top: 10px;">DO NOT CLOSE THIS WINDOW</p>
-            </div>
-        </div>
-    </div>
+<div class="machine-container" id="main-container">
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<div class="scanner-box">
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-            authDomain: "my-school-project-6e00c.firebaseapp.com",
-            projectId: "my-school-project-6e00c",
-            storageBucket: "my-school-project-6e00c.appspot.com",
-            messagingSenderId: "14283853516",
-            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-        };
+<video id="video" autoplay playsinline muted></video>
 
-        const state = { db: null };
-        const elements = {
-            video: document.getElementById("video"),
-            regBtn: document.getElementById("regBtn"),
-            fields: document.getElementById("registration-fields"),
-            pending: document.getElementById("pending-ui"),
-            terminal: document.getElementById("terminal")
-        };
+<div class="scan-line"></div>
 
-        async function init() {
-            const app = initializeApp(firebaseConfig);
-            state.db = getFirestore(app);
-            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-            
-            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+</div>
 
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { width: 240, height: 240, facingMode: 'user' } 
-            });
-            elements.video.srcObject = stream;
-        }
+<div id="registration-fields">
 
-        elements.regBtn.addEventListener('click', async () => {
-            const data = {
-                name: document.getElementById('name').value,
-                country: document.getElementById('country').value,
-                district: document.getElementById('district').value,
-                village: document.getElementById('village').value
-            };
+<div class="input-group">
+<label>> ID_NAME</label>
+<input type="text" id="name" placeholder="Enter Name">
+</div>
 
-            const det = await faceapi.detectSingleFace(elements.video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-            
-            if (det) {
-                // 1. Submit to Firestore
-                const docRef = await addDoc(collection(state.db, "students"), {
-                    ...data,
-                    faceDescriptor: Array.from(det.descriptor),
-                    approved: false,
-                    createdAt: serverTimestamp()
-                });
+<div class="input-group">
+<label>> GEO_COUNTRY</label>
+<input type="text" id="country" placeholder="Country">
+</div>
 
-                // 2. Switch to "Machine Pending" UI
-                elements.fields.style.display = 'none';
-                elements.pending.style.display = 'block';
+<div class="input-group">
+<label>> SEC_DISTRICT</label>
+<input type="text" id="district" placeholder="District">
+</div>
 
-                // 3. LISTEN for Admin Approval in Real-Time
-                onSnapshot(doc(state.db, "students", docRef.id), (doc) => {
-                    if (doc.data()?.approved === true) {
-                        elements.terminal.innerHTML += "<br>> AUTH GRANTED.";
-                        elements.terminal.innerHTML += "<br>> REDIRECTING...";
-                        
-                        setTimeout(() => {
-                            sessionStorage.setItem('studentData', JSON.stringify(doc.data()));
-                            window.location.href = 'attendance.html';
-                        }, 1500);
-                    }
-                });
-            }
-        });
+<div class="input-group">
+<label>> LOC_VILLAGE</label>
+<input type="text" id="village" placeholder="Village">
+</div>
 
-        init();
-    </script>
+<button id="regBtn">Check & Register</button>
+
+</div>
+
+<div id="pending-ui">
+
+<div class="terminal-text" id="terminal">
+
+> INITIALIZING UPLOAD...<br>
+> ENCRYPTING DESCRIPTOR...<br>
+> DATA SENT TO CLOUD.<br>
+<span class="pulse">> AWAITING ADMIN AUTH...</span>
+
+</div>
+
+<div class="status pulse">
+
+● STATUS: PENDING
+
+</div>
+
+<p class="small-note">
+
+DO NOT CLOSE THIS WINDOW
+
+</p>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import { getFirestore, collection, addDoc, onSnapshot, doc, serverTimestamp }
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig={
+
+apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+authDomain:"my-school-project-6e00c.firebaseapp.com",
+projectId:"my-school-project-6e00c",
+storageBucket:"my-school-project-6e00c.appspot.com",
+messagingSenderId:"14283853516",
+appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
+
+};
+
+const state={db:null};
+
+const elements={
+
+video:document.getElementById("video"),
+regBtn:document.getElementById("regBtn"),
+fields:document.getElementById("registration-fields"),
+pending:document.getElementById("pending-ui"),
+terminal:document.getElementById("terminal")
+
+};
+
+async function init(){
+
+const app=initializeApp(firebaseConfig);
+
+state.db=getFirestore(app);
+
+const MODEL_URL='https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+const stream=await navigator.mediaDevices.getUserMedia({
+
+video:{width:240,height:240,facingMode:'user'}
+
+});
+
+elements.video.srcObject=stream;
+
+}
+
+elements.regBtn.addEventListener('click',async()=>{
+
+const data={
+
+name:document.getElementById('name').value,
+country:document.getElementById('country').value,
+district:document.getElementById('district').value,
+village:document.getElementById('village').value
+
+};
+
+const det=await faceapi
+.detectSingleFace(elements.video,new faceapi.TinyFaceDetectorOptions())
+.withFaceLandmarks()
+.withFaceDescriptor();
+
+if(det){
+
+const docRef=await addDoc(collection(state.db,"students"),{
+
+...data,
+faceDescriptor:Array.from(det.descriptor),
+approved:false,
+createdAt:serverTimestamp()
+
+});
+
+elements.fields.style.display='none';
+elements.pending.style.display='block';
+
+onSnapshot(doc(state.db,"students",docRef.id),(docu)=>{
+
+if(docu.data()?.approved===true){
+
+elements.terminal.innerHTML+="<br>> AUTH GRANTED.";
+elements.terminal.innerHTML+="<br>> REDIRECTING...";
+
+setTimeout(()=>{
+
+sessionStorage.setItem('studentData',JSON.stringify(docu.data()));
+
+window.location.href='attendance.html';
+
+},1500);
+
+}
+
+});
+
+}
+
+});
+
+init();
+
+</script>
+
 </body>
 </html>
