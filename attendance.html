@@ -1,259 +1,393 @@
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance System</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: white; text-align: center; padding: 20px; }
-        video { border: 3px solid #00f7ff; border-radius: 10px; width: 400px; background: #000; box-shadow: 0 0 20px rgba(0, 247, 255, 0.3); }
-        
-        /* Loading Bar Styles */
-        .progress-container { width: 400px; height: 10px; background: #1a264d; margin: 10px auto; border-radius: 5px; overflow: hidden; display: none; }
-        #progressBar { width: 0%; height: 100%; background: #00f7ff; transition: width 0.1s linear; }
 
-        #profileCard { 
-            max-width: 400px; margin: 20px auto; padding: 20px; 
-            background: rgba(0, 247, 255, 0.1); border: 2px solid #00f7ff; 
-            border-radius: 12px; display: none;
-        }
-        .info-label { color: #00f7ff; font-size: 0.8rem; text-transform: uppercase; margin-top: 10px; }
-        .info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        #status { margin-top: 15px; font-size: 1.1rem; color: #00f7ff; min-height: 1.5em; }
-        #debugInfo { margin-top: 10px; font-size: 0.9rem; color: #ffaa00; }
-        .log-container { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; display: inline-block; min-width: 350px; }
-    </style>
+<title>NK Biometric Attendance</title>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+<style>
+
+body{
+font-family:'Segoe UI',sans-serif;
+background:#050a14;
+color:white;
+text-align:center;
+padding:20px;
+}
+
+/* CYBER GRID BACKGROUND */
+
+body::before{
+content:"";
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background-image:
+linear-gradient(rgba(0,255,255,0.08) 1px,transparent 1px),
+linear-gradient(90deg,rgba(0,255,255,0.08) 1px,transparent 1px);
+background-size:40px 40px;
+z-index:-1;
+}
+
+/* CAMERA */
+
+.camera-box{
+position:relative;
+display:inline-block;
+}
+
+video{
+border:3px solid #00f7ff;
+border-radius:10px;
+width:420px;
+background:#000;
+box-shadow:0 0 20px rgba(0,247,255,0.3);
+}
+
+/* FACE TRACK BOX */
+
+#scanBox{
+position:absolute;
+border:3px solid #00f7ff;
+width:120px;
+height:120px;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+pointer-events:none;
+box-shadow:0 0 15px #00f7ff;
+}
+
+/* SCAN LINE */
+
+.scan-line{
+position:absolute;
+width:100%;
+height:2px;
+background:#00f7ff;
+animation:scan 2s linear infinite;
+}
+
+@keyframes scan{
+0%{top:0}
+100%{top:100%}
+}
+
+/* PROGRESS */
+
+.progress-container{
+width:420px;
+height:10px;
+background:#1a264d;
+margin:10px auto;
+border-radius:5px;
+overflow:hidden;
+display:none;
+}
+
+#progressBar{
+width:0%;
+height:100%;
+background:#00f7ff;
+transition:width 0.1s linear;
+}
+
+/* PROFILE CARD */
+
+#profileCard{
+max-width:420px;
+margin:20px auto;
+padding:20px;
+background:rgba(0,247,255,0.1);
+border:2px solid #00f7ff;
+border-radius:12px;
+display:none;
+}
+
+.info-label{
+color:#00f7ff;
+font-size:0.8rem;
+text-transform:uppercase;
+margin-top:10px;
+}
+
+.info-value{
+font-size:1.2rem;
+font-weight:bold;
+margin-bottom:5px;
+}
+
+#status{
+margin-top:15px;
+font-size:1.1rem;
+color:#00f7ff;
+min-height:1.5em;
+}
+
+/* LOG */
+
+.log-container{
+margin-top:20px;
+background:rgba(255,255,255,0.05);
+padding:15px;
+border-radius:10px;
+display:inline-block;
+min-width:350px;
+}
+
+</style>
 </head>
+
 <body>
 
-    <h2>⏱️ Attendance Scan</h2>
-    <video id="video" autoplay muted playsinline></video>
-    
-    <div class="progress-container" id="progressWrap">
-        <div id="progressBar"></div>
-    </div>
+<h2>⚡ NK Biometric Attendance Scanner</h2>
 
-    <p id="status">Initializing NK Upgrade...</p>
-    <p id="debugInfo"></p>
+<div class="camera-box">
 
-    <div id="profileCard">
-        <div class="info-label">Student Name</div>
-        <div id="resName" class="info-value">-</div>
-        <div class="info-label">Location Details</div>
-        <div id="resLocation" class="info-value">-</div>
-        <div id="resStatus" style="color: #00ff88; margin-top: 10px; font-weight: bold;">✅ Attendance Marked</div>
-    </div>
+<video id="video" autoplay muted playsinline></video>
 
-    <div class="log-container">
-        <h3>Recent Logs:</h3>
-        <ul id="attendanceList" style="list-style: none; padding: 0; text-align: left;"></ul>
-    </div>
+<div id="scanBox">
+<div class="scan-line"></div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+</div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-            authDomain: "my-school-project-6e00c.firebaseapp.com",
-            projectId: "my-school-project-6e00c",
-            storageBucket: "my-school-project-6e00c.appspot.com",
-            messagingSenderId: "14283853516",
-            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-        };
+<div class="progress-container" id="progressWrap">
+<div id="progressBar"></div>
+</div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        const video = document.getElementById("video");
-        const status = document.getElementById("status");
-        const debugInfo = document.getElementById("debugInfo");
-        const list = document.getElementById("attendanceList");
-        const profileCard = document.getElementById("profileCard");
-        const progressBar = document.getElementById("progressBar");
-        const progressWrap = document.getElementById("progressWrap");
+<p id="status">Initializing AI Scanner...</p>
 
-        let faceMatcher = null;
-        let allStudentsData = [];
-        let isProcessing = false;
-        
-        // --- BALANCED FACE DETECTION CONFIG ---
-        const DISTANCE_THRESHOLD = 0.45; // BALANCED: between strict (0.35) and lenient (0.6)
-        const CONFIDENCE_MIN = 0.55; // Moderate confidence level
-        const CONSECUTIVE_MATCHES_REQUIRED = 2; // Require 2 consecutive matches for stability
-        let consecutiveMatches = 0;
-        let lastMatchName = null;
+<div id="profileCard">
 
-        // --- AUDIO HELPERS ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+<div class="info-label">Student Name</div>
+<div id="resName" class="info-value">-</div>
 
-        function playSuccessSound() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
-            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1); 
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
-        }
+<div class="info-label">Location</div>
+<div id="resLocation" class="info-value">-</div>
 
-        function playErrorSound() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-        }
+<div id="resStatus" style="color:#00ff88;margin-top:10px;font-weight:bold;">
+✅ Attendance Marked
+</div>
 
-        async function init() {
-            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-            try {
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-                ]);
-                await loadStudents();
-                startCamera();
-            } catch (err) { status.innerText = "Error: " + err.message; }
-        }
+</div>
 
-        async function loadStudents() {
-            status.innerText = "Downloading student database...";
-            const q = query(collection(db, "students"), where("approved", "==", true));
-            const querySnapshot = await getDocs(q);
-            const labeledDescriptors = [];
+<div class="log-container">
 
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                allStudentsData.push(data);
-                const desc = new Float32Array(data.faceDescriptor);
-                labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [desc]));
-            });
+<h3>Recent Logs</h3>
 
-            if (labeledDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);
-                status.innerText = "System Ready. Please face the camera.";
-                debugInfo.innerText = `Threshold: ${DISTANCE_THRESHOLD} | Min Confidence: ${CONFIDENCE_MIN}`;
-                startRecognitionLoop();
-            } else {
-                status.innerText = "No approved students found.";
-            }
-        }
+<ul id="attendanceList" style="list-style:none;padding:0;text-align:left;"></ul>
 
-        async function startCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            video.srcObject = stream;
-        }
+</div>
 
-        async function startRecognitionLoop() {
-            setInterval(async () => {
-                if (!faceMatcher || isProcessing) return;
+<script type="module">
 
-                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore,collection,getDocs,addDoc,serverTimestamp,query,where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-                if (detection) {
-                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-                    const distance = bestMatch.distance;
-                    const confidence = (1 - distance).toFixed(2);
-                    
-                    debugInfo.innerText = `Distance: ${distance.toFixed(3)} | Confidence: ${confidence}`;
-                    
-                    // BALANCED CHECKING
-                    if (bestMatch.label !== 'unknown' && distance < DISTANCE_THRESHOLD && confidence >= CONFIDENCE_MIN) {
-                        if (lastMatchName === bestMatch.label) {
-                            consecutiveMatches++;
-                        } else {
-                            consecutiveMatches = 1;
-                            lastMatchName = bestMatch.label;
-                        }
+/* FIREBASE */
 
-                        if (consecutiveMatches >= CONSECUTIVE_MATCHES_REQUIRED) {
-                            const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);
-                            if (studentInfo) {
-                                handleMatch(studentInfo);
-                                consecutiveMatches = 0;
-                                lastMatchName = null;
-                            }
-                        }
-                    } else {
-                        consecutiveMatches = 0;
-                        lastMatchName = null;
+const firebaseConfig={
+apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+authDomain:"my-school-project-6e00c.firebaseapp.com",
+projectId:"my-school-project-6e00c",
+storageBucket:"my-school-project-6e00c.appspot.com",
+messagingSenderId:"14283853516",
+appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
+};
 
-                        if (detection && distance >= DISTANCE_THRESHOLD) {
-                            status.innerText = `❌ Unknown Face (Distance: ${distance.toFixed(3)})`;
-                            playErrorSound();
-                            isProcessing = true;
-                            setTimeout(() => { 
-                                window.location.href = 'registration.html'; 
-                            }, 2000);
-                        }
-                    }
-                }
-            }, 800);
-        }
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-        async function handleMatch(info) {
-            isProcessing = true; 
-            playSuccessSound();
+const video=document.getElementById("video");
+const status=document.getElementById("status");
+const list=document.getElementById("attendanceList");
 
-            document.getElementById("resName").innerText = info.name;
-            document.getElementById("resLocation").innerText = `${info.country} / ${info.district} / ${info.village}`;
-            profileCard.style.display = "block";
-            status.innerText = "✅ Attendance Logged!";
+const progressBar=document.getElementById("progressBar");
+const progressWrap=document.getElementById("progressWrap");
 
-            await markAttendance(info);
+const profileCard=document.getElementById("profileCard");
 
-            progressWrap.style.display = "block";
-            let timeLeft = 0;
-            const duration = 4000; 
-            const interval = 100; 
-            
-            const timer = setInterval(() => {
-                timeLeft += interval;
-                const percent = (timeLeft / duration) * 100;
-                progressBar.style.width = percent + "%";
+let faceMatcher=null;
+let students=[];
 
-                if (timeLeft >= duration) {
-                    clearInterval(timer);
-                    resetScanner();
-                }
-            }, interval);
-        }
+/* VOICE SYSTEM */
 
-        function resetScanner() {
-            isProcessing = false; 
-            progressWrap.style.display = "none";
-            progressBar.style.width = "0%";
-            profileCard.style.display = "none";
-            status.innerText = "Ready for next student...";
-            debugInfo.innerText = `Threshold: ${DISTANCE_THRESHOLD} | Min Confidence: ${CONFIDENCE_MIN}`;
-        }
+function speak(msg){
 
-        async function markAttendance(info) {
-            try {
-                await addDoc(collection(db, "attendance"), {
-                    studentName: info.name,
-                    district: info.district,
-                    time: serverTimestamp()
-                });
-                
-                const li = document.createElement("li");
-                li.innerHTML = `✅ <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;
-                if (list.children.length > 5) list.lastChild.remove();
-                list.prepend(li);
-            } catch (e) { console.error(e); }
-        }
+const speech=new SpeechSynthesisUtterance(msg);
+speech.rate=1;
+speech.pitch=1;
 
-        init();
-    </script>
+speechSynthesis.speak(speech);
+
+}
+
+/* INIT */
+
+async function init(){
+
+const MODEL_URL='https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+await Promise.all([
+faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+]);
+
+await loadStudents();
+startCamera();
+startScanner();
+
+}
+
+/* CAMERA */
+
+async function startCamera(){
+
+const stream=await navigator.mediaDevices.getUserMedia({video:true});
+video.srcObject=stream;
+
+}
+
+/* LOAD STUDENTS */
+
+async function loadStudents(){
+
+const q=query(collection(db,"students"),where("approved","==",true));
+const snap=await getDocs(q);
+
+const labeled=[];
+
+snap.forEach(doc=>{
+
+const data=doc.data();
+students.push(data);
+
+labeled.push(
+new faceapi.LabeledFaceDescriptors(
+data.name,
+[new Float32Array(data.faceDescriptor)]
+)
+);
+
+});
+
+faceMatcher=new faceapi.FaceMatcher(labeled,0.45);
+
+status.innerText="System Ready. Look at the camera.";
+
+}
+
+/* SCANNER LOOP */
+
+async function startScanner(){
+
+setInterval(async()=>{
+
+if(!faceMatcher) return;
+
+const det=await faceapi
+.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
+.withFaceLandmarks()
+.withFaceDescriptor();
+
+if(det){
+
+const match=faceMatcher.findBestMatch(det.descriptor);
+
+if(match.label!=="unknown"){
+
+const student=students.find(s=>s.name===match.label);
+
+if(student){
+
+handleMatch(student);
+
+}
+
+}else{
+
+status.innerText="❌ Unknown Face";
+
+speak("Access Denied");
+
+setTimeout(()=>{
+window.location.href='registration.html';
+},2000);
+
+}
+
+}
+
+},800);
+
+}
+
+/* HANDLE MATCH */
+
+async function handleMatch(student){
+
+speak("Access Granted");
+
+document.getElementById("resName").innerText=student.name;
+document.getElementById("resLocation").innerText=
+`${student.country} / ${student.district} / ${student.village}`;
+
+profileCard.style.display="block";
+
+await addDoc(collection(db,"attendance"),{
+
+studentName:student.name,
+district:student.district,
+time:serverTimestamp()
+
+});
+
+const li=document.createElement("li");
+
+li.innerHTML=`✅ <strong>${student.name}</strong> - ${new Date().toLocaleTimeString()}`;
+
+list.prepend(li);
+
+progressWrap.style.display="block";
+
+let progress=0;
+
+const timer=setInterval(()=>{
+
+progress+=5;
+
+progressBar.style.width=progress+"%";
+
+if(progress>=100){
+
+clearInterval(timer);
+
+progressWrap.style.display="none";
+progressBar.style.width="0%";
+profileCard.style.display="none";
+
+status.innerText="Ready for next student";
+
+}
+
+},200);
+
+}
+
+/* START */
+
+init();
+
+</script>
+
 </body>
-    </html>
+</html>
