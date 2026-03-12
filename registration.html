@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Biometric Registration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NK Upgrade Biometric Registration</title>
 
 <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
@@ -29,13 +29,13 @@ color:#ffcc00;
 
 .scanner-box{
 position:relative;
-width:140px;
-height:140px;
+width:150px;
+height:150px;
 border:2px solid #00f7ff;
 border-radius:50%;
-margin:0 auto 15px;
-background:#000;
+margin:auto;
 overflow:hidden;
+background:#000;
 box-shadow:0 0 15px rgba(0,247,255,0.3);
 }
 
@@ -50,13 +50,12 @@ position:absolute;
 width:100%;
 height:2px;
 background:#00f7ff;
-top:0;
 animation:scan 2s linear infinite;
 }
 
 @keyframes scan{
-from{top:0;}
-to{top:100%;}
+0%{top:0}
+100%{top:100%}
 }
 
 .reg-container{
@@ -68,33 +67,15 @@ border-radius:12px;
 border:1px solid rgba(0,247,255,0.3);
 }
 
-.form-group{
-margin-bottom:10px;
-text-align:left;
-}
-
-label{
-font-size:0.65rem;
-color:#888;
-text-transform:uppercase;
-margin-left:5px;
-}
-
 input{
 width:100%;
 padding:12px;
-margin-top:4px;
+margin-top:6px;
+margin-bottom:8px;
 background:#1a264d;
 border:1px solid #00f7ff;
 color:#fff;
 border-radius:6px;
-font-size:0.9rem;
-outline:none;
-}
-
-input:focus{
-border-color:#00ff9c;
-box-shadow:0 0 10px rgba(0,255,156,0.3);
 }
 
 button{
@@ -103,43 +84,23 @@ padding:14px;
 background:#00f7ff;
 border:none;
 border-radius:6px;
-color:#0a0f2c;
 font-weight:bold;
-text-transform:uppercase;
-letter-spacing:1px;
 margin-top:10px;
-font-size:0.9rem;
-cursor:pointer;
-}
-
-button:disabled{
-background:#444;
-color:#888;
-cursor:not-allowed;
 }
 
 #status-msg{
-font-size:0.75rem;
-margin-top:15px;
-font-weight:bold;
+margin-top:10px;
+font-size:13px;
 }
 
 .success{color:#00ff9c;}
 .error{color:#ff4444;}
-
-.back-link{
-display:block;
-margin-top:15px;
-color:#888;
-font-size:0.75rem;
-text-decoration:none;
-}
 </style>
 </head>
 
 <body>
 
-<h1>Biometric Enrollment</h1>
+<h1>NK Upgrade Biometric Registration</h1>
 
 <div class="reg-container">
 
@@ -148,38 +109,21 @@ text-decoration:none;
 <div class="scan-line"></div>
 </div>
 
-<div class="form-group">
-<label>Student Full Name</label>
-<input type="text" id="name" placeholder="Enter Full Name">
-</div>
+<input id="name" placeholder="Full Name">
+<input id="country" placeholder="Country">
+<input id="district" placeholder="District">
+<input id="village" placeholder="Village">
 
-<div class="form-group">
-<label>Country</label>
-<input type="text" id="country" placeholder="Enter Country">
-</div>
-
-<div class="form-group">
-<label>District</label>
-<input type="text" id="district" placeholder="Enter District">
-</div>
-
-<div class="form-group">
-<label>Village</label>
-<input type="text" id="village" placeholder="Enter Village">
-</div>
-
-<button id="regBtn" disabled>Capture & Register</button>
+<button id="regBtn">Capture & Register</button>
 
 <div id="status-msg"></div>
-
-<a href="index.html" class="back-link">← Back to Scanner</a>
 
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
@@ -190,34 +134,30 @@ messagingSenderId:"14283853516",
 appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
 };
 
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+
 const video=document.getElementById("video");
 const regBtn=document.getElementById("regBtn");
-const statusMsg=document.getElementById("status-msg");
+const msg=document.getElementById("status-msg");
 
-let db;
-let modelsLoaded=false;
+const DISTANCE_THRESHOLD = 0.45;
+const CONFIDENCE_MIN = 0.55;
+const CONSECUTIVE_MATCHES_REQUIRED = 2;
 
-function updateMsg(text,type=""){
-statusMsg.textContent=text;
-statusMsg.className=type;
+let consecutiveMatches = 0;
+let lastMatchName = null;
+
+function status(text,type=""){
+msg.textContent=text;
+msg.className=type;
 }
 
 async function startCamera(){
 const stream=await navigator.mediaDevices.getUserMedia({
-video:{
-width:480,
-height:480,
-facingMode:"user"
-}
+video:{facingMode:"user",width:480,height:480}
 });
 video.srcObject=stream;
-
-return new Promise(resolve=>{
-video.onloadedmetadata=()=>{
-video.play();
-resolve();
-};
-});
 }
 
 async function loadModels(){
@@ -230,38 +170,47 @@ faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
 ]);
 
-modelsLoaded=true;
 }
 
-async function init(){
+async function checkExistingFace(descriptor){
 
-try{
+const snapshot=await getDocs(collection(db,"students"));
 
-const app=initializeApp(firebaseConfig);
-db=getFirestore(app);
+for(const doc of snapshot.docs){
 
-updateMsg("Loading AI models...");
+const data=doc.data();
+if(!data.faceDescriptor) continue;
 
-await loadModels();
+const saved=new Float32Array(data.faceDescriptor);
 
-updateMsg("Starting camera...");
+const distance=faceapi.euclideanDistance(descriptor,saved);
+const confidence=1-distance;
 
-await startCamera();
+if(distance < DISTANCE_THRESHOLD && confidence > CONFIDENCE_MIN){
 
-updateMsg("System ready for capture","success");
+if(lastMatchName===data.name){
+consecutiveMatches++;
+}else{
+lastMatchName=data.name;
+consecutiveMatches=1;
+}
 
-regBtn.disabled=false;
+if(consecutiveMatches>=CONSECUTIVE_MATCHES_REQUIRED){
+return true;
+}
 
-}catch(e){
-
-console.error(e);
-updateMsg("Camera or AI failed to load","error");
-
+}else{
+consecutiveMatches=0;
+lastMatchName=null;
 }
 
 }
 
-regBtn.addEventListener("click",async()=>{
+return false;
+
+}
+
+regBtn.onclick=async()=>{
 
 const name=document.getElementById("name").value.trim();
 const country=document.getElementById("country").value.trim();
@@ -269,17 +218,11 @@ const district=document.getElementById("district").value.trim();
 const village=document.getElementById("village").value.trim();
 
 if(!name||!country||!district||!village){
-updateMsg("Please fill all fields","error");
+status("Fill all fields","error");
 return;
 }
 
-if(!modelsLoaded){
-updateMsg("AI not ready","error");
-return;
-}
-
-regBtn.disabled=true;
-updateMsg("Scanning face...");
+status("Scanning face...");
 
 const detection=await faceapi
 .detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
@@ -287,9 +230,24 @@ const detection=await faceapi
 .withFaceDescriptor();
 
 if(!detection){
+status("Face not detected","error");
+return;
+}
 
-updateMsg("Face not detected. Look at camera.","error");
-regBtn.disabled=false;
+const descriptor=detection.descriptor;
+
+status("Checking database...");
+
+const exists=await checkExistingFace(descriptor);
+
+if(exists){
+
+status("Face already registered. Redirecting to attendance.","error");
+
+setTimeout(()=>{
+window.location.href="attendance.html";
+},2000);
+
 return;
 
 }
@@ -297,32 +255,33 @@ return;
 try{
 
 await addDoc(collection(db,"students"),{
-
 name,
 country,
 district,
 village,
-faceDescriptor:Array.from(detection.descriptor),
+faceDescriptor:Array.from(descriptor),
 approved:false,
 createdAt:serverTimestamp()
-
 });
 
-updateMsg("Registration sent. Await admin approval.","success");
-
-setTimeout(()=>{
-window.location.href="index.html";
-},3000);
+status("Registration successful","success");
 
 }catch(e){
-
-console.error(e);
-updateMsg("Database error","error");
-regBtn.disabled=false;
-
+status("Database error","error");
 }
 
-});
+};
+
+async function init(){
+
+status("Loading AI...");
+
+await loadModels();
+await startCamera();
+
+status("System Ready","success");
+
+}
 
 init();
 
