@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Advanced AI Biometric Analysis & Registration System">
-    <title>AI Biometric Analysis & Registration</title>
+    <title>NK Upgrade Biometric Registration</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <link rel="manifest" href="manifest.json">
     <style>
@@ -219,7 +219,7 @@
 </head>
 <body>
 
-    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
+    <h1>🔍 NK Upgrade Biometric Registration</h1>
 
     <div class="scanner-container">
         <div class="scanner-box">
@@ -255,6 +255,11 @@
 
     <div id="reg-section" class="reg-container">
         <h2>🎓 STUDENT REGISTRATION</h2>
+        </div>
+        <button id="regBtn">CHECK & REGISTER FACE</button>
+        <div id="pendingMsg" class="alert-box">⚠️ Your registration is pending admin approval.</div>
+        <div id="alertMsg" class="alert-box"></div>
+       </div>
         <div class="form-group">
             <input type="text" id="name" placeholder="Full Name" required>
         </div>
@@ -266,11 +271,6 @@
         </div>
         <div class="form-group">
             <input type="text" id="village" placeholder="Village" required>
-        </div>
-        <button id="regBtn">CHECK & REGISTER FACE</button>
-        <div id="pendingMsg" class="alert-box">⚠️ Your registration is pending admin approval.</div>
-        <div id="alertMsg" class="alert-box"></div>
-    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
