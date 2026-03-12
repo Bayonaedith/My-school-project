@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NK Upgrade Biometric Registration</title>
+<title>NK Upgrade Biometric Registration 2</title>
 
 <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
@@ -29,8 +29,8 @@ color:#ffcc00;
 
 .scanner-box{
 position:relative;
-width:150px;
-height:150px;
+width:160px;
+height:160px;
 border:2px solid #00f7ff;
 border-radius:50%;
 margin:auto;
@@ -100,7 +100,7 @@ font-size:13px;
 
 <body>
 
-<h1>NK Upgrade Biometric Registration</h1>
+<h1>NK Upgrade Biometric Registration 2</h1>
 
 <div class="reg-container">
 
@@ -141,13 +141,11 @@ const video=document.getElementById("video");
 const regBtn=document.getElementById("regBtn");
 const msg=document.getElementById("status-msg");
 
-const DISTANCE_THRESHOLD = 0.45;
-const CONFIDENCE_MIN = 0.55;
-const CONSECUTIVE_MATCHES_REQUIRED = 2;
+const DISTANCE_THRESHOLD=0.45;
 
-let consecutiveMatches = 0;
-let lastMatchName = null;
+let students=[];
 let faceAlreadyRegistered=false;
+let currentDescriptor=null;
 
 function status(text,type=""){
 msg.textContent=text;
@@ -176,41 +174,46 @@ faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
 
 }
 
-async function checkExistingFace(descriptor){
+async function loadStudents(){
+
+status("Loading database...");
 
 const snapshot=await getDocs(collection(db,"students"));
 
-for(const doc of snapshot.docs){
+snapshot.forEach(doc=>{
 
 const data=doc.data();
-if(!data.faceDescriptor) continue;
 
-const saved=new Float32Array(data.faceDescriptor);
+if(data.faceDescriptor){
 
-const distance=faceapi.euclideanDistance(descriptor,saved);
-const confidence=1-distance;
-
-if(distance<DISTANCE_THRESHOLD && confidence>CONFIDENCE_MIN){
-
-if(lastMatchName===data.name){
-consecutiveMatches++;
-}else{
-lastMatchName=data.name;
-consecutiveMatches=1;
-}
-
-if(consecutiveMatches>=CONSECUTIVE_MATCHES_REQUIRED){
-return true;
-}
-
-}else{
-consecutiveMatches=0;
-lastMatchName=null;
-}
+students.push({
+name:data.name,
+descriptor:new Float32Array(data.faceDescriptor)
+});
 
 }
 
-return false;
+});
+
+status("Database Loaded");
+
+}
+
+function checkExistingFace(descriptor){
+
+for(const student of students){
+
+const distance=faceapi.euclideanDistance(descriptor,student.descriptor);
+
+if(distance<DISTANCE_THRESHOLD){
+
+return student.name;
+
+}
+
+}
+
+return null;
 
 }
 
@@ -228,17 +231,15 @@ setTimeout(autoScan,1500);
 return;
 }
 
-const descriptor=detection.descriptor;
+currentDescriptor=detection.descriptor;
 
-status("Checking database...");
+const match=checkExistingFace(currentDescriptor);
 
-const exists=await checkExistingFace(descriptor);
-
-if(exists){
+if(match){
 
 faceAlreadyRegistered=true;
 
-status("User already registered → Redirecting to attendance","success");
+status(match+" already registered → Redirecting","success");
 
 setTimeout(()=>{
 window.location.href="attendance.html";
@@ -246,7 +247,7 @@ window.location.href="attendance.html";
 
 }else{
 
-status("New face detected. Please fill form to register","success");
+status("New face detected. Fill form to register","success");
 
 }
 
@@ -269,17 +270,10 @@ status("Fill all fields","error");
 return;
 }
 
-const detection=await faceapi
-.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
-.withFaceLandmarks()
-.withFaceDescriptor();
-
-if(!detection){
+if(!currentDescriptor){
 status("Face not detected","error");
 return;
 }
-
-const descriptor=detection.descriptor;
 
 try{
 
@@ -288,15 +282,22 @@ name,
 country,
 district,
 village,
-faceDescriptor:Array.from(descriptor),
+faceDescriptor:Array.from(currentDescriptor),
 approved:false,
 createdAt:serverTimestamp()
 });
 
 status("Registration successful","success");
 
+students.push({
+name,
+descriptor:currentDescriptor
+});
+
 }catch(e){
+
 status("Database error","error");
+
 }
 
 };
@@ -307,6 +308,7 @@ status("Loading AI...");
 
 await loadModels();
 await startCamera();
+await loadStudents();
 
 status("System Ready");
 
