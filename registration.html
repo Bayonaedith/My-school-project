@@ -1,324 +1,480 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NK Upgrade Biometric Registration is</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced AI Biometric Analysis & Registration System">
+    <title>AI Biometric Analysis & Registration</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+        body {
+            background: linear-gradient(135deg, #0b1220 0%, #1a2d4d 100%);
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            color: #0ff;
+            text-align: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
+        h1 {
+            letter-spacing: 8px;
+            text-shadow: 0 0 20px #0ff, 0 0 40px #0099ff;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
 
-body{
-background:linear-gradient(135deg,#0b1220,#1a2d4d);
-font-family:'Segoe UI',sans-serif;
-color:#0ff;
-text-align:center;
-padding:10px;
-min-height:100vh;
-}
+        h2 {
+            color: #ffcc00;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
 
-h1{
-font-size:1.2rem;
-letter-spacing:2px;
-margin:10px 0;
-text-transform:uppercase;
-color:#ffcc00;
-}
+        /* Scanner UI */
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
 
-.scanner-box{
-position:relative;
-width:160px;
-height:160px;
-border:2px solid #00f7ff;
-border-radius:50%;
-margin:auto;
-overflow:hidden;
-background:#000;
-box-shadow:0 0 15px rgba(0,247,255,0.3);
-}
+        .scanner-box {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 4 / 3;
+            border: 3px solid #00f7ff;
+            border-radius: 15px;
+            box-shadow: 0 0 30px #00f7ff, inset 0 0 30px rgba(0, 247, 255, 0.1);
+            background: #000;
+            overflow: hidden;
+        }
 
-video{
-width:100%;
-height:100%;
-object-fit:cover;
-}
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-.scan-line{
-position:absolute;
-width:100%;
-height:2px;
-background:#00f7ff;
-animation:scan 2s linear infinite;
-}
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00f7ff, transparent);
+            box-shadow: 0 0 15px 5px rgba(0, 247, 255, 0.6);
+            top: 0;
+            animation: scan 3s ease-in-out infinite;
+        }
 
-@keyframes scan{
-0%{top:0}
-100%{top:100%}
-}
+        @keyframes scan {
+            0%, 100% { top: 0%; }
+            50% { top: 100%; }
+        }
 
-.reg-container{
-max-width:320px;
-margin:auto;
-background:rgba(255,255,255,0.05);
-padding:20px;
-border-radius:12px;
-border:1px solid rgba(0,247,255,0.3);
-}
+        .corner-accent {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #00f7ff;
+        }
 
-input{
-width:100%;
-padding:12px;
-margin-top:6px;
-margin-bottom:8px;
-background:#1a264d;
-border:1px solid #00f7ff;
-color:#fff;
-border-radius:6px;
-}
+        .corner-tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+        .corner-br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
 
-button{
-width:100%;
-padding:14px;
-background:#00f7ff;
-border:none;
-border-radius:6px;
-font-weight:bold;
-margin-top:10px;
-}
+        .status-display {
+            font-size: 1.3rem;
+            color: #0ff;
+            margin: 20px 0;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #0ff;
+            min-height: 30px;
+        }
 
-#status-msg{
-margin-top:10px;
-font-size:13px;
-}
+        .status-display.success { color: #00ff9c; text-shadow: 0 0 10px #00ff9c; }
+        .status-display.warning { color: #ffcc00; text-shadow: 0 0 10px #ffcc00; }
+        .status-display.error { color: #ff4444; text-shadow: 0 0 10px #ff4444; }
 
-.success{color:#00ff9c;}
-.error{color:#ff4444;}
-</style>
+        /* --- REDUCED BOX SIZE STYLING --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2x2 grid for professional look */
+            gap: 12px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        .panel {
+            background: rgba(8, 18, 32, 0.9);
+            border: 1px solid #00f7ff; /* Thinner border */
+            padding: 12px; /* Reduced padding */
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 247, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 80px; /* Reduced height */
+        }
+
+        .panel:hover {
+            box-shadow: 0 0 20px rgba(0, 247, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .panel-label {
+            font-size: 0.75rem; /* Smaller labels */
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .panel-value {
+            font-size: 1.1rem; /* Scaled down value text */
+            color: #00ff9c;
+            font-weight: bold;
+        }
+
+        .panel-value.accent { color: #00f7ff; }
+
+        /* Registration Form */
+        .reg-container {
+            display: none;
+            max-width: 500px;
+            margin: 30px auto;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #ffcc00;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .reg-container.visible { display: block; }
+        .form-group { margin-bottom: 15px; }
+
+        input {
+            padding: 14px;
+            width: 100%;
+            border: 2px solid #00f7ff;
+            border-radius: 8px;
+            background: #1a264d;
+            color: #0ff;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        button {
+            padding: 15px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #00f7ff 0%, #00ccff 100%);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #0a0f2c;
+            width: 100%;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .alert-box {
+            color: #ffcc00;
+            border: 2px solid #ffcc00;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+            border-radius: 8px;
+            background: rgba(255, 204, 0, 0.1);
+        }
+
+        .alert-box.visible { display: block; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .dashboard { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .scanner-box { max-width: 100%; }
+        }
+    </style>
 </head>
-
 <body>
 
-<h1>NK Upgrade Biometric Registration is</h1>
-
-<div class="reg-container">
-
-<div class="scanner-box">
-<video id="video" autoplay muted playsinline></video>
-<div class="scan-line"></div>
-</div>
-
-<input id="name" placeholder="Full Name">
-<input id="country" placeholder="Country">
-<input id="district" placeholder="District">
-<input id="village" placeholder="Village">
-
-<button id="regBtn">Register Face</button>
-
-<div id="status-msg"></div>
-
-</div>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig={
-apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-authDomain:"my-school-project-6e00c.firebaseapp.com",
-projectId:"my-school-project-6e00c",
-storageBucket:"my-school-project-6e00c.appspot.com",
-messagingSenderId:"14283853516",
-appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
-};
-
-const app=initializeApp(firebaseConfig);
-const db=getFirestore(app);
-
-const video=document.getElementById("video");
-const regBtn=document.getElementById("regBtn");
-const msg=document.getElementById("status-msg");
-
-const DISTANCE_THRESHOLD=0.45;
-
-let students=[];
-let faceAlreadyRegistered=false;
-let currentDescriptor=null;
-
-function status(text,type=""){
-msg.textContent=text;
-msg.className=type;
-}
-
-async function startCamera(){
-
-const stream=await navigator.mediaDevices.getUserMedia({
-video:{facingMode:"user",width:480,height:480}
-});
-
-video.srcObject=stream;
-
-}
-
-async function loadModels(){
-
-const MODEL_URL="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
-
-await Promise.all([
-faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-]);
-
-}
-
-async function loadStudents(){
-
-status("Loading database...");
-
-const snapshot=await getDocs(collection(db,"students"));
-
-snapshot.forEach(doc=>{
-
-const data=doc.data();
-
-if(data.faceDescriptor){
-
-students.push({
-name:data.name,
-descriptor:new Float32Array(data.faceDescriptor)
-});
-
-}
-
-});
-
-status("Database Loaded");
-
-}
-
-function checkExistingFace(descriptor){
-
-for(const student of students){
-
-const distance=faceapi.euclideanDistance(descriptor,student.descriptor);
-
-if(distance<DISTANCE_THRESHOLD){
-
-return student.name;
-
-}
-
-}
-
-return null;
-
-}
-
-async function autoScan(){
-
-status("Scanning face...");
-
-const detection=await faceapi
-.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
-.withFaceLandmarks()
-.withFaceDescriptor();
-
-if(!detection){
-setTimeout(autoScan,1500);
-return;
-}
-
-currentDescriptor=detection.descriptor;
-
-const match=checkExistingFace(currentDescriptor);
-
-if(match){
-
-faceAlreadyRegistered=true;
-
-status(match+" already registered → Redirecting","success");
-
-setTimeout(()=>{
-window.location.href="attendance.html";
-},2000);
-
-}else{
-
-status("New face detected. Fill form to register","success");
-
-}
-
-}
-
-regBtn.onclick=async()=>{
-
-if(faceAlreadyRegistered){
-status("Already registered","error");
-return;
-}
-
-const name=document.getElementById("name").value.trim();
-const country=document.getElementById("country").value.trim();
-const district=document.getElementById("district").value.trim();
-const village=document.getElementById("village").value.trim();
-
-if(!name||!country||!district||!village){
-status("Fill all fields","error");
-return;
-}
-
-if(!currentDescriptor){
-status("Face not detected","error");
-return;
-}
-
-try{
-
-await addDoc(collection(db,"students"),{
-name,
-country,
-district,
-village,
-faceDescriptor:Array.from(currentDescriptor),
-approved:false,
-createdAt:serverTimestamp()
-});
-
-status("Registration successful","success");
-
-students.push({
-name,
-descriptor:currentDescriptor
-});
-
-}catch(e){
-
-status("Database error","error");
-
-}
-
-};
-
-async function init(){
-
-status("Loading AI...");
-
-await loadModels();
-await startCamera();
-await loadStudents();
-
-status("System Ready");
-
-setTimeout(autoScan,2000);
-
-}
-
-init();
-
-</script>
-
+    <h1>🔍 AI BIOMETRIC ANALYSIS</h1>
+
+    <div class="scanner-container">
+        <div class="scanner-box">
+            <video id="video" autoplay playsinline muted></video>
+            <div class="scan-line"></div>
+            <div class="corner-accent corner-tl"></div>
+            <div class="corner-accent corner-tr"></div>
+            <div class="corner-accent corner-bl"></div>
+            <div class="corner-accent corner-br"></div>
+        </div>
+    </div>
+
+    <div id="status-text" class="status-display">INITIALIZING SYSTEM...</div>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="panel-label">Security Status</div>
+            <div class="panel-value" id="lock-status">🔒 LOCKED</div>
+        </div>
+        <div class="panel">
+            <div class="panel-label">Match Confidence</div>
+            <div class="panel-value accent" id="confidence">0%</div>
+        </div>
+        <div class="panel">
+            <div class="panel-label">Identified Subject</div>
+            <div class="panel-value" id="subject-name">SCANNING...</div>
+        </div>
+        <div class="panel">
+            <div class="panel-label">Database Status</div>
+            <div class="panel-value" id="db-status" style="color: #ffcc00;">CONNECTING...</div>
+        </div>
+    </div>
+
+    <div id="reg-section" class="reg-container">
+        <h2>🎓 STUDENT REGISTRATION</h2>
+        <div class="form-group">
+            <input type="text" id="name" placeholder="Full Name" required>
+        </div>
+        <div class="form-group">
+            <input type="text" id="country" placeholder="Country" required>
+        </div>
+        <div class="form-group">
+            <input type="text" id="district" placeholder="District" required>
+        </div>
+        <div class="form-group">
+            <input type="text" id="village" placeholder="Village" required>
+        </div>
+        <button id="regBtn">CHECK & REGISTER FACE</button>
+        <div id="pendingMsg" class="alert-box">⚠️ Your registration is pending admin approval.</div>
+        <div id="alertMsg" class="alert-box"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            getDocs,
+            serverTimestamp,
+            query,
+            where
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const FACE_API_MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        const CONFIDENCE_THRESHOLD = 0.45;
+        const DISTANCE_THRESHOLD = 0.5;
+        const RECOGNITION_INTERVAL = 1000;
+        const PROCESSING_TIMEOUT = 3000;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+            authDomain: "my-school-project-6e00c.firebaseapp.com",
+            projectId: "my-school-project-6e00c",
+            storageBucket: "my-school-project-6e00c.appspot.com",
+            messagingSenderId: "14283853516",
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
+        };
+
+        const state = {
+            app: null,
+            db: null,
+            faceMatcher: null,
+            allStudents: [],
+            isProcessing: false,
+            recognitionLoopId: null
+        };
+
+        const elements = {
+            video: document.getElementById("video"),
+            statusEl: document.getElementById("status-text"),
+            confidenceEl: document.getElementById("confidence"),
+            lockEl: document.getElementById("lock-status"),
+            subjectEl: document.getElementById("subject-name"),
+            dbStatusEl: document.getElementById("db-status"),
+            regSection: document.getElementById("reg-section"),
+            regBtn: document.getElementById("regBtn"),
+            alertMsg: document.getElementById("alertMsg"),
+            pendingMsg: document.getElementById("pendingMsg"),
+            nameInput: document.getElementById("name"),
+            countryInput: document.getElementById("country"),
+            districtInput: document.getElementById("district"),
+            villageInput: document.getElementById("village")
+        };
+
+        const utils = {
+            updateStatus(text, type = 'info') {
+                elements.statusEl.textContent = text;
+                elements.statusEl.className = `status-display ${type}`;
+            },
+            updateConfidence(percent) { elements.confidenceEl.textContent = `${percent}%`; },
+            updateSubject(name) { elements.subjectEl.textContent = name; },
+            showAlert(message, type = 'error') {
+                elements.alertMsg.textContent = message;
+                elements.alertMsg.className = `alert-box visible ${type}`;
+            },
+            hideAlert() { elements.alertMsg.classList.remove('visible'); },
+            showRegSection(show = true) { elements.regSection.classList.toggle('visible', show); },
+            async delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
+            log(message, type = 'info') { console.log(`[${type.toUpperCase()}] ${message}`); },
+            redirectToAttendance(studentData) {
+                sessionStorage.setItem('studentData', JSON.stringify(studentData));
+                window.location.href = './attendance.html';
+            }
+        };
+
+        const faceManager = {
+            async loadModels() {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODEL_URL)
+                ]);
+            },
+            async detectFace(videoElement) {
+                return await faceapi.detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+            },
+            computeConfidence(distance) { return Math.max(0, Math.min(100, Math.round((1 - distance) * 100))); },
+            euclideanDistance(a, b) { return Math.sqrt(a.reduce((sum, ai, i) => sum + Math.pow(ai - b[i], 2), 0)); }
+        };
+
+        const database = {
+            async initialize() {
+                state.app = initializeApp(firebaseConfig);
+                state.db = getFirestore(state.app);
+            },
+            async loadAllStudents() {
+                try {
+                    const querySnapshot = await getDocs(collection(state.db, "students"));
+                    state.allStudents = [];
+                    const labeledDescriptors = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        state.allStudents.push(data);
+                        if (data.approved && data.faceDescriptor) {
+                            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));
+                        }
+                    });
+                    if (labeledDescriptors.length > 0) {
+                        state.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, CONFIDENCE_THRESHOLD);
+                        elements.dbStatusEl.textContent = 'CONNECTED';
+                        elements.dbStatusEl.style.color = '#00ff9c';
+                    }
+                } catch (err) {
+                    elements.dbStatusEl.textContent = 'ERROR';
+                }
+            },
+            async recordAttendance(studentName, district) {
+                await addDoc(collection(state.db, "attendance"), { studentName, district, timestamp: serverTimestamp() });
+            },
+            async registerStudent(data) {
+                await addDoc(collection(state.db, "students"), { ...data, approved: false, createdAt: serverTimestamp() });
+            }
+        };
+
+        const recognition = {
+            async process() {
+                if (state.isProcessing) return;
+                const detection = await faceManager.detectFace(elements.video);
+                if (detection) {
+                    const confidence = faceManager.computeConfidence(detection.descriptor);
+                    utils.updateConfidence(Math.min(confidence, 100));
+                    if (state.faceMatcher) {
+                        const bestMatch = state.faceMatcher.findBestMatch(detection.descriptor);
+                        if (bestMatch.label !== 'unknown') {
+                            const student = state.allStudents.find(s => s.name === bestMatch.label);
+                            if (student) await this.handleMatch(student);
+                        } else { this.handleUnknownFace(detection.descriptor); }
+                    } else { this.handleUnknownFace(detection.descriptor); }
+                } else {
+                    utils.updateConfidence(0);
+                    if (!state.isProcessing) utils.updateSubject('SCANNING...');
+                }
+            },
+            async handleMatch(student) {
+                state.isProcessing = true;
+                utils.updateStatus('ACCESS GRANTED ✓', 'success');
+                elements.lockEl.textContent = '🔓 UNLOCKED';
+                utils.updateSubject(student.name.toUpperCase());
+                utils.showRegSection(false);
+                await database.recordAttendance(student.name, student.district);
+                await utils.delay(PROCESSING_TIMEOUT);
+                utils.redirectToAttendance({ name: student.name, country: student.country, district: student.district, village: student.village, timestamp: new Date().toLocaleString() });
+            },
+            handleUnknownFace(descriptor) {
+                let pendingStudent = null;
+                for (const student of state.allStudents) {
+                    if (!student.approved && student.faceDescriptor) {
+                        const distance = faceManager.euclideanDistance(descriptor, new Float32Array(student.faceDescriptor));
+                        if (distance < DISTANCE_THRESHOLD) { pendingStudent = student; break; }
+                    }
+                }
+                if (pendingStudent) {
+                    utils.updateStatus('PENDING APPROVAL', 'warning');
+                    utils.updateSubject('AWAITING ADMIN');
+                    elements.pendingMsg.classList.add('visible');
+                    utils.showRegSection(true);
+                } else {
+                    utils.updateStatus('UNKNOWN - REGISTERING', 'error');
+                    utils.updateSubject('NOT IN SYSTEM');
+                    elements.pendingMsg.classList.remove('visible');
+                    utils.showRegSection(true);
+                }
+            },
+            start() { state.recognitionLoopId = setInterval(() => this.process(), RECOGNITION_INTERVAL); }
+        };
+
+        const videoManager = {
+            async start() {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                elements.video.srcObject = stream;
+            }
+        };
+
+        const registrationForm = {
+            async submit() {
+                const data = { name: elements.nameInput.value, country: elements.countryInput.value, district: elements.districtInput.value, village: elements.villageInput.value };
+                if (!data.name) return;
+                const detection = await faceManager.detectFace(elements.video);
+                if (!detection) return;
+                await database.registerStudent({ ...data, faceDescriptor: Array.from(detection.descriptor) });
+                location.reload();
+            }
+        };
+
+        async function initialize() {
+            await database.initialize();
+            await faceManager.loadModels();
+            await videoManager.start();
+            await database.loadAllStudents();
+            recognition.start();
+        }
+
+        elements.regBtn.addEventListener('click', () => registrationForm.submit());
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
 </body>
 </html>
