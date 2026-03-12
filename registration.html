@@ -1,228 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NK Upgrade Biometric Registration</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: linear-gradient(135deg, #0b1220 0%, #1a2d4d 100%);
-            font-family: 'Segoe UI', sans-serif;
-            color: #0ff;
-            text-align: center;
-            padding: 10px;
-            min-height: 100vh;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Biometric Registration</title>
 
-        h1 { font-size: 1.2rem; letter-spacing: 2px; margin: 10px 0; text-transform: uppercase; color: #ffcc00; }
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
-        /* Compact Scanner for Registration */
-        .scanner-box {
-            position: relative;
-            width: 140px; /* Smaller preview for registration */
-            height: 140px;
-            border: 2px solid #00f7ff;
-            border-radius: 50%; /* Circular for a professional "profile" look */
-            margin: 0 auto 15px;
-            background: #000;
-            overflow: hidden;
-            box-shadow: 0 0 15px rgba(0, 247, 255, 0.3);
-        }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        
-        .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: #00f7ff;
-            top: 0;
-            animation: scan 2s linear infinite;
-        }
-        @keyframes scan { from { top: 0%; } to { top: 100%; } }
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
 
-        /* Form Styling */
-        .reg-container {
-            max-width: 320px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 247, 255, 0.3);
-        }
+body{
+background:linear-gradient(135deg,#0b1220,#1a2d4d);
+font-family:'Segoe UI',sans-serif;
+color:#0ff;
+text-align:center;
+padding:10px;
+min-height:100vh;
+}
 
-        .form-group { margin-bottom: 10px; text-align: left; }
-        label { font-size: 0.65rem; color: #888; text-transform: uppercase; margin-left: 5px; }
+h1{
+font-size:1.2rem;
+letter-spacing:2px;
+margin:10px 0;
+text-transform:uppercase;
+color:#ffcc00;
+}
 
-        input {
-            width: 100%;
-            padding: 12px;
-            margin-top: 4px;
-            background: #1a264d;
-            border: 1px solid #00f7ff;
-            color: #fff;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            outline: none;
-        }
+.scanner-box{
+position:relative;
+width:140px;
+height:140px;
+border:2px solid #00f7ff;
+border-radius:50%;
+margin:0 auto 15px;
+background:#000;
+overflow:hidden;
+box-shadow:0 0 15px rgba(0,247,255,0.3);
+}
 
-        input:focus { border-color: #00ff9c; box-shadow: 0 0 10px rgba(0, 255, 156, 0.3); }
+video{
+width:100%;
+height:100%;
+object-fit:cover;
+}
 
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #00f7ff;
-            border: none;
-            border-radius: 6px;
-            color: #0a0f2c;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
+.scan-line{
+position:absolute;
+width:100%;
+height:2px;
+background:#00f7ff;
+top:0;
+animation:scan 2s linear infinite;
+}
 
-        button:disabled { background: #444; color: #888; cursor: not-allowed; }
+@keyframes scan{
+from{top:0;}
+to{top:100%;}
+}
 
-        #status-msg { font-size: 0.75rem; margin-top: 15px; font-weight: bold; }
-        .success { color: #00ff9c; }
-        .error { color: #ff4444; }
+.reg-container{
+max-width:320px;
+margin:auto;
+background:rgba(255,255,255,0.05);
+padding:20px;
+border-radius:12px;
+border:1px solid rgba(0,247,255,0.3);
+}
 
-        .back-link {
-            display: block;
-            margin-top: 15px;
-            color: #888;
-            font-size: 0.75rem;
-            text-decoration: none;
-        }
-    </style>
+.form-group{
+margin-bottom:10px;
+text-align:left;
+}
+
+label{
+font-size:0.65rem;
+color:#888;
+text-transform:uppercase;
+margin-left:5px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-top:4px;
+background:#1a264d;
+border:1px solid #00f7ff;
+color:#fff;
+border-radius:6px;
+font-size:0.9rem;
+outline:none;
+}
+
+input:focus{
+border-color:#00ff9c;
+box-shadow:0 0 10px rgba(0,255,156,0.3);
+}
+
+button{
+width:100%;
+padding:14px;
+background:#00f7ff;
+border:none;
+border-radius:6px;
+color:#0a0f2c;
+font-weight:bold;
+text-transform:uppercase;
+letter-spacing:1px;
+margin-top:10px;
+font-size:0.9rem;
+cursor:pointer;
+}
+
+button:disabled{
+background:#444;
+color:#888;
+cursor:not-allowed;
+}
+
+#status-msg{
+font-size:0.75rem;
+margin-top:15px;
+font-weight:bold;
+}
+
+.success{color:#00ff9c;}
+.error{color:#ff4444;}
+
+.back-link{
+display:block;
+margin-top:15px;
+color:#888;
+font-size:0.75rem;
+text-decoration:none;
+}
+</style>
 </head>
+
 <body>
 
-    <h1>NK Upgrade Biometric Registration</h1>
+<h1>Biometric Enrollment</h1>
 
-    <div class="reg-container">
-        <div class="scanner-box">
-            <video id="video" autoplay playsinline muted></video>
-            <div class="scan-line" id="line"></div>
-        </div>
+<div class="reg-container">
 
-        <div class="form-group">
-            <label>Student Full Name</label>
-            <input type="text" id="name" placeholder="Enter Full Name">
-        </div>
-        <div class="form-group">
-            <label>Country</label>
-            <input type="text" id="country" placeholder="Enter Country">
-        </div>
-        <div class="form-group">
-            <label>District</label>
-            <input type="text" id="district" placeholder="Enter District">
-        </div>
-        <div class="form-group">
-            <label>Village</label>
-            <input type="text" id="village" placeholder="Enter Village">
-        </div>
+<div class="scanner-box">
+<video id="video" autoplay muted playsinline></video>
+<div class="scan-line"></div>
+</div>
 
-        <button id="regBtn">Capture & Register</button>
-        <div id="status-msg"></div>
-        
-        <a href="index.html" class="back-link">← Back to Scanner</a>
-    </div>
+<div class="form-group">
+<label>Student Full Name</label>
+<input type="text" id="name" placeholder="Enter Full Name">
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<div class="form-group">
+<label>Country</label>
+<input type="text" id="country" placeholder="Enter Country">
+</div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-            authDomain: "my-school-project-6e00c.firebaseapp.com",
-            projectId: "my-school-project-6e00c",
-            storageBucket: "my-school-project-6e00c.appspot.com",
-            messagingSenderId: "14283853516",
-            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-        };
+<div class="form-group">
+<label>District</label>
+<input type="text" id="district" placeholder="Enter District">
+</div>
 
-        const state = { db: null, modelsLoaded: false };
-        const elements = {
-            video: document.getElementById("video"),
-            regBtn: document.getElementById("regBtn"),
-            statusMsg: document.getElementById("status-msg"),
-            inputs: ['name', 'country', 'district', 'village'].map(id => document.getElementById(id))
-        };
+<div class="form-group">
+<label>Village</label>
+<input type="text" id="village" placeholder="Enter Village">
+</div>
 
-        async function init() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                state.db = getFirestore(app);
+<button id="regBtn" disabled>Capture & Register</button>
 
-                const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-                ]);
-                state.modelsLoaded = true;
+<div id="status-msg"></div>
 
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 240, height: 240, facingMode: 'user' } 
-                });
-                elements.video.srcObject = stream;
-                updateMsg("System ready for capture.", "success");
-            } catch (e) {
-                updateMsg("Camera or AI Load Error", "error");
-            }
-        }
+<a href="index.html" class="back-link">← Back to Scanner</a>
 
-        function updateMsg(text, type) {
-            elements.statusMsg.textContent = text;
-            elements.statusMsg.className = type;
-        }
+</div>
 
-        elements.regBtn.addEventListener('click', async () => {
-            const data = {
-                name: document.getElementById('name').value.trim(),
-                country: document.getElementById('country').value.trim(),
-                district: document.getElementById('district').value.trim(),
-                village: document.getElementById('village').value.trim()
-            };
+<script type="module">
 
-            if (!data.name || !data.country || !data.district || !data.village) {
-                updateMsg("Please fill all fields", "error");
-                return;
-            }
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-            elements.regBtn.disabled = true;
-            updateMsg("Analyzing face...", "");
+const firebaseConfig={
+apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+authDomain:"my-school-project-6e00c.firebaseapp.com",
+projectId:"my-school-project-6e00c",
+storageBucket:"my-school-project-6e00c.appspot.com",
+messagingSenderId:"14283853516",
+appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
+};
 
-            const det = await faceapi.detectSingleFace(elements.video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
+const video=document.getElementById("video");
+const regBtn=document.getElementById("regBtn");
+const statusMsg=document.getElementById("status-msg");
 
-            if (!det) {
-                updateMsg("Face not detected. Look at camera.", "error");
-                elements.regBtn.disabled = false;
-                return;
-            }
+let db;
+let modelsLoaded=false;
 
-            try {
-                await addDoc(collection(state.db, "students"), {
-                    ...data,
-                    faceDescriptor: Array.from(det.descriptor),
-                    approved: false, // Requires admin approval to show in scanner
-                    createdAt: serverTimestamp()
-                });
+function updateMsg(text,type=""){
+statusMsg.textContent=text;
+statusMsg.className=type;
+}
 
-                updateMsg("REGISTRATION SENT! Awaiting admin approval.", "success");
-                setTimeout(() => window.location.href = 'registration.html, 3000);
-            } catch (e) {
-                updateMsg("Database Error. Try again.", "error");
-                elements.regBtn.disabled = false;
-            }
-        });
+async function startCamera(){
+const stream=await navigator.mediaDevices.getUserMedia({
+video:{
+width:480,
+height:480,
+facingMode:"user"
+}
+});
+video.srcObject=stream;
 
-        init();
-    </script>
+return new Promise(resolve=>{
+video.onloadedmetadata=()=>{
+video.play();
+resolve();
+};
+});
+}
+
+async function loadModels(){
+
+const MODEL_URL="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+
+await Promise.all([
+faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+]);
+
+modelsLoaded=true;
+}
+
+async function init(){
+
+try{
+
+const app=initializeApp(firebaseConfig);
+db=getFirestore(app);
+
+updateMsg("Loading AI models...");
+
+await loadModels();
+
+updateMsg("Starting camera...");
+
+await startCamera();
+
+updateMsg("System ready for capture","success");
+
+regBtn.disabled=false;
+
+}catch(e){
+
+console.error(e);
+updateMsg("Camera or AI failed to load","error");
+
+}
+
+}
+
+regBtn.addEventListener("click",async()=>{
+
+const name=document.getElementById("name").value.trim();
+const country=document.getElementById("country").value.trim();
+const district=document.getElementById("district").value.trim();
+const village=document.getElementById("village").value.trim();
+
+if(!name||!country||!district||!village){
+updateMsg("Please fill all fields","error");
+return;
+}
+
+if(!modelsLoaded){
+updateMsg("AI not ready","error");
+return;
+}
+
+regBtn.disabled=true;
+updateMsg("Scanning face...");
+
+const detection=await faceapi
+.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
+.withFaceLandmarks()
+.withFaceDescriptor();
+
+if(!detection){
+
+updateMsg("Face not detected. Look at camera.","error");
+regBtn.disabled=false;
+return;
+
+}
+
+try{
+
+await addDoc(collection(db,"students"),{
+
+name,
+country,
+district,
+village,
+faceDescriptor:Array.from(detection.descriptor),
+approved:false,
+createdAt:serverTimestamp()
+
+});
+
+updateMsg("Registration sent. Await admin approval.","success");
+
+setTimeout(()=>{
+window.location.href="index.html";
+},3000);
+
+}catch(e){
+
+console.error(e);
+updateMsg("Database error","error");
+regBtn.disabled=false;
+
+}
+
+});
+
+init();
+
+</script>
+
 </body>
 </html>
