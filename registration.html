@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Biometric Registration</title>
+    <title>NK Upgrade Biometric Registration</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -100,7 +100,7 @@
 </head>
 <body>
 
-    <h1>Biometric Enrollment</h1>
+    <h1>NK Upgrade Biometric Registration</h1>
 
     <div class="reg-container">
         <div class="scanner-box">
@@ -215,7 +215,7 @@
                 });
 
                 updateMsg("REGISTRATION SENT! Awaiting admin approval.", "success");
-                setTimeout(() => window.location.href = 'index.html', 3000);
+                setTimeout(() => window.location.href = 'registration.html, 3000);
             } catch (e) {
                 updateMsg("Database Error. Try again.", "error");
                 elements.regBtn.disabled = false;
