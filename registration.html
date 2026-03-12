@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NK Upgrade Biometric Registration</title>
+<title>Biometric Registration</title>
 
 <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
@@ -100,7 +100,7 @@ font-size:13px;
 
 <body>
 
-<h1>NK Upgrade Biometric Registration</h1>
+<h1>Biometric Enrollment</h1>
 
 <div class="reg-container">
 
@@ -114,7 +114,7 @@ font-size:13px;
 <input id="district" placeholder="District">
 <input id="village" placeholder="Village">
 
-<button id="regBtn">Capture & Register</button>
+<button id="regBtn">Register Face</button>
 
 <div id="status-msg"></div>
 
@@ -147,6 +147,7 @@ const CONSECUTIVE_MATCHES_REQUIRED = 2;
 
 let consecutiveMatches = 0;
 let lastMatchName = null;
+let faceAlreadyRegistered=false;
 
 function status(text,type=""){
 msg.textContent=text;
@@ -154,10 +155,13 @@ msg.className=type;
 }
 
 async function startCamera(){
+
 const stream=await navigator.mediaDevices.getUserMedia({
 video:{facingMode:"user",width:480,height:480}
 });
+
 video.srcObject=stream;
+
 }
 
 async function loadModels(){
@@ -186,7 +190,7 @@ const saved=new Float32Array(data.faceDescriptor);
 const distance=faceapi.euclideanDistance(descriptor,saved);
 const confidence=1-distance;
 
-if(distance < DISTANCE_THRESHOLD && confidence > CONFIDENCE_MIN){
+if(distance<DISTANCE_THRESHOLD && confidence>CONFIDENCE_MIN){
 
 if(lastMatchName===data.name){
 consecutiveMatches++;
@@ -210,7 +214,50 @@ return false;
 
 }
 
+async function autoScan(){
+
+status("Scanning face...");
+
+const detection=await faceapi
+.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
+.withFaceLandmarks()
+.withFaceDescriptor();
+
+if(!detection){
+setTimeout(autoScan,1500);
+return;
+}
+
+const descriptor=detection.descriptor;
+
+status("Checking database...");
+
+const exists=await checkExistingFace(descriptor);
+
+if(exists){
+
+faceAlreadyRegistered=true;
+
+status("User already registered → Redirecting to attendance","success");
+
+setTimeout(()=>{
+window.location.href="attendance.html";
+},2000);
+
+}else{
+
+status("New face detected. Please fill form to register","success");
+
+}
+
+}
+
 regBtn.onclick=async()=>{
+
+if(faceAlreadyRegistered){
+status("Already registered","error");
+return;
+}
 
 const name=document.getElementById("name").value.trim();
 const country=document.getElementById("country").value.trim();
@@ -221,8 +268,6 @@ if(!name||!country||!district||!village){
 status("Fill all fields","error");
 return;
 }
-
-status("Scanning face...");
 
 const detection=await faceapi
 .detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
@@ -235,22 +280,6 @@ return;
 }
 
 const descriptor=detection.descriptor;
-
-status("Checking database...");
-
-const exists=await checkExistingFace(descriptor);
-
-if(exists){
-
-status("Face already registered. Redirecting to attendance.","error");
-
-setTimeout(()=>{
-window.location.href="attendance.html";
-},2000);
-
-return;
-
-}
 
 try{
 
@@ -279,7 +308,9 @@ status("Loading AI...");
 await loadModels();
 await startCamera();
 
-status("System Ready","success");
+status("System Ready");
+
+setTimeout(autoScan,2000);
 
 }
 
