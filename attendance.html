@@ -1,298 +1,268 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NK Biometric Attendance</title>
+<html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>NK Biometric Attendance</title>  
 
-<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>  
 
-<style>
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background: #0a0f2c;
-    color: #00f7ff;
-    text-align: center;
-    padding: 20px;
-}
+<style>  
+body {  
+    font-family: 'Segoe UI', sans-serif;  
+    background: #0a0f2c;  
+    color: #00f7ff;  
+    text-align: center;  
+    padding: 20px;  
+    overflow-x: hidden;  
+}  
 
-.video-wrapper {
-    position: relative;
-    display: inline-block;
-    width: 400px;
-    height: 300px;
-}
+h2 { font-size: 2rem; color: #00f7ff; margin-bottom: 20px; }  
 
-video {
-    width: 100%;
-    height: 100%;
-    border: 3px solid #00f7ff;
-    border-radius: 12px;
-    background: #000;
-}
+/* Video & scanner wrapper */  
+.video-wrapper { position: relative; display: inline-block; width: 400px; height: 300px; }  
+video { width: 100%; height: 100%; border: 3px solid #00f7ff; border-radius: 12px; background: #000; box-shadow: 0 0 25px rgba(0,247,255,0.5); }  
 
-#scannerOverlay {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    border: 2px solid rgba(0,247,255,0.5);
-}
+/* Blueprint scanning overlay */  
+#scannerOverlay {  
+    position: absolute;  
+    width: 100%;  
+    height: 100%;  
+    top: 0; left: 0;  
+    pointer-events: none;  
+    border: 2px solid rgba(0,247,255,0.5);  
+    box-shadow: 0 0 20px rgba(0,247,255,0.3);  
+    border-radius: 12px;  
+    overflow: hidden;  
+}  
 
-#scannerLine {
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background: #00f7ff;
-    animation: scan 2s linear infinite;
-}
+#scannerLine {  
+    position: absolute;  
+    width: 100%;  
+    height: 2px;  
+    background: #00f7ff;  
+    animation: scan 2s linear infinite;  
+}  
 
-@keyframes scan {
-    0% { top: 0%; }
-    100% { top: 100%; }
-}
+@keyframes scan {  
+    0% { top: 0%; }  
+    100% { top: 100%; }  
+}  
 
-#profileCard {
-    display: none;
-    margin-top: 20px;
-    padding: 15px;
-    border: 2px solid #00f7ff;
-    border-radius: 10px;
-}
+.progress-container {  
+    width: 400px; height: 10px; background: #1a264d; margin: 10px auto;  
+    border-radius: 5px; overflow: hidden; display: none;  
+}  
+#progressBar { width: 0%; height: 100%; background: #00f7ff; transition: width 0.1s linear; }  
 
-.progress-container {
-    width: 400px;
-    height: 10px;
-    background: #1a264d;
-    margin: 10px auto;
-    display: none;
-}
+#profileCard {  
+    max-width: 400px; margin: 20px auto; padding: 20px;  
+    background: rgba(0,247,255,0.05); border: 2px solid #00f7ff;  
+    border-radius: 12px; display: none;  
+    box-shadow: 0 0 20px #00f7ff;  
+    animation: glow 1.5s infinite alternate;  
+}  
 
-#progressBar {
-    height: 100%;
-    width: 0%;
-    background: #00f7ff;
-}
-</style>
-</head>
+@keyframes glow {  
+    0% { box-shadow: 0 0 10px #00f7ff; }  
+    100% { box-shadow: 0 0 25px #00f7ff; }  
+}  
 
-<body>
+.info-label { color: #00f7ff; font-size: 0.8rem; text-transform: uppercase; margin-top: 10px; }  
+.info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }  
 
-<h2>⏱️ NK Biometric Attendance</h2>
+#status { margin-top: 15px; font-size: 1.1rem; min-height: 1.5em; color: #00f7ff; }  
+#debugInfo { margin-top: 10px; font-size: 0.9rem; color: #ffaa00; }  
 
-<div class="video-wrapper">
-    <video id="video" autoplay muted playsinline></video>
-    <div id="scannerOverlay"><div id="scannerLine"></div></div>
-</div>
+.log-container {  
+    margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px;  
+    border-radius: 10px; display: inline-block; min-width: 350px; text-align: left;  
+}  
+</style>  
+</head>  
 
-<div class="progress-container" id="progressWrap">
-    <div id="progressBar"></div>
-</div>
+<body>  
+<h2>⏱️ NK Biometric Attendance</h2>  
 
-<p id="status">Initializing system...</p>
-<p id="debugInfo"></p>
+<div class="video-wrapper">  
+    <video id="video" autoplay muted playsinline></video>  
+    <div id="scannerOverlay"><div id="scannerLine"></div></div>  
+</div>  
 
-<div id="profileCard">
-    <p><b>Name:</b> <span id="resName"></span></p>
-    <p><b>Location:</b> <span id="resLocation"></span></p>
-    <p id="resStatus"></p>
-</div>
+<div class="progress-container" id="progressWrap">  
+    <div id="progressBar"></div>  
+</div>  
 
-<ul id="attendanceList"></ul>
+<p id="status">Initializing NK Upgrade...</p>  
+<p id="debugInfo"></p>  
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<div id="profileCard">  
+    <div class="info-label">Student Name</div>  
+    <div id="resName" class="info-value">-</div>  
+    <div class="info-label">Location Details</div>  
+    <div id="resLocation" class="info-value">-</div>  
+    <div id="resStatus" style="margin-top: 10px; font-weight: bold;">-</div>  
+</div>  
 
-// ✅ YOUR REAL FIREBASE CONFIG
-const firebaseConfig = {
-    apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-    authDomain: "my-school-project-6e00c.firebaseapp.com",
-    projectId: "my-school-project-6e00c",
-    storageBucket: "my-school-project-6e00c.appspot.com",
-    messagingSenderId: "14283853516",
-    appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-};
+<div class="log-container">  
+    <h3>Recent Logs:</h3>  
+    <ul id="attendanceList" style="list-style: none; padding: 0;"></ul>  
+</div>  
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+<script type="module">  
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";  
+import { getFirestore, collection, getDocs, addDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";  
 
-const video = document.getElementById("video");
-const status = document.getElementById("status");
-const debugInfo = document.getElementById("debugInfo");
-const list = document.getElementById("attendanceList");
+const firebaseConfig = {  
+    apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",  
+    authDomain: "my-school-project-6e00c.firebaseapp.com",  
+    projectId: "my-school-project-6e00c",  
+    storageBucket: "my-school-project-6e00c.appspot.com",  
+    messagingSenderId: "14283853516",  
+    appId: "1:14283853516:web:c7999ae32d83166cb8bc69"  
+};  
 
-let faceMatcher;
-let students = [];
+const app = initializeApp(firebaseConfig);  
+const db = getFirestore(app);  
 
+const video = document.getElementById("video");  
+const status = document.getElementById("status");  
+const debugInfo = document.getElementById("debugInfo");  
+const list = document.getElementById("attendanceList");  
+const profileCard = document.getElementById("profileCard");  
+const progressBar = document.getElementById("progressBar");  
+const progressWrap = document.getElementById("progressWrap");  
+
+let faceMatcher = null;  
+let allStudentsData = [];  
+let isProcessing = false;  
+
+const CONFIDENCE_THRESHOLD = 0.45;
 const DISTANCE_THRESHOLD = 0.5;
-const REQUIRED_MATCHES = 3;
+const RECOGNITION_INTERVAL = 1000; 
+const PROCESSING_TIMEOUT = 3000;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();  
 
-let lastMatch = null;
-let matchCount = 0;
-let busy = false;
+function playSound(type){  
+    const osc = audioCtx.createOscillator();  
+    const gain = audioCtx.createGain();  
+    if(type==='success'){  
+        osc.type='sine'; osc.frequency.setValueAtTime(880,audioCtx.currentTime);  
+        osc.frequency.exponentialRampToValueAtTime(440,audioCtx.currentTime+0.1);  
+        gain.gain.setValueAtTime(0.1,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.2);  
+    }else{  
+        osc.type='sawtooth'; osc.frequency.setValueAtTime(150,audioCtx.currentTime);  
+        gain.gain.setValueAtTime(0.1,audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.3);  
+    }  
+    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.3);  
+}  
 
-// 🔊 SOUND
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+async function init(){  
+    const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';  
+    await Promise.all([  
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),  
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),  
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)  
+    ]);  
+    await loadStudents();  
+    startCamera();  
+}  
 
-function beep(ok){
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+async function loadStudents(){  
+    status.innerText="Downloading student database...";  
+    const q = query(collection(db,"students"));  
+    const querySnapshot = await getDocs(q);  
+    const labeledDescriptors=[];  
+    querySnapshot.forEach(doc=>{  
+        const data=doc.data();  
+        allStudentsData.push(data);  
+        if(data.faceDescriptor){  
+            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name,[new Float32Array(data.faceDescriptor)]));  
+        }  
+    });  
+    if(labeledDescriptors.length>0){  
+        faceMatcher=new faceapi.FaceMatcher(labeledDescriptors,DISTANCE_THRESHOLD);  
+        status.innerText="System Ready. Face the camera.";  
+    }else status.innerText="No students found!";  
+    startRecognitionLoop();  
+}  
 
-    osc.frequency.value = ok ? 800 : 200;
-    gain.gain.value = 0.1;
+async function startCamera(){  
+    const stream=await navigator.mediaDevices.getUserMedia({video:{}});  
+    video.srcObject=stream;  
+}  
 
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+async function startRecognitionLoop(){  
+    setInterval(async()=>{  
+        if(!faceMatcher||isProcessing) return;  
+        const detection=await faceapi.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();  
+        if(detection){  
+            const bestMatch=faceMatcher.findBestMatch(detection.descriptor);  
+            const distance=bestMatch.distance;  
+            const confidence=(1-distance).toFixed(2);  
+            debugInfo.innerText=`Distance: ${distance.toFixed(3)} | Confidence: ${confidence}`;  
+            if(bestMatch.label!=='unknown'&&distance<DISTANCE_THRESHOLD&&confidence>=CONFIDENCE_MIN){  
+                if(lastMatchName===bestMatch.label) consecutiveMatches++; else { consecutiveMatches=1; lastMatchName=bestMatch.label; }  
+                if(consecutiveMatches>=CONSECUTIVE_MATCHES_REQUIRED){  
+                    const studentInfo=allStudentsData.find(s=>s.name===bestMatch.label);  
+                    if(studentInfo){  
+                        if(studentInfo.approved) handleMatch(studentInfo,true);  
+                        else handleMatch(studentInfo,false);  
+                        consecutiveMatches=0; lastMatchName=null;  
+                    }  
+                }  
+            }else{  
+                consecutiveMatches=0; lastMatchName=null;  
+                if(detection&&distance>=DISTANCE_THRESHOLD){  
+                    status.innerText=`❌ Unknown Face`;  
+                    playSound('error');  
+                    isProcessing=true;  
+                    setTimeout(()=>{ window.location.href='registration.html'; },2000);  
+                }  
+            }  
+        }  
+    },800);  
+}  
 
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.2);
-}
+async function handleMatch(info,approved){  
+    isProcessing=true;  
+    playSound(approved?'success':'error');  
+    document.getElementById("resName").innerText=info.name;  
+    document.getElementById("resLocation").innerText=`${info.country||'-'} / ${info.district||'-'} / ${info.village||'-'}`;  
+    document.getElementById("resStatus").innerText=approved?"✅ Attendance Marked":"⚠️ Not Approved";  
+    profileCard.style.display="block";  
+    if(approved) await markAttendance(info);  
 
-// 📷 CAMERA
-async function startCamera(){
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-    } catch {
-        status.innerText = "❌ Camera access denied!";
-    }
-}
+    progressWrap.style.display="block";  
+    let timeLeft=0;  
+    const duration=4000, interval=100;  
+    const timer=setInterval(()=>{  
+        timeLeft+=interval;  
+        const percent=(timeLeft/duration)*100;  
+        progressBar.style.width=percent+"%";  
+        if(timeLeft>=duration){ clearInterval(timer); resetScanner(); }  
+    },interval);  
+}  
 
-// 🤖 LOAD AI MODELS
-async function loadModels(){
-    const URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-    await faceapi.nets.tinyFaceDetector.loadFromUri(URL);
-    await faceapi.nets.faceLandmark68Net.loadFromUri(URL);
-    await faceapi.nets.faceRecognitionNet.loadFromUri(URL);
-}
+function resetScanner(){  
+    isProcessing=false;  
+    progressWrap.style.display="none";  
+    progressBar.style.width="0%";  
+    profileCard.style.display="none";  
+    status.innerText="Ready for next student...";  
+}  
 
-// 👨‍🎓 LOAD STUDENTS
-async function loadStudents(){
-    const snap = await getDocs(query(collection(db,"students")));
-    const labeled = [];
+async function markAttendance(info){  
+    try{  
+        await addDoc(collection(db,"attendance"),{ studentName:info.name, district:info.district, time:serverTimestamp() });  
+        const li=document.createElement("li");  
+        li.innerHTML=`✅ <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;  
+        if(list.children.length>5) list.lastChild.remove();  
+        list.prepend(li);  
+    }catch(e){ console.error(e); }  
+}  
 
-    snap.forEach(doc=>{
-        const d = doc.data();
-        students.push(d);
-
-        if(d.faceDescriptor){
-            labeled.push(
-                new faceapi.LabeledFaceDescriptors(
-                    d.name,
-                    [new Float32Array(d.faceDescriptor)]
-                )
-            );
-        }
-    });
-
-    faceMatcher = new faceapi.FaceMatcher(labeled, DISTANCE_THRESHOLD);
-}
-
-// 🔍 SCAN LOOP
-function startScan(){
-    setInterval(async ()=>{
-        if(!faceMatcher || busy) return;
-
-        const result = await faceapi
-            .detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
-        if(result){
-            const best = faceMatcher.findBestMatch(result.descriptor);
-            const dist = best.distance;
-
-            debugInfo.innerText = "Distance: " + dist.toFixed(2);
-
-            if(best.label !== "unknown" && dist < DISTANCE_THRESHOLD){
-
-                if(lastMatch === best.label){
-                    matchCount++;
-                } else {
-                    lastMatch = best.label;
-                    matchCount = 1;
-                }
-
-                if(matchCount >= REQUIRED_MATCHES){
-                    const student = students.find(s=>s.name === best.label);
-                    if(student){
-                        process(student);
-                    }
-                    matchCount = 0;
-                }
-
-            } else {
-                matchCount = 0;
-                lastMatch = null;
-                status.innerText = "❌ Unknown face";
-            }
-        }
-    },800);
-}
-
-// ✅ PROCESS MATCH
-async function process(student){
-    busy = true;
-
-    document.getElementById("profileCard").style.display = "block";
-    document.getElementById("resName").innerText = student.name;
-    document.getElementById("resLocation").innerText =
-        (student.district || "-");
-
-    document.getElementById("resStatus").innerText =
-        student.approved ? "✅ Approved" : "⚠️ Not Approved";
-
-    beep(student.approved);
-
-    if(student.approved){
-        await addDoc(collection(db,"attendance"),{
-            name: student.name,
-            time: serverTimestamp()
-        });
-
-        const li = document.createElement("li");
-        li.innerText = student.name + " ✔";
-        list.prepend(li);
-    }
-
-    let bar = document.getElementById("progressBar");
-    let wrap = document.getElementById("progressWrap");
-
-    wrap.style.display = "block";
-
-    let t = 0;
-    const timer = setInterval(()=>{
-        t += 100;
-        bar.style.width = (t/3000)*100 + "%";
-
-        if(t>=3000){
-            clearInterval(timer);
-            wrap.style.display = "none";
-            bar.style.width = "0%";
-            document.getElementById("profileCard").style.display = "none";
-            busy = false;
-        }
-    },100);
-}
-
-// 🚀 INIT SYSTEM
-async function init(){
-    status.innerText = "Loading AI...";
-    await loadModels();
-
-    status.innerText = "Loading students...";
-    await loadStudents();
-
-    await startCamera();
-
-    status.innerText = "✅ Ready - Look at camera";
-    startScan();
-}
-
-init();
-</script>
-
-</body>
+init();  
+</script>  
+</body>  
 </html>
