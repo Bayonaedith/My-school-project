@@ -1,269 +1,325 @@
 <!DOCTYPE html>
 <html lang="en">  
 <head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>NK Biometric Attendance</title>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>NK Biometric Attendance</title>  
 
-<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>  
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>  
 
-<style>  
-body {  
-    font-family: 'Segoe UI', sans-serif;  
-    background: #0a0f2c;  
-    color: #00f7ff;  
-    text-align: center;  
-    padding: 20px;  
-    overflow-x: hidden;  
-}  
+    <style>  
+        body {  
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
+            background: #0a0f2c;  
+            color: #00f7ff;  
+            text-align: center;  
+            padding: 20px;  
+            overflow-x: hidden;  
+        }  
 
-h2 { font-size: 2rem; color: #00f7ff; margin-bottom: 20px; }  
+        h2 { font-size: 2rem; color: #00f7ff; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,247,255,0.5); }  
 
-/* Video & scanner wrapper */  
-.video-wrapper { position: relative; display: inline-block; width: 400px; height: 300px; }  
-video { width: 100%; height: 100%; border: 3px solid #00f7ff; border-radius: 12px; background: #000; box-shadow: 0 0 25px rgba(0,247,255,0.5); }  
+        .video-wrapper { 
+            position: relative; 
+            display: inline-block; 
+            width: 400px; 
+            height: 300px; 
+        }  
+        
+        video { 
+            width: 100%; 
+            height: 100%; 
+            border: 3px solid #00f7ff; 
+            border-radius: 12px; 
+            background: #000; 
+            box-shadow: 0 0 25px rgba(0,247,255,0.5); 
+            object-fit: cover;
+        }  
 
-/* Blueprint scanning overlay */  
-#scannerOverlay {  
-    position: absolute;  
-    width: 100%;  
-    height: 100%;  
-    top: 0; left: 0;  
-    pointer-events: none;  
-    border: 2px solid rgba(0,247,255,0.5);  
-    box-shadow: 0 0 20px rgba(0,247,255,0.3);  
-    border-radius: 12px;  
-    overflow: hidden;  
-}  
+        #scannerOverlay {  
+            position: absolute;  
+            width: 100%;  
+            height: 100%;  
+            top: 0; left: 0;  
+            pointer-events: none;  
+            border: 2px solid rgba(0,247,255,0.5);  
+            border-radius: 12px;  
+            overflow: hidden;  
+        }  
 
-#scannerLine {  
-    position: absolute;  
-    width: 100%;  
-    height: 2px;  
-    background: #00f7ff;  
-    animation: scan 2s linear infinite;  
-}  
+        #scannerLine {  
+            position: absolute;  
+            width: 100%;  
+            height: 2px;  
+            background: #00f7ff;  
+            box-shadow: 0 0 15px #00f7ff;
+            animation: scan 2s linear infinite;  
+        }  
 
-@keyframes scan {  
-    0% { top: 0%; }  
-    100% { top: 100%; }  
-}  
+        @keyframes scan {  
+            0% { top: 0%; }  
+            100% { top: 100%; }  
+        }  
 
-.progress-container {  
-    width: 400px; height: 10px; background: #1a264d; margin: 10px auto;  
-    border-radius: 5px; overflow: hidden; display: none;  
-}  
-#progressBar { width: 0%; height: 100%; background: #00f7ff; transition: width 0.1s linear; }  
+        .progress-container {  
+            width: 400px; height: 10px; background: #1a264d; margin: 15px auto;  
+            border-radius: 5px; overflow: hidden; display: none;  
+        }  
+        #progressBar { width: 0%; height: 100%; background: #00f7ff; transition: width 0.1s linear; }  
 
-#profileCard {  
-    max-width: 400px; margin: 20px auto; padding: 20px;  
-    background: rgba(0,247,255,0.05); border: 2px solid #00f7ff;  
-    border-radius: 12px; display: none;  
-    box-shadow: 0 0 20px #00f7ff;  
-    animation: glow 1.5s infinite alternate;  
-}  
+        #profileCard {  
+            max-width: 400px; margin: 20px auto; padding: 20px;  
+            background: rgba(0,247,255,0.1); border: 2px solid #00f7ff;  
+            border-radius: 12px; display: none;  
+            box-shadow: 0 0 20px #00f7ff;  
+            animation: glow 1.5s infinite alternate;  
+        }  
 
-@keyframes glow {  
-    0% { box-shadow: 0 0 10px #00f7ff; }  
-    100% { box-shadow: 0 0 25px #00f7ff; }  
-}  
+        @keyframes glow {  
+            0% { box-shadow: 0 0 5px #00f7ff; }  
+            100% { box-shadow: 0 0 20px #00f7ff; }  
+        }  
 
-.info-label { color: #00f7ff; font-size: 0.8rem; text-transform: uppercase; margin-top: 10px; }  
-.info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }  
+        .info-label { color: #aaa; font-size: 0.75rem; text-transform: uppercase; margin-top: 10px; }  
+        .info-value { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; color: #fff; }  
 
-#status { margin-top: 15px; font-size: 1.1rem; min-height: 1.5em; color: #00f7ff; }  
-#debugInfo { margin-top: 10px; font-size: 0.9rem; color: #ffaa00; }  
+        #status { margin-top: 15px; font-size: 1.1rem; min-height: 1.5em; font-weight: bold; }  
+        #debugInfo { margin-top: 10px; font-size: 0.8rem; color: #ffaa00; font-family: monospace; }  
 
-.log-container {  
-    margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px;  
-    border-radius: 10px; display: inline-block; min-width: 350px; text-align: left;  
-}  
-</style>  
+        .log-container {  
+            margin-top: 25px; background: rgba(255,255,255,0.05); padding: 15px;  
+            border-radius: 10px; display: inline-block; min-width: 350px; text-align: left;  
+            border: 1px solid rgba(0,247,255,0.2);
+        }  
+        #attendanceList li { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    </style>  
 </head>  
 
 <body>  
-<h2>⏱️ NK Biometric Attendance</h2>  
+    <h2>⏱️ NK Biometric Attendance</h2>  
 
-<div class="video-wrapper">  
-    <video id="video" autoplay muted playsinline></video>  
-    <div id="scannerOverlay"><div id="scannerLine"></div></div>  
-</div>  
+    <div class="video-wrapper">  
+        <video id="video" autoplay muted playsinline></video>  
+        <div id="scannerOverlay"><div id="scannerLine"></div></div>  
+    </div>  
 
-<div class="progress-container" id="progressWrap">  
-    <div id="progressBar"></div>  
-</div>  
+    <div class="progress-container" id="progressWrap">  
+        <div id="progressBar"></div>  
+    </div>  
 
-<p id="status">Initializing NK Upgrade...</p>  
-<p id="debugInfo"></p>  
+    <p id="status">Initializing Neural Networks...</p>  
+    <p id="debugInfo">System Offline</p>  
 
-<div id="profileCard">  
-    <div class="info-label">Student Name</div>  
-    <div id="resName" class="info-value">-</div>  
-    <div class="info-label">Location Details</div>  
-    <div id="resLocation" class="info-value">-</div>  
-    <div id="resStatus" style="margin-top: 10px; font-weight: bold;">-</div>  
-</div>  
+    <div id="profileCard">  
+        <div class="info-label">Student Name</div>  
+        <div id="resName" class="info-value">-</div>  
+        <div class="info-label">Location</div>  
+        <div id="resLocation" class="info-value">-</div>  
+        <div id="resStatus" style="margin-top: 15px; font-weight: bold; font-size: 1.1rem;">-</div>  
+    </div>  
 
-<div class="log-container">  
-    <h3>Recent Logs:</h3>  
-    <ul id="attendanceList" style="list-style: none; padding: 0;"></ul>  
-</div>  
+    <div class="log-container">  
+        <h3 style="margin-top:0;">Recent Logs:</h3>  
+        <ul id="attendanceList" style="list-style: none; padding: 0; margin:0;"></ul>  
+    </div>  
 
-<script type="module">  
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";  
-import { getFirestore, collection, getDocs, addDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";  
+    <script type="module">  
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";  
+        import { getFirestore, collection, getDocs, addDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";  
 
-const firebaseConfig = {  
-    apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",  
-    authDomain: "my-school-project-6e00c.firebaseapp.com",  
-    projectId: "my-school-project-6e00c",  
-    storageBucket: "my-school-project-6e00c.appspot.com",  
-    messagingSenderId: "14283853516",  
-    appId: "1:14283853516:web:c7999ae32d83166cb8bc69"  
-};  
+        const firebaseConfig = {  
+            apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",  
+            authDomain: "my-school-project-6e00c.firebaseapp.com",  
+            projectId: "my-school-project-6e00c",  
+            storageBucket: "my-school-project-6e00c.appspot.com",  
+            messagingSenderId: "14283853516",  
+            appId: "1:14283853516:web:c7999ae32d83166cb8bc69"  
+        };  
 
-const app = initializeApp(firebaseConfig);  
-const db = getFirestore(app);  
+        const app = initializeApp(firebaseConfig);  
+        const db = getFirestore(app);  
 
-const video = document.getElementById("video");  
-const status = document.getElementById("status");  
-const debugInfo = document.getElementById("debugInfo");  
-const list = document.getElementById("attendanceList");  
-const profileCard = document.getElementById("profileCard");  
-const progressBar = document.getElementById("progressBar");  
-const progressWrap = document.getElementById("progressWrap");  
+        const video = document.getElementById("video");  
+        const status = document.getElementById("status");  
+        const debugInfo = document.getElementById("debugInfo");  
+        const list = document.getElementById("attendanceList");  
+        const profileCard = document.getElementById("profileCard");  
+        const progressBar = document.getElementById("progressBar");  
+        const progressWrap = document.getElementById("progressWrap");  
 
-let faceMatcher = null;  
-let allStudentsData = [];  
-let isProcessing = false;  
+        let faceMatcher = null;  
+        let allStudentsData = [];  
+        let isProcessing = false;  
 
-const DISTANCE_THRESHOLD = 0.45;  
-const CONFIDENCE_MIN = 0.55;  
-const CONSECUTIVE_MATCHES_REQUIRED = 2;  
-let consecutiveMatches = 0;  
-let lastMatchName = null;  
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();  
+        // CONFIGURATION: Adjusting distance to 0.6 makes it more likely to recognize registered faces
+        const DISTANCE_THRESHOLD = 0.60;  
+        const CONSECUTIVE_MATCHES_REQUIRED = 2;  
+        let consecutiveMatches = 0;  
+        let lastMatchName = null;  
 
-function playSound(type){  
-const osc = audioCtx.createOscillator();  
-const gain = audioCtx.createGain();  
-    if(type==='success'){  
-        osc.type='sine'; osc.frequency.setValueAtTime(880,audioCtx.currentTime);  
-        osc.frequency.exponentialRampToValueAtTime(440,audioCtx.currentTime+0.1);  
-        gain.gain.setValueAtTime(0.1,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.2);  
-    }else{  
-        osc.type='sawtooth'; osc.frequency.setValueAtTime(150,audioCtx.currentTime);  
-        gain.gain.setValueAtTime(0.1,audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.3);  
-    }  
-    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.3);  
-}  
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();  
 
-async function init(){  
-    const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';  
-    await Promise.all([  
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),  
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),  
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)  
-    ]);  
-    await loadStudents();  
-    startCamera();  
-}  
-
-async function loadStudents(){  
-    status.innerText="Downloading student database...";  
-    const q = query(collection(db,"students"));  
-    const querySnapshot = await getDocs(q);  
-    const labeledDescriptors=[];  
-    querySnapshot.forEach(doc=>{  
-        const data=doc.data();  
-        allStudentsData.push(data);  
-        if(data.faceDescriptor){  
-            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name,[new Float32Array(data.faceDescriptor)]));  
+        function playSound(type){  
+            try {
+                const osc = audioCtx.createOscillator();  
+                const gain = audioCtx.createGain();  
+                if(type === 'success'){  
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);  
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); 
+                } else {  
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);  
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); 
+                }  
+                osc.connect(gain); gain.connect(audioCtx.destination); 
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);  
+            } catch(e) { console.log("Audio play failed"); }
         }  
-    });  
-    if(labeledDescriptors.length>0){  
-        faceMatcher=new faceapi.FaceMatcher(labeledDescriptors,DISTANCE_THRESHOLD);  
-        status.innerText="System Ready. Face the camera.";  
-    }else status.innerText="No students found!";  
-    startRecognitionLoop();  
-}  
 
-async function startCamera(){  
-    const stream=await navigator.mediaDevices.getUserMedia({video:{}});  
-    video.srcObject=stream;  
-}  
+        async function init(){  
+            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';  
+            try {
+                status.innerText = "Loading AI Models...";  
+                await Promise.all([  
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL), // Changed from Tiny for better recognition
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),  
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)  
+                ]);  
+                await loadStudents();  
+                await startCamera();  
+            } catch (err) {
+                status.innerText = "Model Load Error. Check Internet.";
+                console.error(err);
+            }
+        }  
 
-async function startRecognitionLoop(){  
-    setInterval(async()=>{  
-        if(!faceMatcher||isProcessing) return;  
-        const detection=await faceapi.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();  
-        if(detection){  
-            const bestMatch=faceMatcher.findBestMatch(detection.descriptor);  
-            const distance=bestMatch.distance;  
-            const confidence=(1-distance).toFixed(2);  
-            debugInfo.innerText=`Distance: ${distance.toFixed(3)} | Confidence: ${confidence}`;  
-            if(bestMatch.label!=='unknown'&&distance<DISTANCE_THRESHOLD&&confidence>=CONFIDENCE_MIN){  
-                if(lastMatchName===bestMatch.label) consecutiveMatches++; else { consecutiveMatches=1; lastMatchName=bestMatch.label; }  
-                if(consecutiveMatches>=CONSECUTIVE_MATCHES_REQUIRED){  
-                    const studentInfo=allStudentsData.find(s=>s.name===bestMatch.label);  
-                    if(studentInfo){  
-                        if(studentInfo.approved) handleMatch(studentInfo,true);  
-                        else handleMatch(studentInfo,false);  
-                        consecutiveMatches=0; lastMatchName=null;  
+        async function loadStudents(){  
+            status.innerText = "Downloading student database...";  
+            try {
+                const q = query(collection(db, "students"));  
+                const querySnapshot = await getDocs(q);  
+                const labeledDescriptors = [];  
+                
+                allStudentsData = [];
+                querySnapshot.forEach(doc => {  
+                    const data = doc.data();  
+                    if(data.faceDescriptor){  
+                        allStudentsData.push(data);  
+                        // Ensure descriptor is a Float32Array before feeding to FaceMatcher
+                        labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));  
                     }  
-                }  
-            }else{  
-                consecutiveMatches=0; lastMatchName=null;  
-                if(detection&&distance>=DISTANCE_THRESHOLD){  
-                    status.innerText=`❌ Unknown Face`;  
-                    playSound('error');  
-                    isProcessing=true;  
-                    setTimeout(()=>{ window.location.href='registration.html'; },2000);  
-                }  
-            }  
+                });  
+
+                if(labeledDescriptors.length > 0){  
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);  
+                    status.innerText = "System Ready. Face the camera.";  
+                } else {
+                    status.innerText = "No registered students found!";  
+                }
+                startRecognitionLoop();  
+            } catch (e) {
+                status.innerText = "Database Connection Error.";
+            }
         }  
-    },800);  
-}  
 
-async function handleMatch(info,approved){  
-    isProcessing=true;  
-    playSound(approved?'success':'error');  
-    document.getElementById("resName").innerText=info.name;  
-    document.getElementById("resLocation").innerText=`${info.country||'-'} / ${info.district||'-'} / ${info.village||'-'}`;  
-    document.getElementById("resStatus").innerText=approved?"✅ Attendance Marked":"⚠️ Not Approved";  
-    profileCard.style.display="block";  
-    if(approved) await markAttendance(info);  
+        async function startCamera(){  
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });  
+                video.srcObject = stream;  
+            } catch (err) {
+                status.innerText = "Camera Access Denied.";
+            }
+        }  
 
-    progressWrap.style.display="block";  
-    let timeLeft=0;  
-    const duration=4000, interval=100;  
-    const timer=setInterval(()=>{  
-        timeLeft+=interval;  
-        const percent=(timeLeft/duration)*100;  
-        progressBar.style.width=percent+"%";  
-        if(timeLeft>=duration){ clearInterval(timer); resetScanner(); }  
-    },interval);  
-}  
+        async function startRecognitionLoop(){  
+            setInterval(async () => {  
+                if(!faceMatcher || isProcessing) return;  
 
-function resetScanner(){  
-    isProcessing=false;  
-    progressWrap.style.display="none";  
-    progressBar.style.width="0%";  
-    profileCard.style.display="none";  
-    status.innerText="Ready for next student...";  
-}  
+                // Using SSD MobileNet for better accuracy
+                const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();  
+                
+                if(detection){  
+                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);  
+                    const distance = bestMatch.distance;  
+                    debugInfo.innerText = `ID: ${bestMatch.label} | Euclidean Distance: ${distance.toFixed(3)}`;  
 
-async function markAttendance(info){  
-    try{  
-        await addDoc(collection(db,"attendance"),{ studentName:info.name, district:info.district, time:serverTimestamp() });  
-        const li=document.createElement("li");  
-        li.innerHTML=`✅ <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;  
-        if(list.children.length>5) list.lastChild.remove();  
-        list.prepend(li);  
-    }catch(e){ console.error(e); }  
-}  
+                    if(bestMatch.label !== 'unknown' && distance < DISTANCE_THRESHOLD){  
+                        if(lastMatchName === bestMatch.label) {
+                            consecutiveMatches++; 
+                        } else { 
+                            consecutiveMatches = 1; 
+                            lastMatchName = bestMatch.label; 
+                        }  
 
-init();  
-</script>  
+                        if(consecutiveMatches >= CONSECUTIVE_MATCHES_REQUIRED){  
+                            const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);  
+                            if(studentInfo){  
+                                handleMatch(studentInfo, true); // Assume true if in DB; or check studentInfo.approved
+                                consecutiveMatches = 0; 
+                            }  
+                        }  
+                    } else {  
+                        // Face is detected but not recognized
+                        consecutiveMatches = 0;  
+                        status.innerText = "Scanning... User unknown.";
+                    }  
+                } else {
+                    status.innerText = "Looking for face...";
+                    debugInfo.innerText = "No Face Detected";
+                }  
+            }, 700);  
+        }  
+
+        async function handleMatch(info, approved){  
+            isProcessing = true;  
+            playSound(approved ? 'success' : 'error');  
+            
+            document.getElementById("resName").innerText = info.name;  
+            document.getElementById("resLocation").innerText = `${info.district || 'N/A'} / ${info.village || 'N/A'}`;  
+            document.getElementById("resStatus").innerText = approved ? "✅ ATTENDANCE MARKED" : "⚠️ NOT APPROVED";  
+            document.getElementById("resStatus").style.color = approved ? "#00f7ff" : "#ff4444";
+            
+            profileCard.style.display = "block";  
+            if(approved) await markAttendance(info);  
+
+            progressWrap.style.display = "block";  
+            let timeLeft = 0;  
+            const duration = 4000; 
+            const interval = 100;  
+            const timer = setInterval(() => {  
+                timeLeft += interval;  
+                const percent = (timeLeft / duration) * 100;  
+                progressBar.style.width = percent + "%";  
+                if(timeLeft >= duration){ 
+                    clearInterval(timer); 
+                    resetScanner(); 
+                }  
+            }, interval);  
+        }  
+
+        function resetScanner(){  
+            isProcessing = false;  
+            progressWrap.style.display = "none";  
+            progressBar.style.width = "0%";  
+            profileCard.style.display = "none";  
+            status.innerText = "Ready for next student...";  
+            lastMatchName = null;
+        }  
+
+        async function markAttendance(info){  
+            try {  
+                await addDoc(collection(db, "attendance"), { 
+                    studentName: info.name, 
+                    district: info.district || "Unknown", 
+                    time: serverTimestamp() 
+                });  
+                const li = document.createElement("li");  
+                li.innerHTML = `✅ <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;  
+                if(list.children.length > 5) list.lastChild.remove();  
+                list.prepend(li);  
+            } catch(e) { console.error("Log failed:", e); }  
+        }  
+
+        init();  
+    </script>  
 </body>  
-    </html>
+</html>
