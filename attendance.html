@@ -8,90 +8,21 @@
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>  
 
     <style>  
-        body {  
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
-            background: #0a0f2c;  
-            color: #00f7ff;  
-            text-align: center;  
-            padding: 20px;  
-            overflow-x: hidden;  
-        }  
-
-        h2 { font-size: 2rem; color: #00f7ff; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,247,255,0.5); }  
-
-        .video-wrapper { 
-            position: relative; 
-            display: inline-block; 
-            width: 400px; 
-            height: 300px; 
-        }  
-        
-        video { 
-            width: 100%; 
-            height: 100%; 
-            border: 3px solid #00f7ff; 
-            border-radius: 12px; 
-            background: #000; 
-            box-shadow: 0 0 25px rgba(0,247,255,0.5); 
-            object-fit: cover;
-        }  
-
-        #scannerOverlay {  
-            position: absolute;  
-            width: 100%;  
-            height: 100%;  
-            top: 0; left: 0;  
-            pointer-events: none;  
-            border: 2px solid rgba(0,247,255,0.5);  
-            border-radius: 12px;  
-            overflow: hidden;  
-        }  
-
-        #scannerLine {  
-            position: absolute;  
-            width: 100%;  
-            height: 2px;  
-            background: #00f7ff;  
-            box-shadow: 0 0 15px #00f7ff;
-            animation: scan 2s linear infinite;  
-        }  
-
-        @keyframes scan {  
-            0% { top: 0%; }  
-            100% { top: 100%; }  
-        }  
-
-        .progress-container {  
-            width: 400px; height: 10px; background: #1a264d; margin: 15px auto;  
-            border-radius: 5px; overflow: hidden; display: none;  
-        }  
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0f2c; color: #00f7ff; text-align: center; padding: 20px; }  
+        h2 { font-size: 1.8rem; margin-bottom: 15px; text-shadow: 0 0 10px #00f7ff; }  
+        .video-wrapper { position: relative; display: inline-block; width: 100%; max-width: 400px; aspect-ratio: 4/3; }  
+        video { width: 100%; height: 100%; border: 3px solid #00f7ff; border-radius: 12px; background: #000; object-fit: cover; }  
+        #scannerOverlay { position: absolute; width: 100%; height: 100%; top: 0; left: 0; border-radius: 12px; overflow: hidden; pointer-events: none; }  
+        #scannerLine { position: absolute; width: 100%; height: 2px; background: #00f7ff; box-shadow: 0 0 15px #00f7ff; animation: scan 2s linear infinite; }  
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }  
+        .progress-container { width: 100%; max-width: 400px; height: 10px; background: #1a264d; margin: 15px auto; border-radius: 5px; display: none; overflow: hidden; }  
         #progressBar { width: 0%; height: 100%; background: #00f7ff; transition: width 0.1s linear; }  
-
-        #profileCard {  
-            max-width: 400px; margin: 20px auto; padding: 20px;  
-            background: rgba(0,247,255,0.1); border: 2px solid #00f7ff;  
-            border-radius: 12px; display: none;  
-            box-shadow: 0 0 20px #00f7ff;  
-            animation: glow 1.5s infinite alternate;  
-        }  
-
-        @keyframes glow {  
-            0% { box-shadow: 0 0 5px #00f7ff; }  
-            100% { box-shadow: 0 0 20px #00f7ff; }  
-        }  
-
-        .info-label { color: #aaa; font-size: 0.75rem; text-transform: uppercase; margin-top: 10px; }  
-        .info-value { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; color: #fff; }  
-
-        #status { margin-top: 15px; font-size: 1.1rem; min-height: 1.5em; font-weight: bold; }  
-        #debugInfo { margin-top: 10px; font-size: 0.8rem; color: #ffaa00; font-family: monospace; }  
-
-        .log-container {  
-            margin-top: 25px; background: rgba(255,255,255,0.05); padding: 15px;  
-            border-radius: 10px; display: inline-block; min-width: 350px; text-align: left;  
-            border: 1px solid rgba(0,247,255,0.2);
-        }  
-        #attendanceList li { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        #profileCard { max-width: 400px; margin: 20px auto; padding: 20px; background: rgba(0,247,255,0.1); border: 2px solid #00f7ff; border-radius: 12px; display: none; }  
+        .info-label { color: #aaa; font-size: 0.7rem; text-transform: uppercase; }  
+        .info-value { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #fff; }  
+        #status { margin-top: 15px; font-weight: bold; }  
+        #debugInfo { margin-top: 5px; font-size: 0.8rem; color: #ffaa00; font-family: monospace; }  
+        .log-container { margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: left; max-width: 400px; margin-inline: auto; }  
     </style>  
 </head>  
 
@@ -107,20 +38,20 @@
         <div id="progressBar"></div>  
     </div>  
 
-    <p id="status">Initializing Neural Networks...</p>  
-    <p id="debugInfo">System Offline</p>  
+    <p id="status">Loading AI Engine...</p>  
+    <p id="debugInfo">Initializing...</p>  
 
     <div id="profileCard">  
         <div class="info-label">Student Name</div>  
         <div id="resName" class="info-value">-</div>  
         <div class="info-label">Location</div>  
         <div id="resLocation" class="info-value">-</div>  
-        <div id="resStatus" style="margin-top: 15px; font-weight: bold; font-size: 1.1rem;">-</div>  
+        <div id="resStatus" style="font-weight: bold;">-</div>  
     </div>  
 
     <div class="log-container">  
-        <h3 style="margin-top:0;">Recent Logs:</h3>  
-        <ul id="attendanceList" style="list-style: none; padding: 0; margin:0;"></ul>  
+        <h3 style="margin:0 0 10px 0; font-size: 1rem;">Recent Logs:</h3>  
+        <ul id="attendanceList" style="list-style: none; padding: 0; margin: 0; font-size: 0.9rem;"></ul>  
     </div>  
 
     <script type="module">  
@@ -151,172 +82,128 @@
         let allStudentsData = [];  
         let isProcessing = false;  
 
-        // CONFIGURATION: Adjusting distance to 0.6 makes it more likely to recognize registered faces
+        // CONFIG: 0.6 is the best balance for African lighting/skin tones in face-api.js
         const DISTANCE_THRESHOLD = 0.60;  
-        const CONSECUTIVE_MATCHES_REQUIRED = 2;  
-        let consecutiveMatches = 0;  
-        let lastMatchName = null;  
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();  
-
-        function playSound(type){  
-            try {
-                const osc = audioCtx.createOscillator();  
-                const gain = audioCtx.createGain();  
-                if(type === 'success'){  
-                    osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);  
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); 
-                } else {  
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);  
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); 
-                }  
-                osc.connect(gain); gain.connect(audioCtx.destination); 
-                osc.start(); osc.stop(audioCtx.currentTime + 0.2);  
-            } catch(e) { console.log("Audio play failed"); }
-        }  
+        const MATCH_SAMPLES = 2;  
+        let matchCounter = 0;  
+        let currentMatchLabel = null;  
 
         async function init(){  
-            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';  
+            // Using a more reliable model source to prevent "System Offline" errors
+            const MODEL_URL = 'https://raw.githubusercontent.com/vladmandic/face-api/master/model/';  
+            
             try {
                 status.innerText = "Loading AI Models...";  
                 await Promise.all([  
-                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL), // Changed from Tiny for better recognition
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL), 
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),  
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)  
                 ]);  
+                
+                debugInfo.innerText = "Models OK. Syncing Database...";
                 await loadStudents();  
                 await startCamera();  
             } catch (err) {
-                status.innerText = "Model Load Error. Check Internet.";
-                console.error(err);
+                status.innerText = "⚠️ System Offline";
+                debugInfo.innerText = "Error: " + err.message;
             }
         }  
 
         async function loadStudents(){  
-            status.innerText = "Downloading student database...";  
             try {
                 const q = query(collection(db, "students"));  
-                const querySnapshot = await getDocs(q);  
-                const labeledDescriptors = [];  
-                
+                const snap = await getDocs(q);  
+                const descriptors = [];  
                 allStudentsData = [];
-                querySnapshot.forEach(doc => {  
+
+                snap.forEach(doc => {  
                     const data = doc.data();  
-                    if(data.faceDescriptor){  
+                    if(data.faceDescriptor && Array.isArray(data.faceDescriptor)){  
                         allStudentsData.push(data);  
-                        // Ensure descriptor is a Float32Array before feeding to FaceMatcher
-                        labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));  
+                        descriptors.push(new faceapi.LabeledFaceDescriptors(data.name, [new Float32Array(data.faceDescriptor)]));  
                     }  
                 });  
 
-                if(labeledDescriptors.length > 0){  
-                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);  
-                    status.innerText = "System Ready. Face the camera.";  
+                if(descriptors.length > 0){  
+                    faceMatcher = new faceapi.FaceMatcher(descriptors, DISTANCE_THRESHOLD);  
+                    status.innerText = "System Ready. Align Face.";  
+                    debugInfo.innerText = `${descriptors.length} Students Loaded`;
                 } else {
-                    status.innerText = "No registered students found!";  
+                    status.innerText = "No Students Found.";
                 }
-                startRecognitionLoop();  
+                runRecognition();  
             } catch (e) {
-                status.innerText = "Database Connection Error.";
+                debugInfo.innerText = "DB Error: " + e.message;
             }
         }  
 
         async function startCamera(){  
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });  
-                video.srcObject = stream;  
-            } catch (err) {
-                status.innerText = "Camera Access Denied.";
-            }
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });  
+            video.srcObject = stream;  
         }  
 
-        async function startRecognitionLoop(){  
+        async function runRecognition(){  
             setInterval(async () => {  
                 if(!faceMatcher || isProcessing) return;  
 
-                // Using SSD MobileNet for better accuracy
                 const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();  
                 
                 if(detection){  
-                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);  
-                    const distance = bestMatch.distance;  
-                    debugInfo.innerText = `ID: ${bestMatch.label} | Euclidean Distance: ${distance.toFixed(3)}`;  
+                    const match = faceMatcher.findBestMatch(detection.descriptor);  
+                    debugInfo.innerText = `Dist: ${match.distance.toFixed(3)} | User: ${match.label}`;
 
-                    if(bestMatch.label !== 'unknown' && distance < DISTANCE_THRESHOLD){  
-                        if(lastMatchName === bestMatch.label) {
-                            consecutiveMatches++; 
-                        } else { 
-                            consecutiveMatches = 1; 
-                            lastMatchName = bestMatch.label; 
-                        }  
+                    if(match.label !== 'unknown' && match.distance < DISTANCE_THRESHOLD){  
+                        if(currentMatchLabel === match.label) matchCounter++; else { matchCounter = 1; currentMatchLabel = match.label; }
 
-                        if(consecutiveMatches >= CONSECUTIVE_MATCHES_REQUIRED){  
-                            const studentInfo = allStudentsData.find(s => s.name === bestMatch.label);  
-                            if(studentInfo){  
-                                handleMatch(studentInfo, true); // Assume true if in DB; or check studentInfo.approved
-                                consecutiveMatches = 0; 
-                            }  
+                        if(matchCounter >= MATCH_SAMPLES){  
+                            const student = allStudentsData.find(s => s.name === match.label);  
+                            if(student) handleSuccess(student);  
+                            matchCounter = 0;  
                         }  
-                    } else {  
-                        // Face is detected but not recognized
-                        consecutiveMatches = 0;  
-                        status.innerText = "Scanning... User unknown.";
-                    }  
+                    } else {
+                        status.innerText = "Unknown face or too far.";
+                        matchCounter = 0;
+                    }
                 } else {
                     status.innerText = "Looking for face...";
-                    debugInfo.innerText = "No Face Detected";
                 }  
-            }, 700);  
+            }, 600);  
         }  
 
-        async function handleMatch(info, approved){  
+        async function handleSuccess(info){  
             isProcessing = true;  
-            playSound(approved ? 'success' : 'error');  
-            
+            status.innerText = "MATCH FOUND!";
             document.getElementById("resName").innerText = info.name;  
-            document.getElementById("resLocation").innerText = `${info.district || 'N/A'} / ${info.village || 'N/A'}`;  
-            document.getElementById("resStatus").innerText = approved ? "✅ ATTENDANCE MARKED" : "⚠️ NOT APPROVED";  
-            document.getElementById("resStatus").style.color = approved ? "#00f7ff" : "#ff4444";
-            
+            document.getElementById("resLocation").innerText = `${info.district || '-'} / ${info.village || '-'}`;  
+            document.getElementById("resStatus").innerText = "✅ ATTENDANCE MARKED";  
             profileCard.style.display = "block";  
-            if(approved) await markAttendance(info);  
+            
+            await markAttendance(info);  
 
             progressWrap.style.display = "block";  
-            let timeLeft = 0;  
-            const duration = 4000; 
-            const interval = 100;  
+            let progress = 0;  
             const timer = setInterval(() => {  
-                timeLeft += interval;  
-                const percent = (timeLeft / duration) * 100;  
-                progressBar.style.width = percent + "%";  
-                if(timeLeft >= duration){ 
+                progress += 5;  
+                progressBar.style.width = progress + "%";  
+                if(progress >= 100){ 
                     clearInterval(timer); 
-                    resetScanner(); 
+                    isProcessing = false;
+                    progressWrap.style.display = "none";
+                    progressBar.style.width = "0%";
+                    profileCard.style.display = "none";
+                    status.innerText = "Ready for next student...";
                 }  
-            }, interval);  
-        }  
-
-        function resetScanner(){  
-            isProcessing = false;  
-            progressWrap.style.display = "none";  
-            progressBar.style.width = "0%";  
-            profileCard.style.display = "none";  
-            status.innerText = "Ready for next student...";  
-            lastMatchName = null;
+            }, 100);  
         }  
 
         async function markAttendance(info){  
             try {  
-                await addDoc(collection(db, "attendance"), { 
-                    studentName: info.name, 
-                    district: info.district || "Unknown", 
-                    time: serverTimestamp() 
-                });  
+                await addDoc(collection(db, "attendance"), { studentName: info.name, time: serverTimestamp() });  
                 const li = document.createElement("li");  
-                li.innerHTML = `✅ <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;  
-                if(list.children.length > 5) list.lastChild.remove();  
+                li.innerHTML = `• <strong>${info.name}</strong> - ${new Date().toLocaleTimeString()}`;  
                 list.prepend(li);  
-            } catch(e) { console.error("Log failed:", e); }  
+                if(list.children.length > 5) list.lastChild.remove();  
+            } catch(e) { console.error(e); }  
         }  
 
         init();  
