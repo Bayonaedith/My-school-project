@@ -1,230 +1,311 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Object & Face Detection</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Object & Face Detection</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<!-- Face API -->
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{
-            background:linear-gradient(135deg,#0b1220,#1a2d4d);
-            font-family:'Segoe UI',sans-serif;
-            color:#0ff;
-            text-align:center;
-            padding:10px;
-            min-height:100vh;
-        }
-        h1{font-size:1.2rem;letter-spacing:2px;margin:10px 0;text-transform:uppercase;color:#ffcc00;}
-        .scanner-box{position:relative;width:150px;height:150px;border:2px solid #00f7ff;border-radius:50%;margin:auto;overflow:hidden;background:#000;box-shadow:0 0 15px rgba(0,247,255,0.3);}
-        video{width:100%;height:100%;object-fit:cover;}
-        .scan-line{position:absolute;width:100%;height:2px;background:#00f7ff;animation:scan 2s linear infinite;}
-        @keyframes scan{0%{top:0}100%{top:100%}}
-        .reg-container{max-width:320px;margin:auto;background:rgba(255,255,255,0.05);padding:20px;border-radius:12px;border:1px solid rgba(0,247,255,0.3);}
-        input{width:100%;padding:12px;margin-top:6px;margin-bottom:8px;background:#1a264d;border:1px solid #00f7ff;color:#fff;border-radius:6px;}
-        button{width:100%;padding:14px;background:#00f7ff;border:none;border-radius:6px;font-weight:bold;margin-top:10px;cursor:pointer;}
-        #status-msg{margin-top:10px;font-size:13px; min-height: 1.2em;}
-        .success{color:#00ff9c;}
-        .error{color:#ff4444;}
-    </style>
+<!-- TensorFlow & Coco-SSD -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+background:linear-gradient(135deg,#0b1220,#1a2d4d);
+font-family:'Segoe UI',sans-serif;
+color:#0ff;
+text-align:center;
+padding:10px;
+min-height:100vh;
+}
+h1{font-size:1.2rem;letter-spacing:2px;margin:10px 0;text-transform:uppercase;color:#ffcc00;}
+.scanner-box{position:relative;width:150px;height:150px;border:2px solid #00f7ff;border-radius:50%;margin:auto;overflow:hidden;background:#000;box-shadow:0 0 15px rgba(0,247,255,0.3);}
+video{width:100%;height:100%;object-fit:cover;}
+.scan-line{position:absolute;width:100%;height:2px;background:#00f7ff;animation:scan 2s linear infinite;}
+@keyframes scan{0%{top:0}100%{top:100%}}
+.reg-container{max-width:320px;margin:auto;background:rgba(255,255,255,0.05);padding:20px;border-radius:12px;border:1px solid rgba(0,247,255,0.3);}
+input{width:100%;padding:12px;margin-top:6px;margin-bottom:8px;background:#1a264d;border:1px solid #00f7ff;color:#fff;border-radius:6px;}
+button{width:100%;padding:14px;background:#00f7ff;border:none;border-radius:6px;font-weight:bold;margin-top:10px;}
+#status-msg{margin-top:10px;font-size:13px;min-height:60px;overflow-y:auto;max-height:200px;}
+.success{color:#00ff9c;}
+.error{color:#ff4444;}
+.info{color:#00d4ff;}
+</style>
 </head>
 <body>
 
 <h1>AI Object & Biometric Detection</h1>
 
 <div class="reg-container">
-    <div class="scanner-box">
-        <video id="video" autoplay muted playsinline></video>
-        <div class="scan-line"></div>
-    </div>
 
-    <input id="name" placeholder="Full Name">
-    <input id="country" placeholder="Country">
-    <input id="district" placeholder="District">
-    <input id="village" placeholder="Village">
+<div class="scanner-box">
+<video id="video" autoplay muted playsinline></video>
+<div class="scan-line"></div>
+</div>
 
-    <button id="regBtn">Register Face</button>
-    <div id="status-msg"></div>
+<input id="name" placeholder="Full Name">
+<input id="country" placeholder="Country">
+<input id="district" placeholder="District">
+<input id="village" placeholder="Village">
+
+<button id="regBtn">Register Face</button>
+
+<div id="status-msg"></div>
+
 </div>
 
 <script type="module">
-    // Firebase imports
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Firebase config
-    const firebaseConfig = {
-        apiKey: "AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
-        authDomain: "my-school-project-6e00c.firebaseapp.com",
-        projectId: "my-school-project-6e00c",
-        storageBucket: "my-school-project-6e00c.appspot.com",
-        messagingSenderId: "14283853516",
-        appId: "1:14283853516:web:c7999ae32d83166cb8bc69"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+// Firebase imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const video = document.getElementById("video");
-    const regBtn = document.getElementById("regBtn");
-    const msg = document.getElementById("status-msg");
+// Firebase config
+const firebaseConfig={
+apiKey:"AIzaSyCIu9Gi-TGqdjCsCxsyxyq1qV23pxVHOaI",
+authDomain:"my-school-project-6e00c.firebaseapp.com",
+projectId:"my-school-project-6e00c",
+storageBucket:"my-school-project-6e00c.appspot.com",
+messagingSenderId:"14283853516",
+appId:"1:14283853516:web:c7999ae32d83166cb8bc69"
+};
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-    const DISTANCE_THRESHOLD = 0.45;
-    const CONFIDENCE_MIN = 0.55;
-    const CONSECUTIVE_MATCHES_REQUIRED = 2;
+// DOM elements
+const video=document.getElementById("video");
+const regBtn=document.getElementById("regBtn");
+const msg=document.getElementById("status-msg");
 
-    let consecutiveMatches = 0;
-    let lastMatchName = null;
-    let faceAlreadyRegistered = false;
-    let objectModel = null;
+// Face API stability constants
+const DISTANCE_THRESHOLD = 0.45;
+const CONFIDENCE_MIN = 0.55;
+const CONSECUTIVE_MATCHES_REQUIRED = 2;
 
-    function status(text, type = "") {
-        msg.textContent = text;
-        msg.className = type;
-    }
+let consecutiveMatches = 0;
+let lastMatchName = null;
+let faceAlreadyRegistered=false;
+let detectionInProgress = false;
 
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user", width: 480, height: 480 } 
-            });
-            video.srcObject = stream;
-        } catch (err) {
-            status("Camera access denied", "error");
-        }
-    }
+// Status message helper
+function status(text, type=""){
+  msg.textContent=text;
+  msg.className=type;
+}
 
-    async function loadModels() {
-        const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
-        await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        ]);
-        objectModel = await cocoSsd.load();
-    }
+// Append to status (for multiple detections)
+function appendStatus(text, type=""){
+  msg.innerHTML += `<div class="${type}">${text}</div>`;
+}
 
-    async function checkExistingFace(descriptor) {
-        const snapshot = await getDocs(collection(db, "students"));
-        for (const doc of snapshot.docs) {
-            const data = doc.data();
-            if (!data.faceDescriptor) continue;
-            const saved = new Float32Array(data.faceDescriptor);
-            const distance = faceapi.euclideanDistance(descriptor, saved);
-            
-            if (distance < DISTANCE_THRESHOLD) {
-                if (lastMatchName === data.name) { 
-                    consecutiveMatches++; 
-                } else { 
-                    lastMatchName = data.name; 
-                    consecutiveMatches = 1; 
-                }
-                if (consecutiveMatches >= CONSECUTIVE_MATCHES_REQUIRED) return true;
-            }
-        }
-        return false;
-    }
+// Start camera
+async function startCamera(){
+  const stream=await navigator.mediaDevices.getUserMedia({ video:{facingMode:"user",width:480,height:480}});
+  video.srcObject=stream;
+}
 
-    function explainObject(prediction) {
-        const label = prediction.class;
-        const score = (prediction.score * 100).toFixed(0);
-        let explanation = `I see a ${label} (${score}%)`;
+// Load models
+async function loadModels(){
+  const MODEL_URL="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+  ]);
+  window.objectModel = await cocoSsd.load(); // load Coco-SSD
+}
+
+// Check existing face in Firebase
+async function checkExistingFace(descriptor){
+  const snapshot=await getDocs(collection(db,"students"));
+  for(const doc of snapshot.docs){
+    const data=doc.data();
+    if(!data.faceDescriptor) continue;
+    const saved=new Float32Array(data.faceDescriptor);
+    const distance=faceapi.euclideanDistance(descriptor,saved);
+    const confidence=1-distance;
+    if(distance<DISTANCE_THRESHOLD && confidence>CONFIDENCE_MIN){
+      if(lastMatchName===data.name){ consecutiveMatches++; }
+      else { lastMatchName=data.name; consecutiveMatches=1; }
+      if(consecutiveMatches>=CONSECUTIVE_MATCHES_REQUIRED){
+        return { found: true, name: data.name };
+      }
+    } else { consecutiveMatches=0; lastMatchName=null; }
+  }
+  return { found: false };
+}
+
+// Detailed object explanation
+function explainObject(prediction){
+  const label = prediction.class;
+  const score = (prediction.score*100).toFixed(1);
+  let explanation = `📍 Detected: <strong>${label.toUpperCase()}</strong> (${score}% confidence)`;
+  
+  switch(label.toLowerCase()){
+    case 'bottle': explanation += " → A drinking bottle or container"; break;
+    case 'chair': explanation += " → A seating furniture"; break;
+    case 'cup': explanation += " → A drinking cup or mug"; break;
+    case 'keyboard': explanation += " → A computer keyboard"; break;
+    case 'mouse': explanation += " → A computer mouse"; break;
+    case 'person': explanation += " → <strong>HUMAN DETECTED!</strong> Checking face registration..."; break;
+    case 'dog': explanation += " → A dog animal"; break;
+    case 'cat': explanation += " → A cat animal"; break;
+    case 'cell phone': explanation += " → A mobile phone device"; break;
+    case 'car': explanation += " → A vehicle/car"; break;
+    case 'book': explanation += " → A book or paper material"; break;
+    case 'backpack': explanation += " → A bag or backpack"; break;
+    default: explanation += ` → An interesting ${label} object detected`; break;
+  }
+  return explanation;
+}
+
+// Auto scan for objects & humans
+async function detectFrame(){
+  if(!window.objectModel) {
+    requestAnimationFrame(detectFrame);
+    return;
+  }
+  
+  try{
+    const predictions = await window.objectModel.detect(video);
+    
+    if(predictions.length > 0){
+      msg.innerHTML = ""; // Clear previous detections
+      let humanDetected = false;
+      
+      // Display all detected objects
+      for(const p of predictions){
+        const explanation = explainObject(p);
+        appendStatus(explanation, 'info');
         
-        switch(label) {
-            case 'person': explanation = "Human detected. Scanning face..."; break;
-            case 'cell phone': explanation = "Please put away the phone"; break;
+        if(p.class === 'person'){
+          humanDetected = true;
         }
-        status(explanation, 'success');
-        return label;
+      }
+      
+      // If human detected, trigger face recognition
+      if(humanDetected && !detectionInProgress){
+        detectionInProgress = true;
+        await triggerFaceRegistration();
+        detectionInProgress = false;
+      }
+    } else {
+      msg.innerHTML = '<div class="info">📷 No objects detected. Please position yourself in the camera view.</div>';
     }
+  } catch(e){
+    console.error("Detection error:", e);
+  }
+  
+  requestAnimationFrame(detectFrame);
+}
 
-    async function detectFrame() {
-        if (!objectModel || faceAlreadyRegistered) return;
-
-        const predictions = await objectModel.detect(video);
-        let personFound = false;
-
-        if (predictions.length > 0) {
-            for (const p of predictions) {
-                const label = explainObject(p);
-                if (label === 'person') {
-                    personFound = true;
-                    await triggerFaceRegistration();
-                }
-            }
-        }
-        
-        // Loop the detection
-        requestAnimationFrame(detectFrame);
+// Trigger registration when human detected
+async function triggerFaceRegistration(){
+  try{
+    const detection = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    
+    if(!detection){
+      appendStatus("❌ Face not clearly detected", 'error');
+      return;
     }
-
-    async function triggerFaceRegistration() {
-        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
-        if (!detection) return;
-
-        const exists = await checkExistingFace(detection.descriptor);
-        if (exists) {
-            faceAlreadyRegistered = true;
-            status("Identity Verified! Redirecting...", "success");
-            setTimeout(() => { window.location.href = "attendance.html"; }, 2000);
-        } else {
-            status("New user? Please fill the form.", "success");
-        }
+    
+    const descriptor = detection.descriptor;
+    const result = await checkExistingFace(descriptor);
+    
+    if(result.found){
+      faceAlreadyRegistered=true;
+      appendStatus(`✅ Welcome back, ${result.name}! Face matched in database.`, 'success');
+      appendStatus("Redirecting to attendance in 2 seconds...", 'success');
+      setTimeout(()=>{ window.location.href="attendance.html"; }, 2000);
+    } else {
+      appendStatus("✨ New face detected! Please fill the form to register.", 'success');
     }
+  } catch(e){
+    console.error("Face registration error:", e);
+    appendStatus("⚠️ Error during face analysis", 'error');
+  }
+}
 
-    regBtn.onclick = async () => {
-        const name = document.getElementById("name").value.trim();
-        const country = document.getElementById("country").value.trim();
-        const district = document.getElementById("district").value.trim();
-        const village = document.getElementById("village").value.trim();
-
-        if (!name || !country || !district || !village) {
-            status("Fill all fields", "error");
-            return;
-        }
-
-        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
-        if (!detection) {
-            status("Face not clear. Adjust lighting.", "error");
-            return;
-        }
-
-        try {
-            await addDoc(collection(db, "students"), {
-                name, country, district, village,
-                faceDescriptor: Array.from(detection.descriptor),
-                createdAt: serverTimestamp()
-            });
-            status("Registration successful!", "success");
-            faceAlreadyRegistered = true;
-        } catch (e) {
-            status("Database error", "error");
-        }
-    };
-
-    async function init() {
-        status("Waking up AI...");
-        try {
-            await loadModels();
-            await startCamera();
-            status("System Online");
-            detectFrame();
-        } catch (e) {
-            status("Init Failed: Check connection", "error");
-        }
+// Manual registration button
+regBtn.onclick = async ()=>{
+  if(faceAlreadyRegistered){ 
+    status("Already registered", 'error'); 
+    return; 
+  }
+  
+  const name=document.getElementById("name").value.trim();
+  const country=document.getElementById("country").value.trim();
+  const district=document.getElementById("district").value.trim();
+  const village=document.getElementById("village").value.trim();
+  
+  if(!name||!country||!district||!village){ 
+    status("Fill all fields", 'error'); 
+    return; 
+  }
+  
+  status("Capturing face data...", 'info');
+  
+  try{
+    const detection = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    
+    if(!detection){ 
+      status("Face not detected. Please position your face clearly.", 'error'); 
+      return; 
     }
+    
+    const descriptor = detection.descriptor;
+    
+    await addDoc(collection(db,"students"),{
+      name,
+      country,
+      district,
+      village,
+      faceDescriptor: Array.from(descriptor),
+      approved: false,
+      createdAt: serverTimestamp()
+    });
+    
+    status("✅ Registration successful! Your face has been saved.", 'success');
+    faceAlreadyRegistered = true;
+    
+    // Clear form
+    document.getElementById("name").value = "";
+    document.getElementById("country").value = "";
+    document.getElementById("district").value = "";
+    document.getElementById("village").value = "";
+    
+  } catch(e){ 
+    console.error("Database error:", e);
+    status("Database error. Please try again.", 'error'); 
+  }
+}
 
-    init();
+// Initialize everything
+async function init(){
+  status("Loading AI models...", 'info');
+  try{
+    await loadModels();
+    await startCamera();
+    status("✅ AI system ready. Camera is active. Objects will be detected and explained.", 'success');
+    detectFrame(); // start real-time object detection
+  } catch(e){
+    console.error("Initialization error:", e);
+    status("Error loading models or camera. Please check permissions.", 'error');
+  }
+}
+
+init();
+
 </script>
 </body>
 </html>
